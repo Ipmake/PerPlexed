@@ -195,6 +195,13 @@ function HeroDisplay({ item }: { item: Plex.Metadata }) {
               fontSize: "medium",
               fontWeight: "light",
               maxWidth: "35vw",
+
+              // make the text max 4 lines long and add ellipsis
+              display: "-webkit-box",
+              WebkitLineClamp: 4,
+              WebkitBoxOrient: "vertical",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
             }}
           >
             {item.summary}

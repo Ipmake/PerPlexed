@@ -171,6 +171,7 @@ function MetaScreen() {
               aspectRatio: "2/3",
               boxShadow: "-10px 10px 01px 0px #000000FF",
               backgroundColor: "#00000088",
+              objectFit: "cover",
             }}
           />
 
@@ -201,7 +202,7 @@ function MetaScreen() {
                   flexDirection: "row",
                   alignItems: "center",
                   justifyContent: "flex-start",
-                  mb: 1,
+                  mb: -1,
                 }}
               >
                 <img
@@ -232,6 +233,8 @@ function MetaScreen() {
                 sx={{
                   fontSize: "3rem",
                   fontWeight: "bold",
+                  mt: 0,
+                  mb: 0.5
                 }}
               >
                 {data?.title}
@@ -415,7 +418,14 @@ function MetaScreen() {
                   fontSize: "1rem",
                   fontWeight: "normal",
                   mt: 2,
+                  // max 5 lines
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  display: "-webkit-box",
+                  WebkitLineClamp: 5,
+                  WebkitBoxOrient: "vertical",
                 }}
+                title={data?.summary}
               >
                 {data?.summary}
               </Typography>
@@ -1063,7 +1073,14 @@ function EpisodeItem({
             opacity: 0.7,
             textShadow: "0px 0px 10px #000000",
             mt: -0.5,
+            // make it so the text doesnt resize the parent nor overflow max 3 rows
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            display: "-webkit-box",
+            WebkitLineClamp: 3,
+            WebkitBoxOrient: "vertical",
           }}
+          title={item.summary}
         >
           {item.summary}
         </Typography>

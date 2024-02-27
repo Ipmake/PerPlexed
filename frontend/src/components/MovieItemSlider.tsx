@@ -26,11 +26,32 @@ function MovieItemSlider({
 
   const [currPage, setCurrPage] = React.useState(0);
 
+  const calculateItemsPerPage = (width: number) => {
+    if(width < 400) return 1;
+    if (width < 600) return 2;
+    if (width < 1200) return 3;
+    if (width < 1500) return 4;
+    if (width < 2000) return 5;
+    if (width < 3000) return 6;
+    if (width < 4000) return 7;
+    return 6;
+  }
+
+  const [itemsPerPage, setItemsPerPage] = React.useState(calculateItemsPerPage(window.innerWidth));
+  
+  React.useEffect(() => {
+    const handleResize = () => {
+      setItemsPerPage(calculateItemsPerPage(window.innerWidth));
+    }
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   React.useEffect(() => {
     getLibraryMedia(libraryID, dir).then((media) => {
-      // cut the array down so its a multiple of 6
+      // cut the array down so its a multiple of itemsPerPage
       if (!media) return;
-      const roundedMedia = media.slice(0, 36);
+      const roundedMedia = media.slice(0, itemsPerPage * 5);
       console.log(roundedMedia.length);
 
       setItems(shuffle ? shuffleArray(roundedMedia) : roundedMedia);
@@ -119,10 +140,10 @@ function MovieItemSlider({
             flexDirection: "row",
             alignItems: "center",
             justifyContent: "center",
-            visibility: items.length > 6 ? "visible" : "hidden",
+            visibility: items.length > itemsPerPage ? "visible" : "hidden",
           }}
         >
-          {Array(Math.ceil(items.length / 6))
+          {Array(Math.ceil(items.length / itemsPerPage))
             .fill(0)
             .map((_, i) => {
               return (
@@ -168,11 +189,11 @@ function MovieItemSlider({
             alignItems: "center",
             justifyContent: "center",
             cursor: "pointer",
-            visibility: items.length > 6 ? "visible" : "hidden",
+            visibility: items.length > itemsPerPage ? "visible" : "hidden",
           }}
           onClick={() => {
             setCurrPage((currPage) =>
-              currPage - 1 < 0 ? Math.ceil(items.length / 6) - 1 : currPage - 1
+              currPage - 1 < 0 ? Math.ceil(items.length / itemsPerPage) - 1 : currPage - 1
             );
           }}
         >
@@ -191,7 +212,7 @@ function MovieItemSlider({
           }}
         >
           {items?.map((item) => {
-            return <MovieItem item={item} />;
+            return <MovieItem item={item} itemsPerPage={itemsPerPage} />;
           })}
         </Box>
         <Box
@@ -206,11 +227,11 @@ function MovieItemSlider({
             alignItems: "center",
             justifyContent: "center",
             cursor: "pointer",
-            visibility: items.length > 6 ? "visible" : "hidden",
+            visibility: items.length > itemsPerPage ? "visible" : "hidden",
           }}
           onClick={() => {
             setCurrPage(
-              currPage + 1 > Math.ceil(items.length / 6) - 1 ? 0 : currPage + 1
+              currPage + 1 > Math.ceil(items.length / itemsPerPage) - 1 ? 0 : currPage + 1
             );
           }}
         >
@@ -223,7 +244,7 @@ function MovieItemSlider({
 
 export default MovieItemSlider;
 
-function MovieItem({ item }: { item: Plex.Metadata }): JSX.Element {
+function MovieItem({ item, itemsPerPage }: { item: Plex.Metadata, itemsPerPage: number }): JSX.Element {
   const [, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
 
@@ -236,8 +257,8 @@ function MovieItem({ item }: { item: Plex.Metadata }): JSX.Element {
         flexDirection: "column",
         alignItems: "flex-start",
         justifyContent: "flex-start",
-        width: "calc((100vw / 6) - 10px - (5vw / 6))",
-        minWidth: "calc((100vw / 6) - 10px - (5vw / 6))",
+        width: `calc((100vw / ${itemsPerPage}) - 10px - (5vw / ${itemsPerPage}))`,
+        minWidth: `calc((100vw / ${itemsPerPage}) - 10px - (5vw / ${itemsPerPage}))`,
         aspectRatio: "16/9",
         backgroundColor: "#00000055",
         backgroundImage: ["episode"].includes(item.type)
@@ -321,6 +342,9 @@ function MovieItem({ item }: { item: Plex.Metadata }): JSX.Element {
             fontWeight: "bold",
             color: "#FFFFFF",
             textShadow: "0px 0px 10px #000000",
+            "@media (max-width: 2000px)": {
+              fontSize: "1.2rem",
+            }
           }}
         >
           {item.title}
@@ -331,9 +355,9 @@ function MovieItem({ item }: { item: Plex.Metadata }): JSX.Element {
               fontSize: "1rem",
               fontWeight: "normal",
               color: "#FFFFFF",
-              opacity: 0.5,
-              mt: -1,
-              mb: 1,
+              opacity: 0.7,
+              mt: -0.5,
+              mb: 0.5,
 
               textShadow: "0px 0px 10px #000000",
             }}
@@ -367,8 +391,7 @@ function MovieItem({ item }: { item: Plex.Metadata }): JSX.Element {
             <CheckCircle
               sx={{
                 color: "#00FF00",
-                fontSize: "large",
-                mt: -0.5,
+                fontSize: "large"
               }}
             />
           )}
@@ -405,9 +428,10 @@ function MovieItem({ item }: { item: Plex.Metadata }): JSX.Element {
                 color: "#FFFFFF",
                 textShadow: "0px 0px 10px #000000",
                 ml: 1,
-                border: "1px solid #AAAAAA",
+                border: "1px dotted #AAAAAA",
                 borderRadius: "5px",
                 px: 1,
+                py: -0.5
               }}
             >
               {item.contentRating}

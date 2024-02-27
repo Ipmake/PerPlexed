@@ -8,11 +8,12 @@ import { QueryClient, QueryClientProvider } from "react-query";
 import { BrowserRouter } from "react-router-dom";
 import { makeid } from "./plex/QuickFunctions";
 import axios from "axios";
+import { getBackendURL } from "./backendURL";
 
 if(!localStorage.getItem("clientID")) localStorage.setItem("clientID", makeid(10));
 
 (async () => {
-  const server = await axios.get("/server");
+  const server = await axios.get(`${getBackendURL()}/server`);
   if(server.data !== localStorage.getItem("server")) {
     localStorage.setItem("server", server.data);
     window.location.reload();
