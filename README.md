@@ -1,6 +1,8 @@
 # PerPlexed
 Fixing Plex's old and simple UI.
 
+[**Docker Hub**](https://hub.docker.com/r/ipmake/perplexed )
+
 ![PerPlexed](assets/screenshot1.png)
 
 
