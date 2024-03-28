@@ -317,6 +317,8 @@ declare namespace Plex {
     }
 
     interface Tag {
+        id: number;
+        filter: string;
         tag: string;
     }
 

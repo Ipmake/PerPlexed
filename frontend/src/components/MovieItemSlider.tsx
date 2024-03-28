@@ -110,7 +110,7 @@ function MovieItemSlider({
             sx={{
               fontSize: "2rem",
               fontWeight: "bold",
-              mb: "7px",
+              mb: "0px",
             }}
           >
             {title}
@@ -122,14 +122,14 @@ function MovieItemSlider({
               flexDirection: "row",
               alignItems: "center",
               justifyContent: "center",
-              mt: "5px",
+              mt: "0px",
               opacity: 0,
               gap: "0px",
               transition: "all 0.5s ease",
               color: "primary.main",
             }}
           >
-            <Typography sx={{ fontSize: "1rem", mb: "3px" }}>Browse</Typography>
+            <Typography sx={{ fontSize: "1rem", mt: "2px" }}>Browse</Typography>
             <ArrowForwardIos fontSize="small" />
           </Box>
         </Box>
@@ -391,7 +391,8 @@ function MovieItem({ item, itemsPerPage }: { item: Plex.Metadata, itemsPerPage: 
             <CheckCircle
               sx={{
                 color: "#00FF00",
-                fontSize: "large"
+                fontSize: "large",
+                mb: "2px",
               }}
             />
           )}

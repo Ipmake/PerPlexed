@@ -115,9 +115,9 @@ function Watch() {
   };
 
   const [url, setURL] = useState<string>("");
-  const getUrl = `${
-    localStorage.getItem("server")
-  }/video/:/transcode/universal/start.mpd?${queryBuilder({
+  const getUrl = `${localStorage.getItem(
+    "server"
+  )}/video/:/transcode/universal/start.mpd?${queryBuilder({
     hasMDE: 1,
     path: `/library/metadata/${itemID}`,
     mediaIndex: 0,
@@ -643,7 +643,23 @@ function Watch() {
                 }}
               >
                 <Button
-                  sx={{ width: "auto" }}
+                  sx={{
+                    width: "auto",
+                    px: 3,
+                    py: 1,
+
+                    background: theme.palette.text.primary,
+                    color: theme.palette.background.paper,
+                    transition: "all 0.25s",
+
+                    "&:hover": {
+                      background: theme.palette.text.primary,
+                      color: theme.palette.background.paper,
+
+                      boxShadow: "0px 0px 10px 0px #000000AA",
+                      px: 4,
+                    },
+                  }}
                   variant="contained"
                   onClick={() => {
                     if (!player.current || !metadata?.Marker) return;
@@ -657,7 +673,26 @@ function Watch() {
                     player.current.seekTo(time + 1);
                   }}
                 >
-                  Skip Intro
+                  <Box
+                    sx={{
+                      display: "flex",
+                      flexDirection: "row",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      transition: "all 0.25s",
+                      gap: 1,
+                    }}
+                  >
+                    <SkipNext />{" "}
+                    <Typography
+                      sx={{
+                        fontSize: 14,
+                        fontWeight: "bold",
+                      }}
+                    >
+                      Skip Intro
+                    </Typography>
+                  </Box>
                 </Button>
               </Box>
             </Fade>
@@ -687,7 +722,23 @@ function Watch() {
                 }}
               >
                 <Button
-                  sx={{ width: "auto" }}
+                  sx={{
+                    width: "auto",
+                    px: 3,
+                    py: 1,
+
+                    background: theme.palette.text.primary,
+                    color: theme.palette.background.paper,
+                    transition: "all 0.25s",
+
+                    "&:hover": {
+                      background: theme.palette.text.primary,
+                      color: theme.palette.background.paper,
+
+                      boxShadow: "0px 0px 10px 0px #000000AA",
+                      px: 4,
+                    },
+                  }}
                   variant="contained"
                   onClick={() => {
                     if (!player.current || !metadata?.Marker) return;
@@ -702,7 +753,26 @@ function Watch() {
                     player.current.seekTo(time + 1);
                   }}
                 >
-                  Skip Credits
+                  <Box
+                    sx={{
+                      display: "flex",
+                      flexDirection: "row",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      transition: "all 0.25s",
+                      gap: 1,
+                    }}
+                  >
+                    <SkipNext />{" "}
+                    <Typography
+                      sx={{
+                        fontSize: 14,
+                        fontWeight: "bold",
+                      }}
+                    >
+                      Skip Credits
+                    </Typography>
+                  </Box>
                 </Button>
               </Box>
             </Fade>
@@ -732,7 +802,23 @@ function Watch() {
                 }}
               >
                 <Button
-                  sx={{ width: "auto" }}
+                  sx={{
+                    width: "auto",
+                    px: 3,
+                    py: 1,
+
+                    background: theme.palette.text.primary,
+                    color: theme.palette.background.paper,
+                    transition: "all 0.25s",
+
+                    "&:hover": {
+                      background: theme.palette.text.primary,
+                      color: theme.palette.background.paper,
+
+                      boxShadow: "0px 0px 10px 0px #000000AA",
+                      px: 4,
+                    },
+                  }}
                   variant="contained"
                   onClick={async () => {
                     if (!player.current || !metadata?.Marker) return;
@@ -761,11 +847,30 @@ function Watch() {
                     navigate(`/watch/${next.ratingKey}`);
                   }}
                 >
-                  {metadata.type === "movie"
-                    ? "Skip Credits"
-                    : playQueue && playQueue[1]
-                    ? "Next Episode"
-                    : "Return to Show"}
+                  <Box
+                    sx={{
+                      display: "flex",
+                      flexDirection: "row",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      transition: "all 0.25s",
+                      gap: 1,
+                    }}
+                  >
+                    <SkipNext />{" "}
+                    <Typography
+                      sx={{
+                        fontSize: 14,
+                        fontWeight: "bold",
+                      }}
+                    >
+                      {metadata.type === "movie"
+                        ? "Skip Credits"
+                        : playQueue && playQueue[1]
+                        ? "Next Episode"
+                        : "Return to Show"}
+                    </Typography>
+                  </Box>
                 </Button>
               </Box>
             </Fade>
@@ -857,9 +962,9 @@ function Watch() {
                       }}
                       getPreviewScreenUrl={(value) => {
                         if (!metadata.Media) return "";
-                        return `${
-                          localStorage.getItem("server")
-                        }/photo/:/transcode?${queryBuilder({
+                        return `${localStorage.getItem(
+                          "server"
+                        )}/photo/:/transcode?${queryBuilder({
                           width: "240",
                           height: "135",
                           minSize: "1",
@@ -869,8 +974,9 @@ function Watch() {
                           }/indexes/sd/${value}?X-Plex-Token=${
                             localStorage.getItem("accessToken") as string
                           }`,
-                          "X-Plex-Token": 
-                            localStorage.getItem("accessToken") as string,
+                          "X-Plex-Token": localStorage.getItem(
+                            "accessToken"
+                          ) as string,
                         })}`;
                       }}
                     />
@@ -1026,7 +1132,7 @@ function Watch() {
                 if (!player.current) return;
                 setReady(true);
 
-                if(seekToAfterLoad.current !== null) {
+                if (seekToAfterLoad.current !== null) {
                   player.current.seekTo(seekToAfterLoad.current);
                   seekToAfterLoad.current = null;
                 }

@@ -8,6 +8,7 @@ import Watch from "./pages/Watch";
 import Login from "./pages/Login";
 import Search from "./pages/Search";
 import Home from "./pages/Home";
+import Library from "./pages/Library";
 
 function App() {
   const location = useLocation();
@@ -33,6 +34,7 @@ function App() {
           <Route path="/watch/:itemID" element={<Watch />} />
           <Route path="/login" element={<Login />} />
           <Route path="/search/:query?" element={<Search />} />
+          <Route path="/library/:libraryKey/dir/:dir/:subdir?" element={<Library />} />
         </Routes>
       </Box>
     </>

@@ -10,9 +10,10 @@ import {
   LinearProgress,
   MenuItem,
   Select,
+  Tooltip,
   Typography,
 } from "@mui/material";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import React, { useEffect, useState } from "react";
 import {
   getLibraryMeta,
@@ -110,11 +111,13 @@ function MetaScreen() {
             width: "100%",
             maxWidth: "100%",
             aspectRatio: "16/9",
-            backgroundImage: `url(${localStorage.getItem("server")}${data?.art}?X-Plex-Token=${localStorage.getItem("accessToken")})`,
+            backgroundImage: `url(${localStorage.getItem("server")}${
+              data?.art
+            }?X-Plex-Token=${localStorage.getItem("accessToken")})`,
             backgroundSize: "cover",
             backgroundPosition: "center",
             backgroundRepeat: "no-repeat",
-            backgroundColor: "#00000088",
+            backgroundColor: "#000000AA",
             backgroundBlendMode: "darken",
 
             display: "flex",
@@ -161,7 +164,9 @@ function MetaScreen() {
         >
           <img
             src={`${getTranscodeImageURL(
-              `${data?.thumb}?X-Plex-Token=${localStorage.getItem("accessToken")}`,
+              `${data?.thumb}?X-Plex-Token=${localStorage.getItem(
+                "accessToken"
+              )}`,
               600,
               900
             )}`}
@@ -183,7 +188,7 @@ function MetaScreen() {
               alignItems: "flex-start",
               justifyContent: "flex-end",
               height: "100%",
-              marginLeft: "5%",
+              marginLeft: "1%",
             }}
           >
             <Box
@@ -202,7 +207,7 @@ function MetaScreen() {
                   flexDirection: "row",
                   alignItems: "center",
                   justifyContent: "flex-start",
-                  mb: -1,
+                  mb: 0,
                 }}
               >
                 <img
@@ -221,6 +226,7 @@ function MetaScreen() {
                     letterSpacing: "0.1em",
                     textShadow: "3px 3px 1px #232529",
                     ml: 1,
+                    mt: 1,
                     color: "#e6a104",
                     textTransform: "uppercase",
                   }}
@@ -234,7 +240,6 @@ function MetaScreen() {
                   fontSize: "3rem",
                   fontWeight: "bold",
                   mt: 0,
-                  mb: 0.5
                 }}
               >
                 {data?.title}
@@ -360,15 +365,24 @@ function MetaScreen() {
                     if (data?.type === "movie")
                       navigate(`/watch/${data?.ratingKey}`);
 
-                      if(data?.type === "show") {
-                        if(data?.OnDeck && data?.OnDeck.Metadata) {
-                          navigate(`/watch/${data?.OnDeck.Metadata.ratingKey}${data?.OnDeck.Metadata.viewOffset ? `?t=${data?.OnDeck.Metadata.viewOffset}` : ""}`);
-                        } else {
-                          const firstSeason = await getLibraryMetaChildren(data?.Children?.Metadata[0]?.ratingKey as string);
+                    if (data?.type === "show") {
+                      if (data?.OnDeck && data?.OnDeck.Metadata) {
+                        navigate(
+                          `/watch/${data?.OnDeck.Metadata.ratingKey}${
+                            data?.OnDeck.Metadata.viewOffset
+                              ? `?t=${data?.OnDeck.Metadata.viewOffset}`
+                              : ""
+                          }`
+                        );
+                      } else {
+                        const firstSeason = await getLibraryMetaChildren(
+                          data?.Children?.Metadata[0]?.ratingKey as string
+                        );
 
-                          if(firstSeason) navigate(`/watch/${firstSeason[0].ratingKey}`);
-                        }
+                        if (firstSeason)
+                          navigate(`/watch/${firstSeason[0].ratingKey}`);
                       }
+                    }
                   }}
                 >
                   <PlayArrow fontSize="medium" /> Play{" "}
@@ -413,11 +427,41 @@ function MetaScreen() {
                 </IconButton>
               </Box>
 
+              <Box
+                sx={{
+                  width: "100%",
+                  display: "flex",
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "flex-start",
+                  gap: 0.5,
+                  mt: 2,
+                }}
+              >
+                <Typography>Genres: </Typography>
+                {data?.Genre?.slice(0, 5).map((genre, index) => (
+                  <Link
+                    to={`/library/${data.librarySectionID}/dir/genre/${genre.id}`}
+                    style={{ textDecoration: "none" }}
+                  >
+                    <Typography
+                      sx={{
+                        color: "#FFFFFF",
+                        fontWeight: "bold",
+                      }}
+                    >
+                      {genre.tag}
+                      {index + 1 === data?.Genre?.slice(0, 5).length ? "" : ","}
+                    </Typography>
+                  </Link>
+                ))}
+              </Box>
+
               <Typography
                 sx={{
+                  mt: 1,
                   fontSize: "1rem",
                   fontWeight: "normal",
-                  mt: 2,
                   // max 5 lines
                   overflow: "hidden",
                   textOverflow: "ellipsis",
@@ -467,70 +511,74 @@ function MetaScreen() {
             <Grid container spacing={2}>
               {data?.Role?.map((role) => (
                 <Grid item xs={6}>
-                  <Box
-                    sx={{
-                      display: "flex",
-                      flexDirection: "row",
-                      alignItems: "center",
-                      justifyContent: "flex-start",
-                      gap: 1,
-
-                      width: "100%",
-                      height: "100%",
-
-                      userSelect: "none",
-                      cursor: "pointer",
-
-                      "&:hover": {
-                        transition: "all 0.2s ease-in-out",
-                        transform: "scale(1.05)",
-                      },
-                      transition: "all 0.5s ease-in-out",
-                    }}
+                  <Link
+                    to={`/library/${data?.librarySectionID}/dir/actor/${role.id}`}
                   >
-                    <Avatar
-                      src={role.thumb}
-                      alt=""
-                      sx={{
-                        display: "flex",
-                        width: "35%",
-                        height: "auto",
-                        aspectRatio: "1/1",
-
-                        borderBottomRightRadius: "0%",
-                        borderTopRightRadius: "0%",
-                      }}
-                    />
-
                     <Box
                       sx={{
                         display: "flex",
-                        flexDirection: "column",
-                        alignItems: "flex-start",
+                        flexDirection: "row",
+                        alignItems: "center",
                         justifyContent: "flex-start",
+                        gap: 1,
+
+                        width: "100%",
+                        height: "100%",
+
+                        userSelect: "none",
+                        cursor: "pointer",
+
+                        "&:hover": {
+                          transition: "all 0.2s ease-in-out",
+                          transform: "scale(1.05)",
+                        },
+                        transition: "all 0.5s ease-in-out",
                       }}
                     >
-                      <Typography
+                      <Avatar
+                        src={role.thumb}
+                        alt=""
                         sx={{
-                          fontSize: "0.7rem",
-                          fontWeight: "bold",
-                          letterSpacing: "0.1em",
-                        }}
-                      >
-                        {role.tag}
-                      </Typography>
+                          display: "flex",
+                          width: "35%",
+                          height: "auto",
+                          aspectRatio: "1/1",
 
-                      <Typography
+                          borderBottomRightRadius: "0%",
+                          borderTopRightRadius: "0%",
+                        }}
+                      />
+
+                      <Box
                         sx={{
-                          fontSize: "0.6rem",
-                          fontWeight: "normal",
-                          letterSpacing: "0.1em",
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "flex-start",
+                          justifyContent: "flex-start",
                         }}
                       >
-                        {role.role}
-                      </Typography>
+                        <Typography
+                          sx={{
+                            fontSize: "0.7rem",
+                            fontWeight: "bold",
+                            letterSpacing: "0.1em",
+                          }}
+                        >
+                          {role.tag}
+                        </Typography>
+
+                        <Typography
+                          sx={{
+                            fontSize: "0.6rem",
+                            fontWeight: "normal",
+                            letterSpacing: "0.1em",
+                          }}
+                        >
+                          {role.role}
+                        </Typography>
+                      </Box>
                     </Box>
-                  </Box>
+                  </Link>
                 </Grid>
               ))}
             </Grid>
@@ -687,7 +735,9 @@ export function MovieItem({
         backgroundColor: "#00000055",
         backgroundImage: ["episode"].includes(item.type)
           ? `url(${getTranscodeImageURL(
-              `${item.thumb}?X-Plex-Token=${localStorage.getItem("accessToken")}`,
+              `${item.thumb}?X-Plex-Token=${localStorage.getItem(
+                "accessToken"
+              )}`,
               380,
               214
             )})`
@@ -925,7 +975,7 @@ function EpisodeItem({
         width: "100%",
         display: "flex",
         flexDirection: "row",
-        alignItems: "center",
+        alignItems: "flex-start",
         justifyContent: "flex-start",
         gap: 1,
         userSelect: "none",
@@ -950,6 +1000,7 @@ function EpisodeItem({
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
+          alignSelf: "center",
         }}
       >
         <Typography
@@ -1047,6 +1098,13 @@ function EpisodeItem({
               fontWeight: "bold",
               color: "#FFFFFF",
               textShadow: "0px 0px 10px #000000",
+              // make it so the text doesnt resize the parent nor overflow max 3 rows
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              display: "-webkit-box",
+              WebkitLineClamp: 1,
+              WebkitBoxOrient: "vertical",
+              maxWidth: "80%",
             }}
           >
             {item.title}

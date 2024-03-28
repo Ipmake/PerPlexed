@@ -2,9 +2,11 @@ import { Avatar, Box, Grid, Typography } from "@mui/material";
 import React from "react";
 import { useQuery } from "react-query";
 import { getAllLibraries } from "../plex";
+import { useNavigate } from "react-router-dom";
 
 export default function Home() {
   const libraries = useQuery("libraries", getAllLibraries);
+  const navigate = useNavigate();
 
   return (
     <Box
@@ -63,6 +65,7 @@ export default function Home() {
 
                     "&:hover": { transform: "scale(1.05)" },
                   }}
+                  onClick={() => navigate(`/browse/${library.key}`)}
                 >
                   <Avatar
                     variant="rounded"

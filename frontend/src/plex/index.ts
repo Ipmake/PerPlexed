@@ -187,3 +187,16 @@ export async function getSearch(query: string): Promise<Plex.SearchResult[]> {
     })}`);
     return res.MediaContainer.SearchResult;
 }
+
+export async function getLibraryDir(library: number, directory: string, subDir?: string): Promise<{
+    title: string;
+    library: string;
+    Metadata: Plex.Metadata[];
+}> {
+    const res = await authedGet(`${localStorage.getItem("server")}/library/sections/${library}/${directory}/${subDir ?? ""}`);
+    return {
+        title: res.MediaContainer.title2,
+        library: res.MediaContainer.title1,
+        Metadata: res.MediaContainer.Metadata
+    }
+}
