@@ -155,13 +155,13 @@ function HeroDisplay({ item }: { item: Plex.Metadata }) {
               flexDirection: "row",
               alignItems: "center",
               justifyContent: "flex-start",
-              mb: 1,
+              mb: 0,
             }}
           >
             <img
               src="/plexIcon.png"
               alt=""
-              height="40"
+              height="35"
               style={{
                 aspectRatio: 1,
                 borderRadius: 8,
@@ -169,14 +169,14 @@ function HeroDisplay({ item }: { item: Plex.Metadata }) {
             />
             <Typography
               sx={{
-                fontSize: "30px",
+                fontSize: "24px",
                 fontWeight: "900",
                 letterSpacing: "0.1em",
                 textShadow: "3px 3px 1px #232529",
                 ml: 1,
                 color: "#e6a104",
                 textTransform: "uppercase",
-                mt: 1,
+                mt: "8px",
               }}
             >
               {item.type}

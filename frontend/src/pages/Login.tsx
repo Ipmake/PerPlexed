@@ -11,7 +11,7 @@ const [query] = useSearchParams();
         (async () => {
             const res = await getPin();
 
-            window.location.href = `https://app.plex.tv/auth/#!?clientID=${localStorage.getItem("clientID")}&context[device][product]=Plex%20Web&context[device][version]=4.118.0&context[device][platform]=Firefox&context[device][platformVersion]=122.0&context[device][device]=Linux&context[device][model]=bundled&context[device][screenResolution]=1920x945,1920x1080&context[device][layout]=desktop&context[device][protocol]=http&forwardUrl=${window.location.protocol}//${window.location.host}/login?pinID=${res.id}&code=${res.code}&language=en`;
+            window.location.href = `https://app.plex.tv/auth/#!?clientID=${localStorage.getItem("clientID")}&context[device][product]=Plex%20Web&context[device][version]=4.118.0&context[device][platform]=Firefox&context[device][platformVersion]=122.0&context[device][device]=Linux&context[device][model]=bundled&context[device][screenResolution]=1920x945,1920x1080&context[device][layout]=desktop&context[device][protocol]=${window.location.protocol.replace(":", "")}&forwardUrl=${window.location.protocol}//${window.location.host}/login?pinID=${res.id}&code=${res.code}&language=en`;
         })()
     }
 

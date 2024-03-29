@@ -1,4 +1,4 @@
-import { Box, Typography } from "@mui/material";
+import { Box, Tooltip, Typography } from "@mui/material";
 import React from "react";
 import { getLibraryMedia, getTranscodeImageURL } from "../plex";
 import {
@@ -27,7 +27,7 @@ function MovieItemSlider({
   const [currPage, setCurrPage] = React.useState(0);
 
   const calculateItemsPerPage = (width: number) => {
-    if(width < 400) return 1;
+    if (width < 400) return 1;
     if (width < 600) return 2;
     if (width < 1200) return 3;
     if (width < 1500) return 4;
@@ -35,14 +35,16 @@ function MovieItemSlider({
     if (width < 3000) return 6;
     if (width < 4000) return 7;
     return 6;
-  }
+  };
 
-  const [itemsPerPage, setItemsPerPage] = React.useState(calculateItemsPerPage(window.innerWidth));
-  
+  const [itemsPerPage, setItemsPerPage] = React.useState(
+    calculateItemsPerPage(window.innerWidth)
+  );
+
   React.useEffect(() => {
     const handleResize = () => {
       setItemsPerPage(calculateItemsPerPage(window.innerWidth));
-    }
+    };
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
@@ -193,7 +195,9 @@ function MovieItemSlider({
           }}
           onClick={() => {
             setCurrPage((currPage) =>
-              currPage - 1 < 0 ? Math.ceil(items.length / itemsPerPage) - 1 : currPage - 1
+              currPage - 1 < 0
+                ? Math.ceil(items.length / itemsPerPage) - 1
+                : currPage - 1
             );
           }}
         >
@@ -231,7 +235,9 @@ function MovieItemSlider({
           }}
           onClick={() => {
             setCurrPage(
-              currPage + 1 > Math.ceil(items.length / itemsPerPage) - 1 ? 0 : currPage + 1
+              currPage + 1 > Math.ceil(items.length / itemsPerPage) - 1
+                ? 0
+                : currPage + 1
             );
           }}
         >
@@ -244,10 +250,15 @@ function MovieItemSlider({
 
 export default MovieItemSlider;
 
-function MovieItem({ item, itemsPerPage }: { item: Plex.Metadata, itemsPerPage: number }): JSX.Element {
+function MovieItem({
+  item,
+  itemsPerPage,
+}: {
+  item: Plex.Metadata;
+  itemsPerPage: number;
+}): JSX.Element {
   const [, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
-
 
   // 300 x 170
   return (
@@ -262,8 +273,18 @@ function MovieItem({ item, itemsPerPage }: { item: Plex.Metadata, itemsPerPage: 
         aspectRatio: "16/9",
         backgroundColor: "#00000055",
         backgroundImage: ["episode"].includes(item.type)
-          ? `url(${getTranscodeImageURL(`${item.thumb}?X-Plex-Token=${localStorage.getItem("accessToken")}`, 300, 170)})`
-          : `url(${getTranscodeImageURL(`${item.art}?X-Plex-Token=${localStorage.getItem("accessToken")}`, 300, 170)})`,
+          ? `url(${getTranscodeImageURL(
+              `${item.thumb}?X-Plex-Token=${localStorage.getItem(
+                "accessToken"
+              )}`,
+              300,
+              170
+            )})`
+          : `url(${getTranscodeImageURL(
+              `${item.art}?X-Plex-Token=${localStorage.getItem("accessToken")}`,
+              300,
+              170
+            )})`,
         backgroundSize: "cover",
         backgroundPosition: "center",
         backgroundBlendMode: "darken",
@@ -286,7 +307,12 @@ function MovieItem({ item, itemsPerPage }: { item: Plex.Metadata, itemsPerPage: 
         cursor: "pointer",
       }}
       onClick={() => {
-        if(["episode"].includes(item.type)) return navigate(`/watch/${item.ratingKey}${item.viewOffset ? `?t=${item.viewOffset}` : ""}`)
+        if (["episode"].includes(item.type))
+          return navigate(
+            `/watch/${item.ratingKey}${
+              item.viewOffset ? `?t=${item.viewOffset}` : ""
+            }`
+          );
         setSearchParams({ mid: item.ratingKey.toString() });
       }}
     >
@@ -316,7 +342,7 @@ function MovieItem({ item, itemsPerPage }: { item: Plex.Metadata, itemsPerPage: 
           <img
             src="/plexIcon.png"
             alt=""
-            height="25"
+            height="23"
             style={{
               aspectRatio: 1,
               borderRadius: 8,
@@ -324,13 +350,14 @@ function MovieItem({ item, itemsPerPage }: { item: Plex.Metadata, itemsPerPage: 
           />
           <Typography
             sx={{
-              fontSize: "16px",
+              fontSize: "14px",
               fontWeight: "900",
               letterSpacing: "0.1em",
-              textShadow: "3px 3px 1px #232529",
+              textShadow: "2px 2px 0px #232529",
               ml: 1,
               color: "#e6a104",
               textTransform: "uppercase",
+              mt: "4px",
             }}
           >
             {item.type}
@@ -344,7 +371,7 @@ function MovieItem({ item, itemsPerPage }: { item: Plex.Metadata, itemsPerPage: 
             textShadow: "0px 0px 10px #000000",
             "@media (max-width: 2000px)": {
               fontSize: "1.2rem",
-            }
+            },
           }}
         >
           {item.title}
@@ -388,13 +415,15 @@ function MovieItem({ item, itemsPerPage }: { item: Plex.Metadata, itemsPerPage: 
           }}
         >
           {item.type === "show" && item.leafCount === item.viewedLeafCount && (
-            <CheckCircle
-              sx={{
-                color: "#00FF00",
-                fontSize: "large",
-                mb: "2px",
-              }}
-            />
+            <Tooltip title="Watched" arrow>
+              <CheckCircle
+                sx={{
+                  color: "#00FF00",
+                  fontSize: "large",
+                  mb: "2px",
+                }}
+              />
+            </Tooltip>
           )}
           {item.year && (
             <Typography
@@ -432,7 +461,7 @@ function MovieItem({ item, itemsPerPage }: { item: Plex.Metadata, itemsPerPage: 
                 border: "1px dotted #AAAAAA",
                 borderRadius: "5px",
                 px: 1,
-                py: -0.5
+                py: -0.5,
               }}
             >
               {item.contentRating}

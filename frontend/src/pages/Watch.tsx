@@ -139,16 +139,16 @@ function Watch() {
     "X-Plex-Incomplete-Segments": 1,
     "X-Plex-Product": "PerPlexed",
     "X-Plex-Version": "4.118.0",
-    "X-Plex-Client-Identifier": "rysajgs4qwbc26uurknhxt39",
-    "X-Plex-Platform": "Firefox",
+    "X-Plex-Client-Identifier": localStorage.getItem("clientID") as string,
+    "X-Plex-Platform": getBrowserName(),
     "X-Plex-Platform-Version": "121.0",
     "X-Plex-Features": "external-media,indirect-media,hub-style-list",
     "X-Plex-Model": "bundled",
     "X-Plex-Device": "Linux",
-    "X-Plex-Device-Name": "Firefox",
+    "X-Plex-Device-Name": getBrowserName(),
     "X-Plex-Token": localStorage.getItem("accessToken") as string,
     "X-Plex-Language": "en",
-    "X-Plex-Session-Id": "e41474b9-aeb5-432d-a30c-24814fe44777",
+    "X-Plex-Session-Id": "e41474b9-aeb5-432d-a30c-24814fe44788",
   })}`;
 
   const [showControls, setShowControls] = useState(true);
@@ -459,9 +459,9 @@ function Watch() {
 
                     const progress = player.current?.getCurrentTime() ?? 0;
 
+                    seekToAfterLoad.current = progress;
                     setURL("");
                     setURL(getUrl);
-                    player.current?.seekTo(progress);
                   }}
                 >
                   {stream.selected && (
@@ -523,9 +523,9 @@ function Watch() {
 
                   const progress = player.current?.getCurrentTime() ?? 0;
 
+                  seekToAfterLoad.current = progress;
                   setURL("");
                   setURL(getUrl);
-                  player.current?.seekTo(progress);
                 }}
               >
                 {metadata?.Media[0].Part[0].Stream.filter(
@@ -587,9 +587,9 @@ function Watch() {
 
                     const progress = player.current?.getCurrentTime() ?? 0;
 
+                    seekToAfterLoad.current = progress;
                     setURL("");
                     setURL(getUrl);
-                    player.current?.seekTo(progress);
                   }}
                 >
                   {stream.selected && (
@@ -1260,4 +1260,24 @@ function TuneSettingTab(
       </Typography>
     </Box>
   );
+}
+
+function getBrowserName() {
+  let userAgent = navigator.userAgent; 
+  let browserName = "Unknown";
+
+  // Check for different browsers
+  if (userAgent.indexOf("Chrome") > -1) {
+      browserName = "Chrome";
+  } else if (userAgent.indexOf("Safari") > -1) {
+      browserName = "Safari";
+  } else if (userAgent.indexOf("Opera") > -1) {
+      browserName = "Opera";
+  } else if (userAgent.indexOf("Firefox") > -1) {
+      browserName = "Firefox";
+  } else if (userAgent.indexOf("MSIE") > -1 || userAgent.indexOf("Trident") > -1) {
+      browserName = "Internet Explorer";
+  }
+
+  return browserName;
 }

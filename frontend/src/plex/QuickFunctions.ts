@@ -62,7 +62,7 @@ export function getXPlexProps(sessionID: string) {
         "X-Plex-Device-Screen-Resolution": "1920x1080,1920x1080",
         "X-Plex-Token": localStorage.getItem("accessToken"),
         "X-Plex-Language": "en",
-        "X-Plex-Session-Id": "e41474b9-aeb5-432d-a30c-24814fe44777",
+        "X-Plex-Session-Id": "e41474b9-aeb5-432d-a30c-24814fe44788",
         "session": useSessionStore.getState().sessionID
     }
 }
