@@ -38,7 +38,7 @@ cd frontend
 npm install
 npm run build
 cd ..
-cp -r frontend/build backend/www
+cp -r frontend/build/. backend/www
 cd backend
 docker build -t perplexed .
 docker run --name perplexed -p 3000:3000 -e PLEX_SERVER=http://your-plex-server:32400 perplexed
