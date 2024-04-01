@@ -9,11 +9,13 @@
   "devDependencies": {
     "@types/express": "^4.17.21",
     "@types/node": "^20.11.16",
+    "@vercel/ncc": "^0.38.1",
     "typescript": "^5.3.3"
   },
   "scripts": {
     "start": "node .",
-    "dev": "npx tsc && node ."
+    "dev": "npx tsc && node .",
+    "build": "ncc build src/index.ts -o build"
   },
   "author": "Ipmake",
   "license": "ISC",
