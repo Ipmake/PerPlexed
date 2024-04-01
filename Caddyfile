@@ -1,0 +1,29 @@
+{
+  auto_https off
+}
+
+:3000 {
+  encode zstd gzip
+
+    handle /server {
+        respond {env.PLEX_SERVER} 200 
+    }
+
+	handle {
+		root * /app/www
+		try_files {path} /index.html
+		file_server
+
+        handle /index.html {
+            header Cache-Control no-cache
+            header Access-Control-Allow-Origin *
+            header Access-Control-Allow-Methods "GET, POST, PUT, DELETE"
+          }
+
+          handle {
+            header Cache-Control max-age=2592000
+            header Access-Control-Allow-Origin *
+            header Access-Control-Allow-Methods GET, POST, PUT, DELETE
+          }
+	}
+}
