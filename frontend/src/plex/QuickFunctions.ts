@@ -46,24 +46,24 @@ export function queryBuilder(query: any) {
         .join('&');
 }
 
-export function getXPlexProps(sessionID: string) {
+export function getXPlexProps() {
     return {
-        "X-Plex-Session-Identifier": sessionID,
         "X-Incomplete-Segments": "1",
         "X-Plex-Product": "PerPlexed",
         "X-Plex-Version": "0.1.0",
         "X-Plex-Client-Identifier": localStorage.getItem("clientID"),
-        "X-Plex-Platform": "Firefox",
-        "X-Plex-Platform-Version": "122.0",
+        "X-Plex-Platform": getBrowserName(),
+        "X-Plex-Platform-Version": getBrowserVersion(),
         "X-Plex-Features": "external-media,indirect-media,hub-style-list",
         "X-Plex-Model": "bundled",
-        "X-Plex-Device": "Linux",
-        "X-Plex-Device-Name": "Firefox",
+        "X-Plex-Device": getBrowserName(),
+        "X-Plex-Device-Name": getBrowserName(),
         "X-Plex-Device-Screen-Resolution": "1920x1080,1920x1080",
         "X-Plex-Token": localStorage.getItem("accessToken"),
         "X-Plex-Language": "en",
-        "X-Plex-Session-Id": "e41474b9-aeb5-432d-a30c-24814fe44788",
-        "session": useSessionStore.getState().sessionID
+        "X-Plex-Session-Id": sessionStorage.getItem("sessionID"),
+        "X-Plex-Session-Identifier": useSessionStore.getState().XPlexSessionID,
+        "session": useSessionStore.getState().sessionID,
     }
 }
 
@@ -77,4 +77,89 @@ export function makeid(length: number) {
       counter += 1;
     }
     return result;
+}
+
+export function getBrowserName() {
+    let userAgent = navigator.userAgent; 
+    let browserName = "Unknown";
+  
+    // Check for different browsers
+    const browsers = [
+        { name: "Chrome", identifier: "Chrome" },
+        { name: "Safari", identifier: "Safari" },
+        { name: "Opera", identifier: "Opera" },
+        { name: "Firefox", identifier: "Firefox" },
+        { name: "Internet Explorer", identifier: ["MSIE", "Trident"] }
+    ];
+
+    for (const browser of browsers) {
+        if (Array.isArray(browser.identifier)) {
+            if (browser.identifier.some(id => userAgent.includes(id))) {
+                browserName = browser.name;
+                break;
+            }
+        } else if (userAgent.includes(browser.identifier)) {
+            browserName = browser.name;
+            break;
+        }
+    }
+  
+    return browserName;
+  }
+
+export function getBrowserVersion() {
+    let userAgent = navigator.userAgent;
+    let browserVersion = "Unknown";
+
+    // Check for different browsers
+    const browsers = [
+        { name: "Chrome", identifier: "Chrome" },
+        { name: "Safari", identifier: "Version" },
+        { name: "Opera", identifier: "OPR" },
+        { name: "Firefox", identifier: "Firefox" },
+        { name: "Internet Explorer", identifier: ["MSIE", "Trident"] }
+    ];
+
+    for (const browser of browsers) {
+        if (Array.isArray(browser.identifier)) {
+            if (browser.identifier.some(id => userAgent.includes(id))) {
+                browserVersion = userAgent.split(browser.identifier[0])[1].split(" ")[0];
+                break;
+            }
+        } else if (userAgent.includes(browser.identifier)) {
+            browserVersion = userAgent.split(browser.identifier)[1].split(" ")[0];
+            break;
+        }
+    }
+
+    return browserVersion;
+}
+
+export function getOS() {
+    let userAgent = navigator.userAgent;
+    let os = "Unknown";
+
+    // Check for different operating systems
+    const operatingSystems = [
+        { name: "Windows", identifier: "Windows" },
+        { name: "Mac OS", identifier: "Mac OS" },
+        { name: "Linux", identifier: "Linux" }
+    ];
+
+    for (const operatingSystem of operatingSystems) {
+        if (userAgent.includes(operatingSystem.identifier)) {
+            os = operatingSystem.name;
+            break;
+        }
+    }
+
+    return os;
+}
+
+// uuid generator
+export function uuidv4() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    });
 }
