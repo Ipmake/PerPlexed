@@ -33,7 +33,7 @@ export async function getLibraryMeta(id: string): Promise<Plex.Metadata> {
         includeOnDeck: 1,
         includeChapters: 1,
         includeChildren: 1,
-        ...getXPlexProps("gazjqeiwe61k25cun3080ptf")
+        ...getXPlexProps()
     })}`);
     return res.MediaContainer.Metadata[0];
 }
@@ -45,7 +45,7 @@ export async function getLibraryMetaChildren(id: string): Promise<Plex.Metadata[
         includeOnDeck: 1,
         includeChapters: 1,
         includeChildren: 1,
-        ...getXPlexProps("gazjqeiwe61k25cun3080ptf")
+        ...getXPlexProps()
     })}`);
     return res.MediaContainer.Metadata;
 
@@ -60,7 +60,7 @@ export async function getSimilar(id: string): Promise<Plex.Metadata[]> {
         includeRelated: 1,
         includeExternalMedia: 1,
         async: 1,
-        ...getXPlexProps("gazjqeiwe61k25cun3080ptf")
+        ...getXPlexProps()
     })}`);
     return res.MediaContainer.Metadata;
 }
@@ -86,7 +86,7 @@ export async function getUniversalDecision(id: string, limitation: {
         mediaBufferSize: 102400,
         subtitles: "burn",
         "Accept-Language": "en",
-        ...getXPlexProps("gazjqeiwe61k25cun3080ptf"),
+        ...getXPlexProps(),
         ...(limitation.autoAdjustQuality && {
             autoAdjustQuality: limitation.autoAdjustQuality ? 1 : 0
         }),
@@ -100,14 +100,14 @@ export async function getUniversalDecision(id: string, limitation: {
 export async function putAudioStream(partID: number, streamID: number): Promise<void> {
     await authedPut(`${localStorage.getItem("server")}/library/parts/${partID}?${queryBuilder({
         audioStreamID: streamID,
-        ...getXPlexProps("gazjqeiwe61k25cun3080ptf")
+        ...getXPlexProps()
     })}`, {});
 }
 
 export async function putSubtitleStream(partID: number, streamID: number): Promise<void> {
     await authedPut(`${localStorage.getItem("server")}/library/parts/${partID}?${queryBuilder({
         subtitleStreamID: streamID,
-        ...getXPlexProps("gazjqeiwe61k25cun3080ptf")
+        ...getXPlexProps()
     })}`, {});
 }
 
@@ -120,7 +120,7 @@ export async function getTimelineUpdate(itemID: number, duration: number, state:
         playbackTime: time,
         time: time,
         context: "library",
-        ...getXPlexProps("gazjqeiwe61k25cun3080ptf")
+        ...getXPlexProps()
     })}`);
     return;
 }
@@ -139,7 +139,7 @@ export async function getPlayQueue(uri: string): Promise<Plex.Metadata[]> {
         includeMarkers: 1,
         includeGeolocation: 1,
         includeExternalMedia: 1,
-        ...getXPlexProps("gazjqeiwe61k25cun3080ptf")
+        ...getXPlexProps()
     })}`);
     return res.MediaContainer.Metadata;
 }

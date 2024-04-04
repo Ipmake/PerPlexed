@@ -3,12 +3,14 @@ import { makeid } from "../plex/QuickFunctions";
 
 type SessionState = {
     sessionID: string;
+    XPlexSessionID: string;
     generateSessionID: () => void;
 };
 
 export const useSessionStore = create<SessionState>((set) => ({
-    sessionID: makeid(16),
+    sessionID: makeid(24),
+    XPlexSessionID: makeid(24),
     generateSessionID: () => {
-        set({ sessionID: makeid(16) });
+        set({ sessionID: makeid(24), XPlexSessionID: makeid(24) });
     }
 }));

@@ -22,7 +22,7 @@ import {
   useTheme,
 } from "@mui/material";
 import ReactPlayer from "react-player";
-import { queryBuilder } from "../plex/QuickFunctions";
+import { getXPlexProps, queryBuilder } from "../plex/QuickFunctions";
 import {
   ArrowBackIos,
   Check,
@@ -46,7 +46,7 @@ function Watch() {
   const theme = useTheme();
   const navigate = useNavigate();
 
-  const { sessionID, generateSessionID } = useSessionStore();
+  const { sessionID } = useSessionStore();
 
   const [metadata, setMetadata] = useState<Plex.Metadata | null>(null);
   const [playQueue, setPlayQueue] = useState<Plex.Metadata[] | null>(null); // [current, ...next]
@@ -132,23 +132,9 @@ function Watch() {
     autoAdjustQuality: 0,
     directStreamAudio: 12835,
     mediaBufferSize: 102400,
-    session: sessionID,
     subtitles: "burn",
     "Accept-Language": "en",
-    "X-Plex-Session-Identifier": "gazjqeiwe61k25cun3080ptf",
-    "X-Plex-Incomplete-Segments": 1,
-    "X-Plex-Product": "PerPlexed",
-    "X-Plex-Version": "4.118.0",
-    "X-Plex-Client-Identifier": localStorage.getItem("clientID") as string,
-    "X-Plex-Platform": getBrowserName(),
-    "X-Plex-Platform-Version": "121.0",
-    "X-Plex-Features": "external-media,indirect-media,hub-style-list",
-    "X-Plex-Model": "bundled",
-    "X-Plex-Device": "Linux",
-    "X-Plex-Device-Name": getBrowserName(),
-    "X-Plex-Token": localStorage.getItem("accessToken") as string,
-    "X-Plex-Language": "en",
-    "X-Plex-Session-Id": "e41474b9-aeb5-432d-a30c-24814fe44788",
+    ...getXPlexProps()
   })}`;
 
   const [showControls, setShowControls] = useState(true);
@@ -272,7 +258,7 @@ function Watch() {
       >
         <Box
           sx={{
-            width: 300,
+            width: 350,
             height: "auto",
           }}
         >
@@ -843,7 +829,6 @@ function Watch() {
                         })}`
                       );
 
-                    generateSessionID();
                     navigate(`/watch/${next.ratingKey}`);
                   }}
                 >
@@ -1013,7 +998,6 @@ function Watch() {
                       {playQueue && playQueue[1] && (
                         <IconButton
                           onClick={() => {
-                            generateSessionID();
                             navigate(`/watch/${playQueue[1].ratingKey}`);
                           }}
                         >
@@ -1197,7 +1181,6 @@ function Watch() {
                     })}`
                   );
 
-                generateSessionID();
                 navigate(`/watch/${next.ratingKey}`);
               }}
               url={url}
@@ -1260,24 +1243,4 @@ function TuneSettingTab(
       </Typography>
     </Box>
   );
-}
-
-function getBrowserName() {
-  let userAgent = navigator.userAgent; 
-  let browserName = "Unknown";
-
-  // Check for different browsers
-  if (userAgent.indexOf("Chrome") > -1) {
-      browserName = "Chrome";
-  } else if (userAgent.indexOf("Safari") > -1) {
-      browserName = "Safari";
-  } else if (userAgent.indexOf("Opera") > -1) {
-      browserName = "Opera";
-  } else if (userAgent.indexOf("Firefox") > -1) {
-      browserName = "Firefox";
-  } else if (userAgent.indexOf("MSIE") > -1 || userAgent.indexOf("Trident") > -1) {
-      browserName = "Internet Explorer";
-  }
-
-  return browserName;
 }

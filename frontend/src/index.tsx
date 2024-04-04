@@ -6,11 +6,13 @@ import { ThemeProvider } from "@emotion/react";
 import { CssBaseline, createTheme } from "@mui/material";
 import { QueryClient, QueryClientProvider } from "react-query";
 import { BrowserRouter } from "react-router-dom";
-import { makeid } from "./plex/QuickFunctions";
+import { makeid, uuidv4 } from "./plex/QuickFunctions";
 import axios from "axios";
 import { getBackendURL } from "./backendURL";
 
-if(!localStorage.getItem("clientID")) localStorage.setItem("clientID", makeid(10));
+if(!localStorage.getItem("clientID")) localStorage.setItem("clientID", makeid(24));
+
+sessionStorage.setItem("sessionID", uuidv4());
 
 (async () => {
   const server = await axios.get(`${getBackendURL()}/server`);
