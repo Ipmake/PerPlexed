@@ -31,15 +31,9 @@ Pull requests are welcome for any feature or bug fix. For major changes, please 
 
 ## Development
 
-This may be a bit more complicated when you want to build and run the docker yourself. You have to build the frontend first and then put the build files in the backend's www folder. Then you can build the backend docker image and run it.
+We use multi stage build with docker. Simply run following commands.
 
 ```bash
-cd frontend
-npm install
-npm run build
-cd ..
-cp -r frontend/build/. backend/www
-cd backend
 docker build -t perplexed .
 docker run --name perplexed -p 3000:3000 -e PLEX_SERVER=http://your-plex-server:32400 perplexed
 ```
