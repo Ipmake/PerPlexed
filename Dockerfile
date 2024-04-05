@@ -13,7 +13,7 @@ RUN npm run build
 
 # /// Runner ///
 
-FROM debian:buster-slim as runner
+FROM debian:bookworm-slim as runner
 
 # Install dependencies for caddy
 RUN apt-get update && apt install -y \
