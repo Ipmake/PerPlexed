@@ -99,6 +99,7 @@ function Appbar() {
         <MenuItem
           onClick={() => {
             localStorage.removeItem("accessToken");
+            localStorage.removeItem("accAccessToken");
             window.location.reload();
           }}
         >

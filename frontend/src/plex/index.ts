@@ -1,13 +1,14 @@
+import axios from "axios";
 import { authedGet, authedPost, authedPut, getXPlexProps, queryBuilder } from "./QuickFunctions";
 import './plex.d.ts'
 
 export async function getAllLibraries(): Promise<Plex.LibarySection[]> {
-    const res = await authedGet(`${localStorage.getItem("server")}/library/sections`);
+    const res = await authedGet(`/library/sections`);
     return res.MediaContainer.Directory;
 }
 
 export async function getLibrary(key: string): Promise<Plex.LibraryDetails> {
-    const res = await authedGet(`${localStorage.getItem("server")}/library/sections/${key}?${queryBuilder({
+    const res = await authedGet(`/library/sections/${key}?${queryBuilder({
         includeDetails: 1,
         includeMarkers: 1,
         includeOnDeck: 1,
@@ -17,17 +18,17 @@ export async function getLibrary(key: string): Promise<Plex.LibraryDetails> {
 }
 
 export async function getLibraryMedia(key: string, directory: string): Promise<Plex.Metadata[]> {
-    const res = await authedGet(`${localStorage.getItem("server")}/library/sections/${key}/${directory}`);
+    const res = await authedGet(`/library/sections/${key}/${directory}`);
     return res.MediaContainer.Metadata;
 }
 
 export async function getLibrarySecondary(key: string, directory: string): Promise<Plex.Directory[]> {
-    const res = await authedGet(`${localStorage.getItem("server")}/library/sections/${key}/${directory}`);
+    const res = await authedGet(`/library/sections/${key}/${directory}`);
     return res.MediaContainer.Directory;
 }
 
 export async function getLibraryMeta(id: string): Promise<Plex.Metadata> {
-    const res = await authedGet(`${localStorage.getItem("server")}/library/metadata/${id}?${queryBuilder({
+    const res = await authedGet(`/library/metadata/${id}?${queryBuilder({
         includeDetails: 1,
         includeMarkers: 1,
         includeOnDeck: 1,
@@ -39,7 +40,7 @@ export async function getLibraryMeta(id: string): Promise<Plex.Metadata> {
 }
 
 export async function getLibraryMetaChildren(id: string): Promise<Plex.Metadata[]> {
-    const res = await authedGet(`${localStorage.getItem("server")}/library/metadata/${id}/children?${queryBuilder({
+    const res = await authedGet(`/library/metadata/${id}/children?${queryBuilder({
         includeDetails: 1,
         includeMarkers: 1,
         includeOnDeck: 1,
@@ -53,7 +54,7 @@ export async function getLibraryMetaChildren(id: string): Promise<Plex.Metadata[
 
 export async function getSimilar(id: string): Promise<Plex.Metadata[]> {
     if(!id) return [];
-    const res = await authedGet(`${localStorage.getItem("server")}/library/metadata/${id}/similar?${queryBuilder({
+    const res = await authedGet(`/library/metadata/${id}/similar?${queryBuilder({
         limit: 10,
         excludeFields: "summary",
         includeMarkerCounts: 1,
@@ -69,7 +70,7 @@ export async function getUniversalDecision(id: string, limitation: {
     autoAdjustQuality?: boolean,
     maxVideoBitrate?: number,
 }): Promise<void> {
-    await authedGet(`${localStorage.getItem("server")}/video/:/transcode/universal/decision?${queryBuilder({
+    await authedGet(`/video/:/transcode/universal/decision?${queryBuilder({
         hasMDE: 1,
         path: "/library/metadata/" + id,
         mediaIndex: 0,
@@ -98,21 +99,21 @@ export async function getUniversalDecision(id: string, limitation: {
 }
 
 export async function putAudioStream(partID: number, streamID: number): Promise<void> {
-    await authedPut(`${localStorage.getItem("server")}/library/parts/${partID}?${queryBuilder({
+    await authedPut(`/library/parts/${partID}?${queryBuilder({
         audioStreamID: streamID,
         ...getXPlexProps()
     })}`, {});
 }
 
 export async function putSubtitleStream(partID: number, streamID: number): Promise<void> {
-    await authedPut(`${localStorage.getItem("server")}/library/parts/${partID}?${queryBuilder({
+    await authedPut(`/library/parts/${partID}?${queryBuilder({
         subtitleStreamID: streamID,
         ...getXPlexProps()
     })}`, {});
 }
 
 export async function getTimelineUpdate(itemID: number, duration: number, state: string, time: number): Promise<void> {
-    await authedGet(`${localStorage.getItem("server")}/:/timeline?${queryBuilder({
+    await authedGet(`/:/timeline?${queryBuilder({
         ratingKey: itemID,
         key: `/library/metadata/${itemID}/`,
         duration: duration,
@@ -126,12 +127,12 @@ export async function getTimelineUpdate(itemID: number, duration: number, state:
 }
 
 export async function getServerPreferences(): Promise<Plex.ServerPreferences> {
-    const res = await authedGet(`${localStorage.getItem("server")}/`);
+    const res = await authedGet(`/`);
     return res.MediaContainer;
 }
 
 export async function getPlayQueue(uri: string): Promise<Plex.Metadata[]> {
-    const res = await authedPost(`${localStorage.getItem("server")}/playQueues?${queryBuilder({
+    const res = await authedPost(`/playQueues?${queryBuilder({
         type: "video",
         uri,
         continuous: 1,
@@ -145,7 +146,9 @@ export async function getPlayQueue(uri: string): Promise<Plex.Metadata[]> {
 }
 
 export function getTranscodeImageURL(url: string, width: number, height: number) {
-    return `${localStorage.getItem("server")}/photo/:/transcode?${queryBuilder({
+    return `${localStorage.getItem(
+        "server"
+      )}/photo/:/transcode?${queryBuilder({
         width,
         height,
         minSize: 1,
@@ -156,32 +159,35 @@ export function getTranscodeImageURL(url: string, width: number, height: number)
 }
 
 export async function getAccessToken(pin: string): Promise<Plex.TokenData> {
-    const res = await authedGet(`https://plex.tv/api/v2/pins/${pin}?${queryBuilder({
+    const res = await axios.get(`https://plex.tv/api/v2/pins/${pin}?${queryBuilder({
         "X-Plex-Client-Identifier": localStorage.getItem("clientID")
-    })}`)
-
-    return res;
+    })}`) 
+    return res.data;
 }
 
 export async function getPin(): Promise<Plex.TokenData> {
-    const res = await authedPost(`https://plex.tv/api/v2/pins?${queryBuilder({
+    const res = await axios.post(`https://plex.tv/api/v2/pins?${queryBuilder({
         "X-Plex-Client-Identifier": localStorage.getItem("clientID"),
         "X-Plex-Product": "PerPlexed"
     })}`)
-    return res;
+    return res.data;
 }
 
-export async function getLoggedInUser(): Promise<Plex.UserData> {
-    const res = await authedGet(`https://plex.tv/api/v2/user?${queryBuilder({
-        "X-Plex-Token": localStorage.getItem("accessToken") as string,
+export async function getLoggedInUser(): Promise<Plex.UserData | null> {
+    const res = await axios.get(`https://plex.tv/api/v2/user?${queryBuilder({
+        "X-Plex-Token": localStorage.getItem("accAccessToken") as string,
         "X-Plex-Product": "PerPlexed",
         "X-Plex-Client-Identifier": localStorage.getItem("clientID")
-    })}`)
-    return res;
+    })}`).catch((err) => {
+        console.log(err);
+        return { status: err.response?.status || 500, data: err.response?.data || 'Internal server error' }
+    });
+    if (res.status === 200) return res.data;
+    else return null;
 }
 
 export async function getSearch(query: string): Promise<Plex.SearchResult[]> {
-    const res = await authedGet(`${localStorage.getItem("server")}/library/search?${queryBuilder({
+    const res = await authedGet(`/library/search?${queryBuilder({
         query,
         "X-Plex-Token": localStorage.getItem("accessToken") as string
     })}`);
@@ -193,7 +199,7 @@ export async function getLibraryDir(library: number, directory: string, subDir?:
     library: string;
     Metadata: Plex.Metadata[];
 }> {
-    const res = await authedGet(`${localStorage.getItem("server")}/library/sections/${library}/${directory}/${subDir ?? ""}`);
+    const res = await authedGet(`/library/sections/${library}/${directory}/${subDir ?? ""}`);
     return {
         title: res.MediaContainer.title2,
         library: res.MediaContainer.title1,

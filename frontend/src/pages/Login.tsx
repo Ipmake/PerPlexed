@@ -4,7 +4,7 @@ import { queryBuilder } from "../plex/QuickFunctions";
 import { useSearchParams } from "react-router-dom";
 import { getAccessToken, getPin } from "../plex";
 import axios from "axios";
-import { getBackendURL } from "../backendURL";
+import { getBackendURL, ProxiedRequest } from "../backendURL";
 import { XMLParser } from "fast-xml-parser";
 
 export default function Login() {
@@ -28,48 +28,59 @@ export default function Login() {
 
     if (query.has("pinID")) {
       (async () => {
-        const res = await getAccessToken(query.get("pinID") as string);
+        try {
+          const res = await getAccessToken(query.get("pinID") as string);
 
-        // successful login
-
-        if (!res.authToken) {
-          setError("Failed to log in. Please try again.");
-          return;
-        }
-
-        const server: string = (await axios.get(`${getBackendURL()}/server`)).data.trim();
-
-        // check token validity against the server
-        const tokenCheck = await axios.get(`${server}/?${queryBuilder({ "X-Plex-Token": res.authToken })}`).catch(() => {
-          return { status: 401 };
-        })
-
-        if (tokenCheck.status === 200) {
-          localStorage.setItem("accessToken", res.authToken);
+          if (!res.authToken) return setError("Failed to log in. Please try again.");
+  
+          console.log("1", res);
+  
+          // check token validity against the server
+          const tokenCheck = await ProxiedRequest(`/?${queryBuilder({ "X-Plex-Token": res.authToken })}`, "GET", {})
+  
+          if (tokenCheck.status === 200) {
+            localStorage.setItem("accessToken", res.authToken);
+            localStorage.setItem("accAccessToken", res.authToken);
+            window.location.href = "/";
+          }
+  
+          console.log("2", tokenCheck);
+  
+          const serverIdentity = await ProxiedRequest("/identity", "GET", {
+            "X-Plex-Token": res.authToken,
+          });
+  
+          console.log("3", serverIdentity);
+  
+          if(!serverIdentity || !serverIdentity.data.MediaContainer) return setError(`Failed to log in: ${serverIdentity.data.errors[0].message || "Unknown error"}`);
+  
+          const serverID = serverIdentity.data.MediaContainer.machineIdentifier;
+  
+          const parser = new XMLParser({
+            attributeNamePrefix: "",
+            textNodeName: "value",
+            ignoreAttributes: false,
+            parseAttributeValue: true,
+          });
+  
+          // try getting a shared server
+          const sharedServersXML = await axios.get(`https://plex.tv/api/resources?${queryBuilder({ "X-Plex-Token": res.authToken })}`);
+  
+          const sharedServers = parser.parse(sharedServersXML.data)
+  
+          const targetServer = sharedServers.MediaContainer.Device.find((d: any) => d.clientIdentifier === serverID);
+  
+          if (!targetServer) return setError("You do not have access to this server.");
+  
+          localStorage.setItem("accessToken", targetServer.accessToken);
+          localStorage.setItem("accAccessToken", res.authToken);
+  
           window.location.href = "/";
         }
-
-        const serverID = (await axios.get(`${server}/identity`)).data.MediaContainer.machineIdentifier;
-
-        const parser = new XMLParser({
-          attributeNamePrefix: "",
-          textNodeName: "value",
-          ignoreAttributes: false,
-          parseAttributeValue: true,
-        });
-
-        // try getting a shared server
-        const sharedServersXML = await axios.get(`https://plex.tv/api/resources?${queryBuilder({ "X-Plex-Token": res.authToken })}`);
-
-        const sharedServers = parser.parse(sharedServersXML.data)
-
-        const targetServer = sharedServers.MediaContainer.Device.find((d: any) => d.clientIdentifier === serverID);
-
-        if (!targetServer) return setError("You do not have access to this server.");
-
-        localStorage.setItem("accessToken", targetServer.accessToken);
-
-        window.location.href = "/";
+        catch (e) {
+          console.log(e);
+          setError("Failed to log in. Please try again.");
+        }
       })();
     }
   }, [query]);

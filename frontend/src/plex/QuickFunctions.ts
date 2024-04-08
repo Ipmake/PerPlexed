@@ -1,43 +1,43 @@
+import { ProxiedRequest } from "../backendURL";
 import { useSessionStore } from "../states/SessionState";
 
 export async function authedGet(url: string) {
-    const res = await fetch(url, {
-        headers: {
-            'X-Plex-Token': localStorage.getItem("accessToken") as string,
-            'accept': 'application/json',
-        }
-    })
+    const res = await ProxiedRequest(url, "GET", {
+        'X-Plex-Token': localStorage.getItem("accessToken") as string,
+        'accept': 'application/json'
+    }).catch((err) => {
+        console.log(err);
+        return { status: err.response?.status || 500, data: err.response?.data || 'Internal server error' }
+    });
 
-
-    if (res.ok) return res.json();
+    if (res.status === 200) return res.data;
     else return null;
 }
 
 export async function authedPost(url: string, body?: any) {
-    const res = await fetch(url, {
-        method: 'POST',
-        headers: {
-            'X-Plex-Token': localStorage.getItem("accessToken") as string,
-            'accept': 'application/json'
-        },
-        body: body && JSON.stringify(body)
-    })
+    const res = await ProxiedRequest(url, "POST", {
+        'X-Plex-Token': localStorage.getItem("accessToken") as string,
+        'accept': 'application/json'
+    }, body).catch((err) => {
+        console.log(err);
+        return { status: err.response?.status || 500, data: err.response?.data || 'Internal server error' }
+    });
 
-    return res.json();
-
+    if (res.status === 200) return res.data;
+    else return null;
 }
 
 export async function authedPut(url: string, body: any) {
-    await fetch(url, {
-        method: 'PUT',
-        headers: {
-            'X-Plex-Token': localStorage.getItem("accessToken") as string,
-            'accept': 'application/json'
-        },
-        body: JSON.stringify(body)
-    })
+    const res = await ProxiedRequest(url, "PUT", {
+        'X-Plex-Token': localStorage.getItem("accessToken") as string,
+        'accept': 'application/json'
+    }, body).catch((err) => {
+        console.log(err);
+        return { status: err.response?.status || 500, data: err.response?.data || 'Internal server error' }
+    });
 
-    return;
+    if (res.status === 200) return res.data;
+    else return null;
 }
 
 export function queryBuilder(query: any) {

@@ -15,12 +15,34 @@ if(!localStorage.getItem("clientID")) localStorage.setItem("clientID", makeid(24
 sessionStorage.setItem("sessionID", uuidv4());
 
 (async () => {
-  const server = await axios.get(`${getBackendURL()}/server`);
-  if(server.data !== localStorage.getItem("server")) {
-    localStorage.setItem("server", server.data);
-    window.location.reload();
+  let reload = false;
+
+  const config = await axios.get(`${getBackendURL()}/config`);
+  if(config.data.PLEX_SERVER !== localStorage.getItem("server")) {
+    localStorage.setItem("server", config.data.PLEX_SERVER);
+    reload = true;
   }
+
+  if(JSON.stringify(config.data.CONFIG) !== localStorage.getItem("config")) {
+    localStorage.setItem("config", JSON.stringify(config.data.CONFIG));
+    reload = true;
+  }
+
+  if(reload) return window.location.reload();
 })();
+
+interface ConfigInterface {
+  [key: string]: any;
+}
+
+let config: ConfigInterface;
+
+(() => {
+  if(!localStorage.getItem("config")) return
+  config = JSON.parse(localStorage.getItem("config") as string) as ConfigInterface;
+})();
+
+export { config };
 
 ReactDOM.render(
   <ThemeProvider
