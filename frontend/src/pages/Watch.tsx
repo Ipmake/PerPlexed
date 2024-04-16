@@ -366,7 +366,7 @@ function Watch() {
 
                     const progress = player.current?.getCurrentTime() ?? 0;
 
-                    seekToAfterLoad.current = progress;
+                    if(!seekToAfterLoad.current) seekToAfterLoad.current = progress;
                     setURL("");
                     setURL(getUrl);
                   }}
@@ -445,7 +445,7 @@ function Watch() {
 
                     const progress = player.current?.getCurrentTime() ?? 0;
 
-                    seekToAfterLoad.current = progress;
+                    if(!seekToAfterLoad.current) seekToAfterLoad.current = progress;
                     setURL("");
                     setURL(getUrl);
                   }}
@@ -509,7 +509,7 @@ function Watch() {
 
                   const progress = player.current?.getCurrentTime() ?? 0;
 
-                  seekToAfterLoad.current = progress;
+                  if(!seekToAfterLoad.current) seekToAfterLoad.current = progress;
                   setURL("");
                   setURL(getUrl);
                 }}
@@ -573,7 +573,7 @@ function Watch() {
 
                     const progress = player.current?.getCurrentTime() ?? 0;
 
-                    seekToAfterLoad.current = progress;
+                    if(!seekToAfterLoad.current) seekToAfterLoad.current = progress;
                     setURL("");
                     setURL(getUrl);
                   }}
