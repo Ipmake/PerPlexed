@@ -26,6 +26,12 @@ The easiest way to run PerPlexed is to use Docker. You can use the following com
 docker run --name perplexed -p 3000:3000 -e PLEX_SERVER=http://your-plex-server:32400 ipmake/perplexed
 ```
 
+#### Environment Variables
+| Name           | Type       | Required | Description                                       |
+|----------------|------------|----------|---------------------------------------------------|
+| PLEX_SERVER    | string     | Yes      | The url to your plex server starting with http    |
+| DISABLE_PROXY  | true/false | No       | Disable the PerPlexed proxy (Not Recommended)     |
+
 ## Contributing
 Pull requests are welcome for any feature or bug fix. For major changes, please open an issue first to discuss what you would like to change.
 
