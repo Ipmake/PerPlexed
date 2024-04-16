@@ -12,7 +12,7 @@ const app = express();
 
 app.use(express.json());
 
-if(!process.env.PLEX_SERVER) {
+if (!process.env.PLEX_SERVER) {
     console.error('PLEX_SERVER environment variable not set');
     process.exit(1);
 }
@@ -35,6 +35,7 @@ app.get('/config', (req, res) => {
 
 app.use(express.static('www'));
 
+if (process.env.DISABLE_PROXY !== 'true') 
 app.post('/proxy', (req, res) => {
     const { url, method, headers, data } = req.body;
     const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
