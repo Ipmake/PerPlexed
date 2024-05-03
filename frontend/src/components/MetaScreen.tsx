@@ -468,6 +468,7 @@ function MetaScreen() {
                   display: "-webkit-box",
                   WebkitLineClamp: 5,
                   WebkitBoxOrient: "vertical",
+                  maxInlineSize: "100%",
                 }}
                 title={data?.summary}
               >

@@ -12,7 +12,8 @@ function Movie({ Library }: { Library: Plex.LibraryDetails }) {
   const [genres, setGenres] = React.useState<Plex.Directory[]>([]);
 
   React.useEffect(() => {
-    console.log(shuffleArray([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]));
+    setFeaturedItem(null);
+    setGenres([]);
 
     getLibraryMedia(Library.librarySectionID.toString(), "unwatched").then(
       (media) => {

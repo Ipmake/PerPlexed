@@ -18,8 +18,9 @@ if (!process.env.PLEX_SERVER) {
 }
 
 app.use((req, res, next) => {
+    console.log(`[${new Date().toISOString()}] [${req.method}] ${req.url}`);
     res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
     res.header('Access-Control-Allow-Headers', '*'); // Add this line
     next();
 });
@@ -35,7 +36,6 @@ app.get('/config', (req, res) => {
 
 app.use(express.static('www'));
 
-if (process.env.DISABLE_PROXY !== 'true') 
 app.post('/proxy', (req, res) => {
     const { url, method, headers, data } = req.body;
     const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
@@ -70,7 +70,14 @@ app.post('/proxy', (req, res) => {
         });
 });
 
+app.options('*', (req, res) => {
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
+    res.header('Access-Control-Allow-Headers', '*');
+    res.send();
+});
+
 app.use((req, res) => {
+    console.log(req.url);
     res.sendFile('index.html', { root: 'www' });
 });
 

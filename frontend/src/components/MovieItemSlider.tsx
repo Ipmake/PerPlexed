@@ -92,7 +92,7 @@ function MovieItemSlider({
             alignItems: "center",
             justifyContent: "center",
             gap: "10px",
-
+            mb: "-10px",
             cursor: "pointer",
             "&:hover": {
               gap: "20px",
@@ -174,9 +174,12 @@ function MovieItemSlider({
           justifyContent: "flex-start",
           alignItems: "center",
 
-          overflow: "hidden",
+          py: "10px",
           whiteSpace: "nowrap",
-          clipPath: "inset(0px 0px -10px 0px)",
+          // clipPath: "inset(0px 0px -10px 0px)",
+          overflowX: "clip",
+          overflowY: "visible",
+          position: "relative",
         }}
       >
         <Box
@@ -288,9 +291,8 @@ function MovieItem({
         backgroundSize: "cover",
         backgroundPosition: "center",
         backgroundBlendMode: "darken",
-        overflow: "hidden",
-        whiteSpace: "nowrap",
-        clipPath: "inset(0px 0px -10px 0px)",
+        // clipPath: "inset(0px 0px -10px 0px)",
+        position: "relative",
 
         "&:hover": {
           backgroundColor: "#000000AA",
@@ -299,8 +301,9 @@ function MovieItem({
           backgroundPosition: "center",
         },
 
-        "&:hover > :nth-child(1)": {
-          transform: "translateX(0%)",
+        "&:hover > :nth-child(2)": {
+          opacity: 1,
+          transition: "all 0.25s ease-in",
         },
 
         transition: "all 0.5s ease",
@@ -328,6 +331,7 @@ function MovieItem({
           userSelect: "none",
           transition: "all 0.5s ease",
           transform: "translateX(0%)",
+          transformStyle: "preserve-3d",
         }}
       >
         <Box
@@ -372,12 +376,21 @@ function MovieItem({
             "@media (max-width: 2000px)": {
               fontSize: "1.2rem",
             },
+            textOverflow: "ellipsis",
+            overflow: "hidden",
+            maxLines: 1,
+            maxInlineSize: "100%",
           }}
         >
           {item.title}
         </Typography>
         {["episode"].includes(item.type) && item.grandparentTitle && (
           <Typography
+            onClick={(e) => {
+              e.stopPropagation();
+              if(!item.grandparentKey?.toString()) return;
+              setSearchParams({ mid: (item.grandparentRatingKey as string).toString() });
+            }}
             sx={{
               fontSize: "1rem",
               fontWeight: "normal",
@@ -386,7 +399,10 @@ function MovieItem({
               mt: -0.5,
               mb: 0.5,
 
-              textShadow: "0px 0px 10px #000000",
+              transition: "all 0.5s ease",
+              "&:hover": {
+                opacity: 1
+              }
             }}
           >
             {item.grandparentTitle}
@@ -399,6 +415,11 @@ function MovieItem({
             color: "#FFFFFF",
             textShadow: "0px 0px 10px #000000",
             mt: -0.5,
+
+            textOverflow: "ellipsis",
+            overflow: "hidden",
+            maxLines: 1,
+            maxInlineSize: "100%",
           }}
         >
           {item.tagline}
@@ -510,6 +531,33 @@ function MovieItem({
           )}
         </Box>
       </Box>
+      {/* <Box sx={{
+        width: "100%",
+        height: "100%",
+        position: "absolute",
+        backgroundColor: "#00000055",
+        backgroundImage: ["episode"].includes(item.type)
+          ? `url(${getTranscodeImageURL(
+              `${item.thumb}?X-Plex-Token=${localStorage.getItem(
+                "accessToken"
+              )}`,
+              300,
+              170
+            )})`
+          : `url(${getTranscodeImageURL(
+              `${item.art}?X-Plex-Token=${localStorage.getItem("accessToken")}`,
+              300,
+              170
+            )})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        filter: "blur(10vw)",
+
+        zIndex: -1,
+        transform: "translateZ(-10px) scale(1)",
+        opacity: 0,
+        transition: "all 2s ease",
+      }}></Box> */}
     </Box>
   );
 }

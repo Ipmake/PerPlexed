@@ -5,12 +5,14 @@ import {
   getPlayQueue,
   getServerPreferences,
   getTimelineUpdate,
+  getTranscodeImageURL,
   getUniversalDecision,
   putAudioStream,
   putSubtitleStream,
 } from "../plex";
 import CenteredSpinner from "../components/CenteredSpinner";
 import {
+  Backdrop,
   Box,
   Button,
   Fade,
@@ -49,6 +51,7 @@ function Watch() {
   const { sessionID } = useSessionStore();
 
   const [metadata, setMetadata] = useState<Plex.Metadata | null>(null);
+  const [showmetadata, setShowMetadata] = useState<Plex.Metadata | null>(null);
   const [playQueue, setPlayQueue] = useState<Plex.Metadata[] | null>(null); // [current, ...next]
   const player = useRef<ReactPlayer | null>(null);
   const [quality, setQuality] = useState<{
@@ -83,6 +86,7 @@ function Watch() {
   const playbackBarRef = useRef<HTMLDivElement | null>(null);
 
   const [buffering, setBuffering] = useState(false);
+  const [showError, setShowError] = useState<string | false>(false);
 
   const loadMetadata = async (itemID: string) => {
     await getUniversalDecision(itemID, {
@@ -95,6 +99,13 @@ function Watch() {
       Metadata = metadata;
       if (["movie", "episode"].includes(metadata.type)) {
         setMetadata(metadata);
+        if (metadata.type === "episode") {
+          getLibraryMeta(metadata.grandparentRatingKey as string).then(
+            (show) => {
+              setShowMetadata(show);
+            }
+          );
+        }
       } else {
         console.error("Invalid metadata type");
       }
@@ -134,7 +145,7 @@ function Watch() {
     mediaBufferSize: 102400,
     subtitles: "burn",
     "Accept-Language": "en",
-    ...getXPlexProps()
+    ...getXPlexProps(),
   })}`;
 
   const [showControls, setShowControls] = useState(true);
@@ -152,6 +163,17 @@ function Watch() {
     return () => {
       document.removeEventListener("mousemove", whenMouseMoves);
     };
+  }, [playing]);
+
+  const [showInfo, setShowInfo] = useState(false);
+  useEffect(() => {
+    if (!playing) {
+      setTimeout(() => {
+        if (!playing) setShowInfo(true);
+      }, 5000);
+    } else {
+      setShowInfo(false);
+    }
   }, [playing]);
 
   useEffect(() => {
@@ -202,6 +224,7 @@ function Watch() {
 
     loadMetadata(itemID);
     setURL(getUrl);
+    setShowError(false);
   }, [itemID, theme.palette.primary.main]);
 
   useEffect(() => {
@@ -215,202 +238,474 @@ function Watch() {
   }, [ready]);
 
   return (
-    <Box
-      sx={{
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        height: "100vh",
-        width: "100%",
-        overflow: "hidden",
-      }}
-    >
-      <Box
+    <>
+      <Backdrop
+        open={showError !== false}
         sx={{
-          display: buffering ? "flex" : "none",
-          zIndex: 2,
-          position: "absolute",
-          top: 0,
-          left: 0,
-          width: "100vw",
-          height: "100vh",
-          overflow: "hidden",
-          pointerEvents: "none",
-        }}
-      >
-        <CenteredSpinner />
-      </Box>
-      <Popover
-        open={showTune}
-        anchorEl={tuneButtonRef.current}
-        onClose={() => {
-          setShowTune(false);
-          setTunePage(0);
-        }}
-        anchorOrigin={{
-          vertical: "top",
-          horizontal: "center",
-        }}
-        transformOrigin={{
-          vertical: "bottom",
-          horizontal: "center",
+          zIndex: 5000,
         }}
       >
         <Box
           sx={{
-            width: 350,
-            height: "auto",
+            p: 2,
+            background: theme.palette.error.main,
+            color: theme.palette.error.contrastText,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
           }}
         >
-          {tunePage === 0 && (
-            <>
-              {TuneSettingTab(theme, setTunePage, {
-                pageNum: 1,
-                text: "Video",
-              })}
-              {TuneSettingTab(theme, setTunePage, {
-                pageNum: 2,
-                text: "Audio",
-              })}
-              {TuneSettingTab(theme, setTunePage, {
-                pageNum: 3,
-                text: "Subtitles",
-              })}
-            </>
-          )}
+          <Typography>{showError}</Typography>
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "row",
+              gap: 2,
+              mt: 2,
+            }}
+          >
+            <Button
+              variant="contained"
+              onClick={() => {
+                setShowError(false);
+                window.location.reload();
+              }}
+            >
+              Reload
+            </Button>
+            <Button
+              variant="contained"
+              onClick={() => {
+                setShowError(false);
+                if (!metadata) return navigate("/");
 
-          {tunePage === 1 && metadata?.Media && (
-            <>
-              {TuneSettingTab(theme, setTunePage, {
-                pageNum: 0,
-                text: "Back",
-              })}
+                if (metadata.type === "movie")
+                  navigate(
+                    `/browse/${metadata.librarySectionID}?${queryBuilder({
+                      mid: metadata.ratingKey,
+                    })}`
+                  );
 
-              {[
-                {
-                  title: "Original",
-                  original: true,
-                  extra: `${Math.floor(metadata.Media[0].bitrate / 1000)}Mbps`,
-                },
-                {
-                  title: "Convert to 1080p",
-                  bitrate: 20000,
-                  extra: "(High) 20Mbps",
-                },
-                {
-                  title: "Convert to 1080p",
-                  bitrate: 12000,
-                  extra: "(Medium) 12Mbps",
-                },
-                { title: "Convert to 1080p", bitrate: 10000, extra: "10Mbps" },
-                {
-                  title: "Convert to 720p",
-                  bitrate: 4000,
-                  extra: "(High) 4Mbps",
-                },
-                {
-                  title: "Convert to 720p",
-                  bitrate: 3000,
-                  extra: "(Medium) 3Mbps",
-                },
-                { title: "Convert to 720p", bitrate: 2000, extra: "2Mbps" },
-                { title: "Convert to 480p", bitrate: 1500, extra: "1.5Mbps" },
-                { title: "Convert to 360p", bitrate: 750, extra: "0.7Mbps" },
-                { title: "Convert to 240p", bitrate: 300, extra: "0.3Mbps" },
-              ].map((qualityOption) => (
-                <Box
+                if (metadata.type === "episode")
+                  navigate(
+                    `/browse/${metadata.librarySectionID}?${queryBuilder({
+                      mid: metadata.grandparentRatingKey,
+                    })}`
+                  );
+              }}
+            >
+              Back
+            </Button>
+          </Box>
+        </Box>
+      </Backdrop>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+          width: "100%",
+          overflow: "hidden",
+        }}
+      >
+        <Box
+          sx={{
+            display: buffering ? "flex" : "none",
+            zIndex: 2,
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: "100vw",
+            height: "100vh",
+            overflow: "hidden",
+            pointerEvents: "none",
+          }}
+        >
+          <CenteredSpinner />
+        </Box>
+        <Box
+          sx={{
+            background: "#000000BB",
+            width: "100vw",
+            height: "100vh",
+            position: "absolute",
+            padding: "10px",
+            left: "0",
+            display: "flex",
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "flex-start",
+            px: "5vw",
+            gap: "5vw",
+
+            opacity: showInfo ? 1 : 0,
+            transition: "all 0.5s ease-in-out",
+          }}
+        >
+          <img
+            src={`${getTranscodeImageURL(
+              `${metadata?.thumb}?X-Plex-Token=${localStorage.getItem(
+                "accessToken"
+              )}`,
+              1500,
+              1500
+            )}`}
+            alt=""
+            style={{
+              height: "25vw",
+              width: "auto",
+              borderRadius: "0px",
+              boxShadow: "0px 0px 10px 0px #000000AA",
+              transform: `translateX(${showInfo ? 0 : -40}vw) perspective(1000px) rotateY(${showInfo ? 0 : -30}deg)`,
+              transition: "transform 0.5s ease-in-out",
+              transitionDelay: "0.2s",
+            }}
+          />
+          <Box
+            sx={{
+              width: "40vw",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "flex-start",
+              justifyContent: "center",
+              textAlign: "left",
+              transform: `translateX(${showInfo ? 0 : -80}vw)`,
+              transition: "transform 0.5s ease-in-out",
+              transitionDelay: "0s",
+            }}
+          >
+            {metadata && metadata?.type === "episode" && (
+              <>
+                <Typography
                   sx={{
-                    display: "flex",
-                    flexDirection: "row",
-                    alignItems: "center",
-                    justifyContent: "flex-end",
-                    width: "100%",
-                    height: "50px",
-                    px: 2,
-
-                    userSelect: "none",
-                    cursor: "pointer",
-
-                    "&:hover": {
-                      backgroundColor: theme.palette.primary.dark,
-                      transition: "background-color 0.2s",
-                    },
-                    transition: "background-color 0.5s",
-                  }}
-                  onClick={async () => {
-                    if (!metadata.Media || !itemID) return;
-                    setTunePage(0);
-                    await loadMetadata(itemID);
-                    await getUniversalDecision(
-                      itemID,
-                      qualityOption.original
-                        ? {}
-                        : {
-                            maxVideoBitrate: qualityOption.bitrate,
-                          }
-                    );
-                    setQuality({
-                      bitrate: qualityOption.original
-                        ? undefined
-                        : qualityOption.bitrate,
-                      auto: undefined,
-                    });
-
-                    if (qualityOption.original)
-                      localStorage.removeItem("quality");
-                    else if (qualityOption.bitrate)
-                      localStorage.setItem(
-                        "quality",
-                        qualityOption.bitrate.toString()
-                      );
-
-                    const progress = player.current?.getCurrentTime() ?? 0;
-
-                    if(!seekToAfterLoad.current) seekToAfterLoad.current = progress;
-                    setURL("");
-                    setURL(getUrl);
+                    fontSize: "2vw",
+                    fontWeight: "bold",
+                    color: "#FFF",
                   }}
                 >
-                  {qualityOption.bitrate === quality.bitrate && (
-                    <Check
-                      sx={{
-                        mr: "auto",
-                      }}
-                      fontSize="medium"
-                    />
-                  )}
-                  <Typography
+                  {metadata?.grandparentTitle}
+                </Typography>
+                <Typography
+                  sx={{
+                    fontSize: "1vw",
+                    color: "#FFF",
+                    mt: "-0.75vw",
+                  }}
+                >
+                  {showmetadata?.childCount &&
+                    showmetadata?.childCount > 1 &&
+                    `Season ${metadata.parentIndex}`}
+                </Typography>
+                <Typography
+                  sx={{
+                    fontSize: "1vw",
+                    fontWeight: "bold",
+                    color: "#FFF",
+                    mt: "10px",
+                  }}
+                >
+                  {metadata?.title}: EP. {metadata?.index}
+                </Typography>
+                <Typography
+                  sx={{
+                    fontSize: "0.75vw",
+                    color: "#FFF",
+                  }}
+                >
+                  {metadata?.summary}
+                </Typography>
+              </>
+            )}
+            {metadata && metadata?.type === "movie" && (
+              <>
+                <Typography
+                  sx={{
+                    fontSize: "2vw",
+                    fontWeight: "bold",
+                    color: "#FFF",
+                  }}
+                >
+                  {metadata?.title}
+                </Typography>
+                <Typography
+                  sx={{
+                    fontSize: "1vw",
+                    color: "#FFF",
+                    mt: "-0.75vw",
+                  }}
+                >
+                  {metadata?.year}
+                </Typography>
+                <Typography
+                  sx={{
+                    fontSize: "1vw",
+                    fontWeight: "bold",
+                    color: "#FFF",
+                    mt: "10px",
+                  }}
+                >
+                  {metadata?.tagline}
+                </Typography>
+                <Typography
+                  sx={{
+                    fontSize: "0.75vw",
+                    color: "#FFF",
+                  }}
+                >
+                  {metadata?.summary}
+                </Typography>
+              </>
+            )}
+          </Box>
+        </Box>
+        <Popover
+          open={showTune}
+          anchorEl={tuneButtonRef.current}
+          onClose={() => {
+            setShowTune(false);
+            setTunePage(0);
+          }}
+          anchorOrigin={{
+            vertical: "top",
+            horizontal: "center",
+          }}
+          transformOrigin={{
+            vertical: "bottom",
+            horizontal: "center",
+          }}
+        >
+          <Box
+            sx={{
+              width: 350,
+              height: "auto",
+            }}
+          >
+            {tunePage === 0 && (
+              <>
+                {TuneSettingTab(theme, setTunePage, {
+                  pageNum: 1,
+                  text: "Video",
+                })}
+                {TuneSettingTab(theme, setTunePage, {
+                  pageNum: 2,
+                  text: "Audio",
+                })}
+                {TuneSettingTab(theme, setTunePage, {
+                  pageNum: 3,
+                  text: "Subtitles",
+                })}
+              </>
+            )}
+
+            {tunePage === 1 && metadata?.Media && (
+              <>
+                {TuneSettingTab(theme, setTunePage, {
+                  pageNum: 0,
+                  text: "Back",
+                })}
+
+                {[
+                  {
+                    title: "Original",
+                    original: true,
+                    extra: `${Math.floor(
+                      metadata.Media[0].bitrate / 1000
+                    )}Mbps`,
+                  },
+                  {
+                    title: "Convert to 1080p",
+                    bitrate: 20000,
+                    extra: "(High) 20Mbps",
+                  },
+                  {
+                    title: "Convert to 1080p",
+                    bitrate: 12000,
+                    extra: "(Medium) 12Mbps",
+                  },
+                  {
+                    title: "Convert to 1080p",
+                    bitrate: 10000,
+                    extra: "10Mbps",
+                  },
+                  {
+                    title: "Convert to 720p",
+                    bitrate: 4000,
+                    extra: "(High) 4Mbps",
+                  },
+                  {
+                    title: "Convert to 720p",
+                    bitrate: 3000,
+                    extra: "(Medium) 3Mbps",
+                  },
+                  { title: "Convert to 720p", bitrate: 2000, extra: "2Mbps" },
+                  { title: "Convert to 480p", bitrate: 1500, extra: "1.5Mbps" },
+                  { title: "Convert to 360p", bitrate: 750, extra: "0.7Mbps" },
+                  { title: "Convert to 240p", bitrate: 300, extra: "0.3Mbps" },
+                ].map((qualityOption) => (
+                  <Box
                     sx={{
-                      fontSize: 14,
-                      fontWeight: "bold",
+                      display: "flex",
+                      flexDirection: "row",
+                      alignItems: "center",
+                      justifyContent: "flex-end",
+                      width: "100%",
+                      height: "50px",
+                      px: 2,
+
+                      userSelect: "none",
+                      cursor: "pointer",
+
+                      "&:hover": {
+                        backgroundColor: theme.palette.primary.dark,
+                        transition: "background-color 0.2s",
+                      },
+                      transition: "background-color 0.5s",
+                    }}
+                    onClick={async () => {
+                      if (!metadata.Media || !itemID) return;
+                      setTunePage(0);
+                      await loadMetadata(itemID);
+                      await getUniversalDecision(
+                        itemID,
+                        qualityOption.original
+                          ? {}
+                          : {
+                              maxVideoBitrate: qualityOption.bitrate,
+                            }
+                      );
+                      setQuality({
+                        bitrate: qualityOption.original
+                          ? undefined
+                          : qualityOption.bitrate,
+                        auto: undefined,
+                      });
+
+                      if (qualityOption.original)
+                        localStorage.removeItem("quality");
+                      else if (qualityOption.bitrate)
+                        localStorage.setItem(
+                          "quality",
+                          qualityOption.bitrate.toString()
+                        );
+
+                      const progress = player.current?.getCurrentTime() ?? 0;
+
+                      if (!seekToAfterLoad.current)
+                        seekToAfterLoad.current = progress;
+                      setURL("");
+                      setURL(getUrl);
                     }}
                   >
-                    <strong
-                      style={{
-                        fontWeight: "normal",
-                        opacity: 0.5,
-                        marginRight: "4px",
+                    {qualityOption.bitrate === quality.bitrate && (
+                      <Check
+                        sx={{
+                          mr: "auto",
+                        }}
+                        fontSize="medium"
+                      />
+                    )}
+                    <Typography
+                      sx={{
+                        fontSize: 14,
+                        fontWeight: "bold",
                       }}
                     >
-                      {qualityOption.extra}
-                    </strong>
-                    {qualityOption.title}
-                  </Typography>
-                </Box>
-              ))}
-            </>
-          )}
+                      <strong
+                        style={{
+                          fontWeight: "normal",
+                          opacity: 0.5,
+                          marginRight: "4px",
+                        }}
+                      >
+                        {qualityOption.extra}
+                      </strong>
+                      {qualityOption.title}
+                    </Typography>
+                  </Box>
+                ))}
+              </>
+            )}
 
-          {tunePage === 2 && metadata?.Media && (
-            <>
-              {TuneSettingTab(theme, setTunePage, {
-                pageNum: 0,
-                text: "Back",
-              })}
+            {tunePage === 2 && metadata?.Media && (
+              <>
+                {TuneSettingTab(theme, setTunePage, {
+                  pageNum: 0,
+                  text: "Back",
+                })}
 
-              {metadata?.Media[0].Part[0].Stream.filter(
-                (stream) => stream.streamType === 2
-              ).map((stream) => (
+                {metadata?.Media[0].Part[0].Stream.filter(
+                  (stream) => stream.streamType === 2
+                ).map((stream) => (
+                  <Box
+                    sx={{
+                      display: "flex",
+                      flexDirection: "row",
+                      alignItems: "center",
+                      justifyContent: "flex-end",
+                      width: "100%",
+                      height: "50px",
+                      px: 2,
+
+                      userSelect: "none",
+                      cursor: "pointer",
+
+                      "&:hover": {
+                        backgroundColor: theme.palette.primary.dark,
+                        transition: "background-color 0.2s",
+                      },
+                      transition: "background-color 0.5s",
+                    }}
+                    onClick={async () => {
+                      if (!metadata.Media || !itemID) return;
+                      await putAudioStream(
+                        metadata.Media[0].Part[0].id,
+                        stream.id
+                      );
+                      setTunePage(0);
+                      await loadMetadata(itemID);
+                      await getUniversalDecision(itemID, {
+                        maxVideoBitrate: quality.bitrate,
+                        autoAdjustQuality: quality.auto,
+                      });
+
+                      const progress = player.current?.getCurrentTime() ?? 0;
+
+                      if (!seekToAfterLoad.current)
+                        seekToAfterLoad.current = progress;
+                      setURL("");
+                      setURL(getUrl);
+                    }}
+                  >
+                    {stream.selected && (
+                      <Check
+                        sx={{
+                          mr: "auto",
+                        }}
+                        fontSize="medium"
+                      />
+                    )}
+                    <Typography
+                      sx={{
+                        fontSize: 18,
+                        fontWeight: "bold",
+                      }}
+                    >
+                      {stream.displayTitle}
+                    </Typography>
+                  </Box>
+                ))}
+              </>
+            )}
+
+            {tunePage === 3 && metadata?.Media && (
+              <>
+                {TuneSettingTab(theme, setTunePage, {
+                  pageNum: 0,
+                  text: "Back",
+                })}
+
                 <Box
                   sx={{
                     display: "flex",
@@ -432,10 +727,7 @@ function Watch() {
                   }}
                   onClick={async () => {
                     if (!metadata.Media || !itemID) return;
-                    await putAudioStream(
-                      metadata.Media[0].Part[0].id,
-                      stream.id
-                    );
+                    await putSubtitleStream(metadata.Media[0].Part[0].id, 0);
                     setTunePage(0);
                     await loadMetadata(itemID);
                     await getUniversalDecision(itemID, {
@@ -445,12 +737,15 @@ function Watch() {
 
                     const progress = player.current?.getCurrentTime() ?? 0;
 
-                    if(!seekToAfterLoad.current) seekToAfterLoad.current = progress;
+                    if (!seekToAfterLoad.current)
+                      seekToAfterLoad.current = progress;
                     setURL("");
                     setURL(getUrl);
                   }}
                 >
-                  {stream.selected && (
+                  {metadata?.Media[0].Part[0].Stream.filter(
+                    (stream) => stream.selected && stream.streamType === 3
+                  ).length === 0 && (
                     <Check
                       sx={{
                         mr: "auto",
@@ -464,733 +759,684 @@ function Watch() {
                       fontWeight: "bold",
                     }}
                   >
-                    {stream.displayTitle}
+                    None
                   </Typography>
                 </Box>
-              ))}
-            </>
-          )}
 
-          {tunePage === 3 && metadata?.Media && (
-            <>
-              {TuneSettingTab(theme, setTunePage, {
-                pageNum: 0,
-                text: "Back",
-              })}
-
-              <Box
-                sx={{
-                  display: "flex",
-                  flexDirection: "row",
-                  alignItems: "center",
-                  justifyContent: "flex-end",
-                  width: "100%",
-                  height: "50px",
-                  px: 2,
-
-                  userSelect: "none",
-                  cursor: "pointer",
-
-                  "&:hover": {
-                    backgroundColor: theme.palette.primary.dark,
-                    transition: "background-color 0.2s",
-                  },
-                  transition: "background-color 0.5s",
-                }}
-                onClick={async () => {
-                  if (!metadata.Media || !itemID) return;
-                  await putSubtitleStream(metadata.Media[0].Part[0].id, 0);
-                  setTunePage(0);
-                  await loadMetadata(itemID);
-                  await getUniversalDecision(itemID, {
-                    maxVideoBitrate: quality.bitrate,
-                    autoAdjustQuality: quality.auto,
-                  });
-
-                  const progress = player.current?.getCurrentTime() ?? 0;
-
-                  if(!seekToAfterLoad.current) seekToAfterLoad.current = progress;
-                  setURL("");
-                  setURL(getUrl);
-                }}
-              >
                 {metadata?.Media[0].Part[0].Stream.filter(
-                  (stream) => stream.selected && stream.streamType === 3
-                ).length === 0 && (
-                  <Check
-                    sx={{
-                      mr: "auto",
-                    }}
-                    fontSize="medium"
-                  />
-                )}
-                <Typography
-                  sx={{
-                    fontSize: 18,
-                    fontWeight: "bold",
-                  }}
-                >
-                  None
-                </Typography>
-              </Box>
-
-              {metadata?.Media[0].Part[0].Stream.filter(
-                (stream) => stream.streamType === 3
-              ).map((stream) => (
-                <Box
-                  sx={{
-                    display: "flex",
-                    flexDirection: "row",
-                    alignItems: "center",
-                    justifyContent: "flex-end",
-                    width: "100%",
-                    height: "50px",
-                    px: 2,
-
-                    userSelect: "none",
-                    cursor: "pointer",
-
-                    "&:hover": {
-                      backgroundColor: theme.palette.primary.dark,
-                      transition: "background-color 0.2s",
-                    },
-                    transition: "background-color 0.5s",
-                  }}
-                  onClick={async () => {
-                    if (!metadata.Media || !itemID) return;
-                    await putSubtitleStream(
-                      metadata.Media[0].Part[0].id,
-                      stream.id
-                    );
-                    setTunePage(0);
-                    await loadMetadata(itemID);
-                    console.log(
-                      await getUniversalDecision(itemID, {
-                        maxVideoBitrate: quality.bitrate,
-                        autoAdjustQuality: quality.auto,
-                      })
-                    );
-
-                    const progress = player.current?.getCurrentTime() ?? 0;
-
-                    if(!seekToAfterLoad.current) seekToAfterLoad.current = progress;
-                    setURL("");
-                    setURL(getUrl);
-                  }}
-                >
-                  {stream.selected && (
-                    <Check
-                      sx={{
-                        mr: "auto",
-                      }}
-                      fontSize="medium"
-                    />
-                  )}
-                  <Typography
-                    sx={{
-                      fontSize: 18,
-                      fontWeight: "bold",
-                    }}
-                  >
-                    {stream.extendedDisplayTitle}
-                  </Typography>
-                </Box>
-              ))}
-            </>
-          )}
-        </Box>
-      </Popover>
-      {(() => {
-        if (!metadata) return <CenteredSpinner />;
-
-        return (
-          <>
-            <Fade
-              mountOnEnter
-              unmountOnExit
-              in={
-                metadata.Marker &&
-                metadata.Marker.filter(
-                  (marker) =>
-                    marker.startTimeOffset / 1000 <= progress &&
-                    marker.endTimeOffset / 1000 >= progress &&
-                    marker.type === "intro"
-                ).length > 0
-              }
-            >
-              <Box
-                sx={{
-                  position: "absolute",
-                  bottom: `${
-                    (playbackBarRef.current?.clientHeight ?? 0) + 40
-                  }px`,
-                  right: "40px",
-                  zIndex: 2,
-                }}
-              >
-                <Button
-                  sx={{
-                    width: "auto",
-                    px: 3,
-                    py: 1,
-
-                    background: theme.palette.text.primary,
-                    color: theme.palette.background.paper,
-                    transition: "all 0.25s",
-
-                    "&:hover": {
-                      background: theme.palette.text.primary,
-                      color: theme.palette.background.paper,
-
-                      boxShadow: "0px 0px 10px 0px #000000AA",
-                      px: 4,
-                    },
-                  }}
-                  variant="contained"
-                  onClick={() => {
-                    if (!player.current || !metadata?.Marker) return;
-                    const time =
-                      metadata.Marker?.filter(
-                        (marker) =>
-                          marker.startTimeOffset / 1000 <= progress &&
-                          marker.endTimeOffset / 1000 >= progress &&
-                          marker.type === "intro"
-                      )[0].endTimeOffset / 1000;
-                    player.current.seekTo(time + 1);
-                  }}
-                >
+                  (stream) => stream.streamType === 3
+                ).map((stream) => (
                   <Box
                     sx={{
                       display: "flex",
                       flexDirection: "row",
                       alignItems: "center",
-                      justifyContent: "center",
-                      transition: "all 0.25s",
-                      gap: 1,
+                      justifyContent: "flex-end",
+                      width: "100%",
+                      height: "50px",
+                      px: 2,
+
+                      userSelect: "none",
+                      cursor: "pointer",
+
+                      "&:hover": {
+                        backgroundColor: theme.palette.primary.dark,
+                        transition: "background-color 0.2s",
+                      },
+                      transition: "background-color 0.5s",
                     }}
-                  >
-                    <SkipNext />{" "}
-                    <Typography
-                      sx={{
-                        fontSize: 14,
-                        fontWeight: "bold",
-                      }}
-                    >
-                      Skip Intro
-                    </Typography>
-                  </Box>
-                </Button>
-              </Box>
-            </Fade>
-
-            <Fade
-              mountOnEnter
-              unmountOnExit
-              in={
-                metadata.Marker &&
-                metadata.Marker.filter(
-                  (marker) =>
-                    marker.startTimeOffset / 1000 <= progress &&
-                    marker.endTimeOffset / 1000 >= progress &&
-                    marker.type === "credits" &&
-                    !marker.final
-                ).length > 0
-              }
-            >
-              <Box
-                sx={{
-                  position: "absolute",
-                  bottom: `${
-                    (playbackBarRef.current?.clientHeight ?? 0) + 40
-                  }px`,
-                  right: "40px",
-                  zIndex: 2,
-                }}
-              >
-                <Button
-                  sx={{
-                    width: "auto",
-                    px: 3,
-                    py: 1,
-
-                    background: theme.palette.text.primary,
-                    color: theme.palette.background.paper,
-                    transition: "all 0.25s",
-
-                    "&:hover": {
-                      background: theme.palette.text.primary,
-                      color: theme.palette.background.paper,
-
-                      boxShadow: "0px 0px 10px 0px #000000AA",
-                      px: 4,
-                    },
-                  }}
-                  variant="contained"
-                  onClick={() => {
-                    if (!player.current || !metadata?.Marker) return;
-                    const time =
-                      metadata.Marker?.filter(
-                        (marker) =>
-                          marker.startTimeOffset / 1000 <= progress &&
-                          marker.endTimeOffset / 1000 >= progress &&
-                          marker.type === "credits" &&
-                          !marker.final
-                      )[0].endTimeOffset / 1000;
-                    player.current.seekTo(time + 1);
-                  }}
-                >
-                  <Box
-                    sx={{
-                      display: "flex",
-                      flexDirection: "row",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      transition: "all 0.25s",
-                      gap: 1,
-                    }}
-                  >
-                    <SkipNext />{" "}
-                    <Typography
-                      sx={{
-                        fontSize: 14,
-                        fontWeight: "bold",
-                      }}
-                    >
-                      Skip Credits
-                    </Typography>
-                  </Box>
-                </Button>
-              </Box>
-            </Fade>
-
-            <Fade
-              mountOnEnter
-              unmountOnExit
-              in={
-                metadata.Marker &&
-                metadata.Marker.filter(
-                  (marker) =>
-                    marker.startTimeOffset / 1000 <= progress &&
-                    marker.endTimeOffset / 1000 >= progress &&
-                    marker.type === "credits" &&
-                    marker.final
-                ).length > 0
-              }
-            >
-              <Box
-                sx={{
-                  position: "absolute",
-                  bottom: `${
-                    (playbackBarRef.current?.clientHeight ?? 0) + 40
-                  }px`,
-                  right: "40px",
-                  zIndex: 2,
-                }}
-              >
-                <Button
-                  sx={{
-                    width: "auto",
-                    px: 3,
-                    py: 1,
-
-                    background: theme.palette.text.primary,
-                    color: theme.palette.background.paper,
-                    transition: "all 0.25s",
-
-                    "&:hover": {
-                      background: theme.palette.text.primary,
-                      color: theme.palette.background.paper,
-
-                      boxShadow: "0px 0px 10px 0px #000000AA",
-                      px: 4,
-                    },
-                  }}
-                  variant="contained"
-                  onClick={async () => {
-                    if (!player.current || !metadata?.Marker) return;
-
-                    if (metadata.type === "movie")
-                      return navigate(
-                        `/browse/${metadata.librarySectionID}?${queryBuilder({
-                          mid: metadata.ratingKey,
-                        })}`
+                    onClick={async () => {
+                      if (!metadata.Media || !itemID) return;
+                      await putSubtitleStream(
+                        metadata.Media[0].Part[0].id,
+                        stream.id
+                      );
+                      setTunePage(0);
+                      await loadMetadata(itemID);
+                      console.log(
+                        await getUniversalDecision(itemID, {
+                          maxVideoBitrate: quality.bitrate,
+                          autoAdjustQuality: quality.auto,
+                        })
                       );
 
-                    console.log(playQueue);
+                      const progress = player.current?.getCurrentTime() ?? 0;
 
-                    if (!playQueue) return;
-                    const next = playQueue[1];
-                    if (!next)
-                      return navigate(
-                        `/browse/${metadata.librarySectionID}?${queryBuilder({
-                          mid: metadata.grandparentRatingKey,
-                          pid: metadata.parentRatingKey,
-                          iid: metadata.ratingKey,
-                        })}`
-                      );
-
-                    navigate(`/watch/${next.ratingKey}`);
-                  }}
-                >
-                  <Box
-                    sx={{
-                      display: "flex",
-                      flexDirection: "row",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      transition: "all 0.25s",
-                      gap: 1,
+                      if (!seekToAfterLoad.current)
+                        seekToAfterLoad.current = progress;
+                      setURL("");
+                      setURL(getUrl);
                     }}
                   >
-                    <SkipNext />{" "}
+                    {stream.selected && (
+                      <Check
+                        sx={{
+                          mr: "auto",
+                        }}
+                        fontSize="medium"
+                      />
+                    )}
                     <Typography
                       sx={{
-                        fontSize: 14,
+                        fontSize: 18,
                         fontWeight: "bold",
                       }}
                     >
-                      {metadata.type === "movie"
-                        ? "Skip Credits"
-                        : playQueue && playQueue[1]
-                        ? "Next Episode"
-                        : "Return to Show"}
+                      {stream.extendedDisplayTitle}
                     </Typography>
                   </Box>
-                </Button>
-              </Box>
-            </Fade>
+                ))}
+              </>
+            )}
+          </Box>
+        </Popover>
+        {(() => {
+          if (!metadata) return <CenteredSpinner />;
 
-            <Fade
-              in={showControls || !playing}
-              style={{
-                transitionDuration: "1s",
-              }}
-            >
-              <Box
-                sx={{
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  zIndex: 1,
-                  width: "100vw",
-                  height: "100vh",
-
-                  display: "flex",
-                  flexDirection: "column",
-                }}
+          return (
+            <>
+              <Fade
+                mountOnEnter
+                unmountOnExit
+                in={
+                  metadata.Marker &&
+                  metadata.Marker.filter(
+                    (marker) =>
+                      marker.startTimeOffset / 1000 <= progress &&
+                      marker.endTimeOffset / 1000 >= progress &&
+                      marker.type === "intro"
+                  ).length > 0
+                }
               >
                 <Box
                   sx={{
-                    mt: 2,
-                    mx: 2,
-
-                    display: "flex",
-                    flexDirection: "row",
-                    justifyContent: "flex-start",
-                    alignItems: "center",
+                    position: "absolute",
+                    bottom: `${
+                      (playbackBarRef.current?.clientHeight ?? 0) + 40
+                    }px`,
+                    right: "40px",
+                    zIndex: 2,
                   }}
                 >
-                  <IconButton
+                  <Button
+                    sx={{
+                      width: "auto",
+                      px: 3,
+                      py: 1,
+
+                      background: theme.palette.text.primary,
+                      color: theme.palette.background.paper,
+                      transition: "all 0.25s",
+
+                      "&:hover": {
+                        background: theme.palette.text.primary,
+                        color: theme.palette.background.paper,
+
+                        boxShadow: "0px 0px 10px 0px #000000AA",
+                        px: 4,
+                      },
+                    }}
+                    variant="contained"
                     onClick={() => {
-                      if (itemID && player.current)
-                        getTimelineUpdate(
-                          parseInt(itemID),
-                          Math.floor(player.current?.getDuration() * 1000),
-                          "stopped",
-                          Math.floor(player.current?.getCurrentTime() * 1000)
-                        );
+                      if (!player.current || !metadata?.Marker) return;
+                      const time =
+                        metadata.Marker?.filter(
+                          (marker) =>
+                            marker.startTimeOffset / 1000 <= progress &&
+                            marker.endTimeOffset / 1000 >= progress &&
+                            marker.type === "intro"
+                        )[0].endTimeOffset / 1000;
+                      player.current.seekTo(time + 1);
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        display: "flex",
+                        flexDirection: "row",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        transition: "all 0.25s",
+                        gap: 1,
+                      }}
+                    >
+                      <SkipNext />{" "}
+                      <Typography
+                        sx={{
+                          fontSize: 14,
+                          fontWeight: "bold",
+                        }}
+                      >
+                        Skip Intro
+                      </Typography>
+                    </Box>
+                  </Button>
+                </Box>
+              </Fade>
+
+              <Fade
+                mountOnEnter
+                unmountOnExit
+                in={
+                  metadata.Marker &&
+                  metadata.Marker.filter(
+                    (marker) =>
+                      marker.startTimeOffset / 1000 <= progress &&
+                      marker.endTimeOffset / 1000 >= progress &&
+                      marker.type === "credits" &&
+                      !marker.final
+                  ).length > 0
+                }
+              >
+                <Box
+                  sx={{
+                    position: "absolute",
+                    bottom: `${
+                      (playbackBarRef.current?.clientHeight ?? 0) + 40
+                    }px`,
+                    right: "40px",
+                    zIndex: 2,
+                  }}
+                >
+                  <Button
+                    sx={{
+                      width: "auto",
+                      px: 3,
+                      py: 1,
+
+                      background: theme.palette.text.primary,
+                      color: theme.palette.background.paper,
+                      transition: "all 0.25s",
+
+                      "&:hover": {
+                        background: theme.palette.text.primary,
+                        color: theme.palette.background.paper,
+
+                        boxShadow: "0px 0px 10px 0px #000000AA",
+                        px: 4,
+                      },
+                    }}
+                    variant="contained"
+                    onClick={() => {
+                      if (!player.current || !metadata?.Marker) return;
+                      const time =
+                        metadata.Marker?.filter(
+                          (marker) =>
+                            marker.startTimeOffset / 1000 <= progress &&
+                            marker.endTimeOffset / 1000 >= progress &&
+                            marker.type === "credits" &&
+                            !marker.final
+                        )[0].endTimeOffset / 1000;
+                      player.current.seekTo(time + 1);
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        display: "flex",
+                        flexDirection: "row",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        transition: "all 0.25s",
+                        gap: 1,
+                      }}
+                    >
+                      <SkipNext />{" "}
+                      <Typography
+                        sx={{
+                          fontSize: 14,
+                          fontWeight: "bold",
+                        }}
+                      >
+                        Skip Credits
+                      </Typography>
+                    </Box>
+                  </Button>
+                </Box>
+              </Fade>
+
+              <Fade
+                mountOnEnter
+                unmountOnExit
+                in={
+                  metadata.Marker &&
+                  metadata.Marker.filter(
+                    (marker) =>
+                      marker.startTimeOffset / 1000 <= progress &&
+                      marker.endTimeOffset / 1000 >= progress &&
+                      marker.type === "credits" &&
+                      marker.final
+                  ).length > 0
+                }
+              >
+                <Box
+                  sx={{
+                    position: "absolute",
+                    bottom: `${
+                      (playbackBarRef.current?.clientHeight ?? 0) + 40
+                    }px`,
+                    right: "40px",
+                    zIndex: 2,
+                  }}
+                >
+                  <Button
+                    sx={{
+                      width: "auto",
+                      px: 3,
+                      py: 1,
+
+                      background: theme.palette.text.primary,
+                      color: theme.palette.background.paper,
+                      transition: "all 0.25s",
+
+                      "&:hover": {
+                        background: theme.palette.text.primary,
+                        color: theme.palette.background.paper,
+
+                        boxShadow: "0px 0px 10px 0px #000000AA",
+                        px: 4,
+                      },
+                    }}
+                    variant="contained"
+                    onClick={async () => {
+                      if (!player.current || !metadata?.Marker) return;
+
                       if (metadata.type === "movie")
-                        navigate(
+                        return navigate(
                           `/browse/${metadata.librarySectionID}?${queryBuilder({
                             mid: metadata.ratingKey,
                           })}`
                         );
 
-                      if (metadata.type === "episode")
-                        navigate(
+                      console.log(playQueue);
+
+                      if (!playQueue) return;
+                      const next = playQueue[1];
+                      if (!next)
+                        return navigate(
                           `/browse/${metadata.librarySectionID}?${queryBuilder({
                             mid: metadata.grandparentRatingKey,
+                            pid: metadata.parentRatingKey,
+                            iid: metadata.ratingKey,
                           })}`
                         );
-                    }}
-                  >
-                    <ArrowBackIos fontSize="large" />
-                  </IconButton>
-                </Box>
 
-                <Box
-                  ref={playbackBarRef}
-                  sx={{
-                    mt: "auto",
-                    mb: 2,
-                    mx: 2,
-
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    gap: 2,
-                  }}
-                >
-                  <Box
-                    sx={{
-                      width: "100%",
-                      px: 2,
-                    }}
-                  >
-                    <VideoSeekSlider
-                      max={(player.current?.getDuration() ?? 0) * 1000}
-                      currentTime={progress * 1000}
-                      bufferTime={buffered * 1000}
-                      onChange={(value) => {
-                        player.current?.seekTo(value / 1000);
-                      }}
-                      getPreviewScreenUrl={(value) => {
-                        if (!metadata.Media) return "";
-                        return `${localStorage.getItem(
-                          "server"
-                        )}/photo/:/transcode?${queryBuilder({
-                          width: "240",
-                          height: "135",
-                          minSize: "1",
-                          upscale: "1",
-                          url: `/library/parts/${
-                            metadata.Media[0].Part[0].id
-                          }/indexes/sd/${value}?X-Plex-Token=${
-                            localStorage.getItem("accessToken") as string
-                          }`,
-                          "X-Plex-Token": localStorage.getItem(
-                            "accessToken"
-                          ) as string,
-                        })}`;
-                      }}
-                    />
-                  </Box>
-                  <Box
-                    sx={{
-                      display: "flex",
-                      flexDirection: "row",
-                      gap: 1,
-                      width: "100%",
+                      navigate(`/watch/${next.ratingKey}`);
                     }}
                   >
                     <Box
                       sx={{
-                        mr: "auto",
                         display: "flex",
                         flexDirection: "row",
                         alignItems: "center",
                         justifyContent: "center",
+                        transition: "all 0.25s",
+                        gap: 1,
                       }}
                     >
-                      <IconButton
-                        onClick={() => {
-                          setPlaying(!playing);
+                      <SkipNext />{" "}
+                      <Typography
+                        sx={{
+                          fontSize: 14,
+                          fontWeight: "bold",
                         }}
                       >
-                        {playing ? (
-                          <Pause fontSize="large" />
-                        ) : (
-                          <PlayArrow fontSize="large" />
-                        )}
-                      </IconButton>
-
-                      {playQueue && playQueue[1] && (
-                        <IconButton
-                          onClick={() => {
-                            navigate(`/watch/${playQueue[1].ratingKey}`);
-                          }}
-                        >
-                          <SkipNext fontSize="large" />
-                        </IconButton>
-                      )}
+                        {metadata.type === "movie"
+                          ? "Skip Credits"
+                          : playQueue && playQueue[1]
+                          ? "Next Episode"
+                          : "Return to Show"}
+                      </Typography>
                     </Box>
+                  </Button>
+                </Box>
+              </Fade>
 
-                    {metadata.type === "movie" && (
-                      <Box
-                        sx={{
-                          mr: "auto",
-                          fontSize: 18,
-                          fontWeight: "bold",
+              <Fade
+                in={showControls || !playing}
+                style={{
+                  transitionDuration: "1s",
+                }}
+              >
+                <Box
+                  sx={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    zIndex: 1,
+                    width: "100vw",
+                    height: "100vh",
 
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                        }}
-                      >
-                        {metadata.title}
-                      </Box>
-                    )}
+                    display: "flex",
+                    flexDirection: "column",
+                  }}
+                >
+                  <Box
+                    sx={{
+                      mt: 2,
+                      mx: 2,
 
-                    {metadata.type === "episode" && (
-                      <Box
-                        sx={{
-                          mr: "auto",
-                          fontSize: 18,
-                          fontWeight: "bold",
-
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                        }}
-                      >
-                        {metadata.grandparentTitle} - S{metadata.parentIndex}E
-                        {metadata.index} - {metadata.title}
-                      </Box>
-                    )}
-
-                    <Popover
-                      open={volumePopoverOpen}
-                      anchorEl={volumePopoverAnchor}
-                      onClose={() => {
-                        setVolumePopoverAnchor(null);
-                      }}
-                      anchorOrigin={{
-                        vertical: "top",
-                        horizontal: "center",
-                      }}
-                      transformOrigin={{
-                        vertical: "bottom",
-                        horizontal: "center",
-                      }}
-                      sx={{
-                        "& .MuiPaper-root": {
-                          py: 2,
-                        },
-                      }}
-                    >
-                      <Slider
-                        sx={{
-                          height: "100px",
-                        }}
-                        value={volume}
-                        onChange={(event, value) => {
-                          setVolume(value as number);
-                          localStorage.setItem("volume", value.toString());
-                        }}
-                        aria-labelledby="continuous-slider"
-                        min={0}
-                        max={100}
-                        step={1}
-                        orientation="vertical"
-                      />
-                    </Popover>
-
-                    <IconButton
-                      onClick={(event) => {
-                        setVolumePopoverAnchor(event.currentTarget);
-                      }}
-                    >
-                      <VolumeUp fontSize="large" />
-                    </IconButton>
-
-                    <IconButton
-                      onClick={(event) => {
-                        setShowTune(!showTune);
-                        setTunePage(0);
-                        tuneButtonRef.current = event.currentTarget;
-                      }}
-                    >
-                      <Tune fontSize="large" />
-                    </IconButton>
-
+                      display: "flex",
+                      flexDirection: "row",
+                      justifyContent: "flex-start",
+                      alignItems: "center",
+                    }}
+                  >
                     <IconButton
                       onClick={() => {
-                        if (!document.fullscreenElement)
-                          document.documentElement.requestFullscreen();
-                        else document.exitFullscreen();
+                        if (itemID && player.current)
+                          getTimelineUpdate(
+                            parseInt(itemID),
+                            Math.floor(player.current?.getDuration() * 1000),
+                            "stopped",
+                            Math.floor(player.current?.getCurrentTime() * 1000)
+                          );
+                        if (metadata.type === "movie")
+                          navigate(
+                            `/browse/${
+                              metadata.librarySectionID
+                            }?${queryBuilder({
+                              mid: metadata.ratingKey,
+                            })}`
+                          );
+
+                        if (metadata.type === "episode")
+                          navigate(
+                            `/browse/${
+                              metadata.librarySectionID
+                            }?${queryBuilder({
+                              mid: metadata.grandparentRatingKey,
+                            })}`
+                          );
                       }}
                     >
-                      <Fullscreen fontSize="large" />
+                      <ArrowBackIos fontSize="large" />
                     </IconButton>
                   </Box>
+
+                  <Box
+                    ref={playbackBarRef}
+                    sx={{
+                      mt: "auto",
+                      mb: 2,
+                      mx: 2,
+
+                      display: "flex",
+                      flexDirection: "column",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      gap: 2,
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        width: "100%",
+                        px: 2,
+                      }}
+                    >
+                      <VideoSeekSlider
+                        max={(player.current?.getDuration() ?? 0) * 1000}
+                        currentTime={progress * 1000}
+                        bufferTime={buffered * 1000}
+                        onChange={(value) => {
+                          player.current?.seekTo(value / 1000);
+                        }}
+                        getPreviewScreenUrl={(value) => {
+                          if (!metadata.Media) return "";
+                          return `${localStorage.getItem(
+                            "server"
+                          )}/photo/:/transcode?${queryBuilder({
+                            width: "240",
+                            height: "135",
+                            minSize: "1",
+                            upscale: "1",
+                            url: `/library/parts/${
+                              metadata.Media[0].Part[0].id
+                            }/indexes/sd/${value}?X-Plex-Token=${
+                              localStorage.getItem("accessToken") as string
+                            }`,
+                            "X-Plex-Token": localStorage.getItem(
+                              "accessToken"
+                            ) as string,
+                          })}`;
+                        }}
+                      />
+                    </Box>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        flexDirection: "row",
+                        gap: 1,
+                        width: "100%",
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          mr: "auto",
+                          display: "flex",
+                          flexDirection: "row",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <IconButton
+                          onClick={() => {
+                            setPlaying(!playing);
+                          }}
+                        >
+                          {playing ? (
+                            <Pause fontSize="large" />
+                          ) : (
+                            <PlayArrow fontSize="large" />
+                          )}
+                        </IconButton>
+
+                        {playQueue && playQueue[1] && (
+                          <IconButton
+                            onClick={() => {
+                              navigate(`/watch/${playQueue[1].ratingKey}`);
+                            }}
+                          >
+                            <SkipNext fontSize="large" />
+                          </IconButton>
+                        )}
+                      </Box>
+
+                      {metadata.type === "movie" && (
+                        <Box
+                          sx={{
+                            mr: "auto",
+                            fontSize: 18,
+                            fontWeight: "bold",
+
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                          }}
+                        >
+                          {metadata.title}
+                        </Box>
+                      )}
+
+                      {metadata.type === "episode" && (
+                        <Box
+                          sx={{
+                            mr: "auto",
+                            fontSize: 18,
+                            fontWeight: "bold",
+
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                          }}
+                        >
+                          {metadata.grandparentTitle} - S{metadata.parentIndex}E
+                          {metadata.index} - {metadata.title}
+                        </Box>
+                      )}
+
+                      <Popover
+                        open={volumePopoverOpen}
+                        anchorEl={volumePopoverAnchor}
+                        onClose={() => {
+                          setVolumePopoverAnchor(null);
+                        }}
+                        anchorOrigin={{
+                          vertical: "top",
+                          horizontal: "center",
+                        }}
+                        transformOrigin={{
+                          vertical: "bottom",
+                          horizontal: "center",
+                        }}
+                        sx={{
+                          "& .MuiPaper-root": {
+                            py: 2,
+                          },
+                        }}
+                      >
+                        <Slider
+                          sx={{
+                            height: "100px",
+                          }}
+                          value={volume}
+                          onChange={(event, value) => {
+                            setVolume(value as number);
+                            localStorage.setItem("volume", value.toString());
+                          }}
+                          aria-labelledby="continuous-slider"
+                          min={0}
+                          max={100}
+                          step={1}
+                          orientation="vertical"
+                        />
+                      </Popover>
+
+                      <IconButton
+                        onClick={(event) => {
+                          setVolumePopoverAnchor(event.currentTarget);
+                        }}
+                      >
+                        <VolumeUp fontSize="large" />
+                      </IconButton>
+
+                      <IconButton
+                        onClick={(event) => {
+                          setShowTune(!showTune);
+                          setTunePage(0);
+                          tuneButtonRef.current = event.currentTarget;
+                        }}
+                      >
+                        <Tune fontSize="large" />
+                      </IconButton>
+
+                      <IconButton
+                        onClick={() => {
+                          if (!document.fullscreenElement)
+                            document.documentElement.requestFullscreen();
+                          else document.exitFullscreen();
+                        }}
+                      >
+                        <Fullscreen fontSize="large" />
+                      </IconButton>
+                    </Box>
+                  </Box>
                 </Box>
-              </Box>
-            </Fade>
+              </Fade>
 
-            <ReactPlayer
-              ref={player}
-              playing={playing}
-              volume={volume / 100}
-              onReady={() => {
-                if (!player.current) return;
-                setReady(true);
+              <ReactPlayer
+                ref={player}
+                playing={playing}
+                volume={volume / 100}
+                onReady={() => {
+                  if (!player.current) return;
+                  setReady(true);
 
-                if (seekToAfterLoad.current !== null) {
-                  player.current.seekTo(seekToAfterLoad.current);
-                  seekToAfterLoad.current = null;
-                }
+                  if (seekToAfterLoad.current !== null) {
+                    player.current.seekTo(seekToAfterLoad.current);
+                    seekToAfterLoad.current = null;
+                  }
 
-                if (!params.has("t")) return;
-                if (
-                  lastAppliedTime.current === parseInt(params.get("t") ?? "0")
-                )
-                  return;
-                player.current.seekTo(parseInt(params.get("t") ?? "0") / 1000);
-                lastAppliedTime.current = parseInt(params.get("t") ?? "0");
-              }}
-              onProgress={(progress) => {
-                setProgress(progress.playedSeconds);
-                setBuffered(progress.loadedSeconds);
-              }}
-              onPause={() => {
-                setPlaying(false);
-              }}
-              onPlay={() => {
-                setPlaying(true);
-              }}
-              onBuffer={() => {
-                setBuffering(true);
-              }}
-              onBufferEnd={() => {
-                setBuffering(false);
-              }}
-              onError={(error) => {
-                console.error(error);
-                // window.location.reload();
-              }}
-              config={{
-                file: {
-                  forceDASH: true,
-                  forceDisableHls: true,
-                  attributes: {
-                    controlsList: "nodownload",
-                    disablePictureInPicture: true,
-                    disableRemotePlayback: true,
-                    autoplay: true,
+                  if (!params.has("t")) return;
+                  if (
+                    lastAppliedTime.current === parseInt(params.get("t") ?? "0")
+                  )
+                    return;
+                  player.current.seekTo(
+                    parseInt(params.get("t") ?? "0") / 1000
+                  );
+                  lastAppliedTime.current = parseInt(params.get("t") ?? "0");
+                }}
+                onProgress={(progress) => {
+                  setProgress(progress.playedSeconds);
+                  setBuffered(progress.loadedSeconds);
+                }}
+                onPause={() => {
+                  setPlaying(false);
+                }}
+                onPlay={() => {
+                  setPlaying(true);
+                }}
+                onBuffer={() => {
+                  setBuffering(true);
+                }}
+                onBufferEnd={() => {
+                  setBuffering(false);
+                }}
+                onError={(error) => {
+                  console.log("Player error:");
+                  console.error(error);
+                  // window.location.reload();
+
+                  // filter out links from the error message
+                  const message = error.error.message.replace(
+                    /https?:\/\/[^\s]+/g,
+                    "Media"
+                  );
+
+                  setShowError(message);
+                }}
+                config={{
+                  file: {
+                    forceDASH: true,
+                    forceDisableHls: true,
+                    attributes: {
+                      controlsList: "nodownload",
+                      disablePictureInPicture: true,
+                      disableRemotePlayback: true,
+                      autoplay: true,
+                    },
                   },
-                },
-              }}
-              onEnded={() => {
-                if (!playQueue) return;
+                }}
+                onEnded={() => {
+                  if (!playQueue) return;
 
-                if (metadata.type !== "episode")
-                  return navigate(
-                    `/browse/${metadata.librarySectionID}?${queryBuilder({
-                      mid: metadata.ratingKey,
-                    })}`
-                  );
+                  if (metadata.type !== "episode")
+                    return navigate(
+                      `/browse/${metadata.librarySectionID}?${queryBuilder({
+                        mid: metadata.ratingKey,
+                      })}`
+                    );
 
-                const next = playQueue[1];
-                if (!next)
-                  return navigate(
-                    `/browse/${metadata.librarySectionID}?${queryBuilder({
-                      mid: metadata.grandparentRatingKey,
-                      pid: metadata.parentRatingKey,
-                      iid: metadata.ratingKey,
-                    })}`
-                  );
+                  const next = playQueue[1];
+                  if (!next)
+                    return navigate(
+                      `/browse/${metadata.librarySectionID}?${queryBuilder({
+                        mid: metadata.grandparentRatingKey,
+                        pid: metadata.parentRatingKey,
+                        iid: metadata.ratingKey,
+                      })}`
+                    );
 
-                navigate(`/watch/${next.ratingKey}`);
-              }}
-              url={url}
-              width="100%"
-              height="100%"
-            />
-          </>
-        );
-      })()}
-    </Box>
+                  navigate(`/watch/${next.ratingKey}`);
+                }}
+                url={url}
+                width="100%"
+                height="100%"
+              />
+            </>
+          );
+        })()}
+      </Box>
+    </>
   );
 }
 

@@ -3,20 +3,20 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "@emotion/react": "^11.11.3",
-    "@emotion/styled": "^11.11.0",
-    "@mui/icons-material": "^5.15.3",
-    "@mui/material": "^5.15.3",
-    "axios": "^1.6.3",
+    "@emotion/react": "^11.11.4",
+    "@emotion/styled": "^11.11.5",
+    "@mui/icons-material": "^5.15.15",
+    "@mui/material": "^5.15.15",
+    "axios": "^1.6.8",
     "fast-xml-parser": "^4.3.6",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-player": "^2.14.1",
+    "react-player": "^2.16.0",
     "react-query": "^3.39.3",
-    "react-router-dom": "^6.21.1",
+    "react-router-dom": "^6.22.3",
     "react-scripts": "5.0.1",
     "react-video-seek-slider": "^6.0.6",
-    "zustand": "^4.4.7"
+    "zustand": "^4.5.2"
   },
   "scripts": {
     "start": "PORT=4000 react-scripts start",
@@ -40,7 +40,7 @@
     ]
   },
   "devDependencies": {
-    "@types/react": "^18.2.46",
-    "@types/react-dom": "^18.2.18"
+    "@types/react": "^18.2.79",
+    "@types/react-dom": "^18.2.25"
   }
 }
