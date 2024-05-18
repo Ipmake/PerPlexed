@@ -1,5 +1,5 @@
 import axios from "axios";
-import { authedGet, authedPost, authedPut, getXPlexProps, queryBuilder } from "./QuickFunctions";
+import { authedGet, authedPost, authedPut, getIncludeProps, getXPlexProps, queryBuilder } from "./QuickFunctions";
 import './plex.d.ts'
 
 export async function getAllLibraries(): Promise<Plex.LibarySection[]> {
@@ -9,10 +9,7 @@ export async function getAllLibraries(): Promise<Plex.LibarySection[]> {
 
 export async function getLibrary(key: string): Promise<Plex.LibraryDetails> {
     const res = await authedGet(`/library/sections/${key}?${queryBuilder({
-        includeDetails: 1,
-        includeMarkers: 1,
-        includeOnDeck: 1,
-        includeChapters: 1,
+        ...getIncludeProps(),
     })}`);
     return res.MediaContainer;
 }
@@ -29,11 +26,7 @@ export async function getLibrarySecondary(key: string, directory: string): Promi
 
 export async function getLibraryMeta(id: string): Promise<Plex.Metadata> {
     const res = await authedGet(`/library/metadata/${id}?${queryBuilder({
-        includeDetails: 1,
-        includeMarkers: 1,
-        includeOnDeck: 1,
-        includeChapters: 1,
-        includeChildren: 1,
+        ...getIncludeProps(),
         ...getXPlexProps()
     })}`);
     return res.MediaContainer.Metadata[0];
@@ -41,11 +34,7 @@ export async function getLibraryMeta(id: string): Promise<Plex.Metadata> {
 
 export async function getLibraryMetaChildren(id: string): Promise<Plex.Metadata[]> {
     const res = await authedGet(`/library/metadata/${id}/children?${queryBuilder({
-        includeDetails: 1,
-        includeMarkers: 1,
-        includeOnDeck: 1,
-        includeChapters: 1,
-        includeChildren: 1,
+        ...getIncludeProps(),
         ...getXPlexProps()
     })}`);
     return res.MediaContainer.Metadata;
@@ -136,10 +125,7 @@ export async function getPlayQueue(uri: string): Promise<Plex.Metadata[]> {
         type: "video",
         uri,
         continuous: 1,
-        includeChapters: 1,
-        includeMarkers: 1,
-        includeGeolocation: 1,
-        includeExternalMedia: 1,
+        ...getIncludeProps(),
         ...getXPlexProps()
     })}`);
     return res.MediaContainer.Metadata;
