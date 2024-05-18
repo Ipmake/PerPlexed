@@ -27,6 +27,7 @@ import ReactPlayer from "react-player";
 import { getXPlexProps, queryBuilder } from "../plex/QuickFunctions";
 import {
   ArrowBackIos,
+  ArrowBackIosNew,
   Check,
   Fullscreen,
   Pause,
@@ -169,7 +170,7 @@ function Watch() {
   const [showInfo, setShowInfo] = useState(false);
   useEffect(() => {
     playingRef.current = playing;
-    
+
     if (!playingRef.current) {
       setTimeout(() => {
         if (!playingRef.current) setShowInfo(true);
@@ -240,6 +241,46 @@ function Watch() {
     if (ready && !playing) setPlaying(true);
   }, [ready]);
 
+
+  // playback controll buttons 
+  // SPACE: play/pause
+  // LEFT: seek back 10 seconds
+  // RIGHT: seek forward 10 seconds
+  // UP: increase volume
+  // DOWN: decrease volume
+  // , (comma): Back 1 frame
+  // . (period): Forward 1 frame
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === " " && player.current) {
+        setPlaying(!playing);
+      }
+      if (e.key === "ArrowLeft" && player.current) {
+        player.current.seekTo(player.current.getCurrentTime() - 10);
+      }
+      if (e.key === "ArrowRight" && player.current) {
+        player.current.seekTo(player.current.getCurrentTime() + 10);
+      }
+      if (e.key === "ArrowUp" && player.current) {
+        setVolume(Math.min(volume + 5, 100));
+      }
+      if (e.key === "ArrowDown" && player.current) {
+        setVolume(Math.max(volume - 5, 0));
+      }
+      if (e.key === "," && player.current) {
+        player.current.seekTo(player.current.getCurrentTime() - 0.04);
+      }
+      if (e.key === "." && player.current) {
+        player.current.seekTo(player.current.getCurrentTime() + 0.04);
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [playing, volume]);
+
   return (
     <>
       <Backdrop
@@ -298,7 +339,15 @@ function Watch() {
                   );
               }}
             >
-              Back
+              Home
+            </Button>
+            <Button
+              variant="contained"
+              onClick={() => {
+                setShowError(false);
+              }}
+            >
+              Ignore
             </Button>
           </Box>
         </Box>
@@ -361,7 +410,9 @@ function Watch() {
               width: "auto",
               borderRadius: "0px",
               boxShadow: "0px 0px 10px 0px #000000AA",
-              transform: `translateX(${showInfo ? 0 : -40}vw) perspective(1000px) rotateY(${showInfo ? 0 : -30}deg)`,
+              transform: `translateX(${
+                showInfo ? 0 : -40
+              }vw) perspective(1000px) rotateY(${showInfo ? 0 : -30}deg)`,
               transition: "transform 0.5s ease-in-out",
               transitionDelay: "0.2s",
             }}
@@ -509,44 +560,10 @@ function Watch() {
                   text: "Back",
                 })}
 
-                {[
-                  {
-                    title: "Original",
-                    original: true,
-                    extra: `${Math.floor(
-                      metadata.Media[0].bitrate / 1000
-                    )}Mbps`,
-                  },
-                  {
-                    title: "Convert to 1080p",
-                    bitrate: 20000,
-                    extra: "(High) 20Mbps",
-                  },
-                  {
-                    title: "Convert to 1080p",
-                    bitrate: 12000,
-                    extra: "(Medium) 12Mbps",
-                  },
-                  {
-                    title: "Convert to 1080p",
-                    bitrate: 10000,
-                    extra: "10Mbps",
-                  },
-                  {
-                    title: "Convert to 720p",
-                    bitrate: 4000,
-                    extra: "(High) 4Mbps",
-                  },
-                  {
-                    title: "Convert to 720p",
-                    bitrate: 3000,
-                    extra: "(Medium) 3Mbps",
-                  },
-                  { title: "Convert to 720p", bitrate: 2000, extra: "2Mbps" },
-                  { title: "Convert to 480p", bitrate: 1500, extra: "1.5Mbps" },
-                  { title: "Convert to 360p", bitrate: 750, extra: "0.7Mbps" },
-                  { title: "Convert to 240p", bitrate: 300, extra: "0.3Mbps" },
-                ].map((qualityOption) => (
+                {getCurrentVideoLevels(
+                  metadata.Media[0].videoResolution,
+                  `${Math.floor(metadata.Media[0].bitrate / 1000)}Mbps`
+                ).map((qualityOption) => (
                   <Box
                     sx={{
                       display: "flex",
@@ -1151,7 +1168,7 @@ function Watch() {
                           );
                       }}
                     >
-                      <ArrowBackIos fontSize="large" />
+                      <ArrowBackIosNew fontSize="large" />
                     </IconButton>
                   </Box>
 
@@ -1166,42 +1183,64 @@ function Watch() {
                       flexDirection: "column",
                       justifyContent: "space-between",
                       alignItems: "center",
-                      gap: 2,
+                      gap: 1,
                     }}
                   >
                     <Box
                       sx={{
                         width: "100%",
-                        px: 2,
+                        display: "flex",
+                        flexDirection: "row",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 2,
                       }}
                     >
-                      <VideoSeekSlider
-                        max={(player.current?.getDuration() ?? 0) * 1000}
-                        currentTime={progress * 1000}
-                        bufferTime={buffered * 1000}
-                        onChange={(value) => {
-                          player.current?.seekTo(value / 1000);
+                      <Box
+                        sx={{
+                          width: "100%",
+                          px: 2,
+                          height: "18px",
                         }}
-                        getPreviewScreenUrl={(value) => {
-                          if (!metadata.Media) return "";
-                          return `${localStorage.getItem(
-                            "server"
-                          )}/photo/:/transcode?${queryBuilder({
-                            width: "240",
-                            height: "135",
-                            minSize: "1",
-                            upscale: "1",
-                            url: `/library/parts/${
-                              metadata.Media[0].Part[0].id
-                            }/indexes/sd/${value}?X-Plex-Token=${
-                              localStorage.getItem("accessToken") as string
-                            }`,
-                            "X-Plex-Token": localStorage.getItem(
-                              "accessToken"
-                            ) as string,
-                          })}`;
-                        }}
-                      />
+                      >
+                        <VideoSeekSlider
+                        
+                          max={(player.current?.getDuration() ?? 0) * 1000}
+                          currentTime={progress * 1000}
+                          bufferTime={buffered * 1000}
+                          onChange={(value) => {
+                            player.current?.seekTo(value / 1000);
+                          }}
+                          getPreviewScreenUrl={(value) => {
+                            if (!metadata.Media) return "";
+                            return `${localStorage.getItem(
+                              "server"
+                            )}/photo/:/transcode?${queryBuilder({
+                              width: "240",
+                              height: "135",
+                              minSize: "1",
+                              upscale: "1",
+                              url: `/library/parts/${
+                                metadata.Media[0].Part[0].id
+                              }/indexes/sd/${value}?X-Plex-Token=${
+                                localStorage.getItem("accessToken") as string
+                              }`,
+                              "X-Plex-Token": localStorage.getItem(
+                                "accessToken"
+                              ) as string,
+                            })}`;
+                          }}
+                        />
+                      </Box>
+                      <Box>
+                        <Typography textAlign="right" sx={{
+                          mb: "-1px",
+                        }}>
+                          {getFormatedTime(
+                            (player.current?.getDuration() ?? 0) - progress
+                          )}
+                        </Typography>
+                      </Box>
                     </Box>
                     <Box
                       sx={{
@@ -1492,4 +1531,151 @@ function TuneSettingTab(
       </Typography>
     </Box>
   );
+}
+
+export function getFormatedTime(time: number) {
+  const hours = Math.floor(time / 3600);
+  const minutes = Math.floor((time % 3600) / 60);
+  const seconds = Math.floor(time % 60);
+
+  // only show hours if there are any
+  if (hours > 0)
+    return `${hours}:${minutes.toString().padStart(2, "0")}:${seconds
+      .toString()
+      .padStart(2, "0")}`;
+
+  return `${minutes.toString().padStart(2, "0")}:${seconds
+    .toString()
+    .padStart(2, "0")}`;
+}
+
+export function getCurrentVideoLevels(
+  resolution: string,
+  extraForOriginal = "Auto"
+) {
+  const levels: {
+    title: string;
+    bitrate?: number;
+    extra: string;
+    original?: boolean;
+  }[] = [
+    {
+      title: "Original",
+      bitrate: 0,
+      extra: extraForOriginal,
+      original: true,
+    },
+  ];
+
+  switch (resolution) {
+    case "720":
+      levels.push(
+        ...[
+          {
+            title: "Convert to 720p",
+            bitrate: 4000,
+            extra: "(High) 4Mbps",
+          },
+          {
+            title: "Convert to 720p",
+            bitrate: 3000,
+            extra: "(Medium) 3Mbps",
+          },
+          { title: "Convert to 720p", bitrate: 2000, extra: "2Mbps" },
+          { title: "Convert to 480p", bitrate: 1500, extra: "1.5Mbps" },
+          { title: "Convert to 360p", bitrate: 750, extra: "0.7Mbps" },
+          { title: "Convert to 240p", bitrate: 300, extra: "0.3Mbps" },
+        ]
+      );
+      break;
+    case "4k":
+      levels.push(
+        ...[
+          {
+            title: "Convert to 4K",
+            bitrate: 40000,
+            extra: "(High) 40Mbps",
+          },
+          {
+            title: "Convert to 4K",
+            bitrate: 30000,
+            extra: "(Medium) 30Mbps",
+          },
+          {
+            title: "Convert to 4K",
+            bitrate: 20000,
+            extra: "20Mbps",
+          },
+          {
+            title: "Convert to 1080p",
+            bitrate: 20000,
+            extra: "(High) 20Mbps",
+          },
+          {
+            title: "Convert to 1080p",
+            bitrate: 12000,
+            extra: "(Medium) 12Mbps",
+          },
+          {
+            title: "Convert to 1080p",
+            bitrate: 10000,
+            extra: "10Mbps",
+          },
+          {
+            title: "Convert to 720p",
+            bitrate: 4000,
+            extra: "(High) 4Mbps",
+          },
+          {
+            title: "Convert to 720p",
+            bitrate: 3000,
+            extra: "(Medium) 3Mbps",
+          },
+          { title: "Convert to 720p", bitrate: 2000, extra: "2Mbps" },
+          { title: "Convert to 480p", bitrate: 1500, extra: "1.5Mbps" },
+          { title: "Convert to 360p", bitrate: 750, extra: "0.7Mbps" },
+          { title: "Convert to 240p", bitrate: 300, extra: "0.3Mbps" },
+        ]
+      );
+      break;
+
+    case "1080":
+    default:
+      levels.push(
+        ...[
+          {
+            title: "Convert to 1080p",
+            bitrate: 20000,
+            extra: "(High) 20Mbps",
+          },
+          {
+            title: "Convert to 1080p",
+            bitrate: 12000,
+            extra: "(Medium) 12Mbps",
+          },
+          {
+            title: "Convert to 1080p",
+            bitrate: 10000,
+            extra: "10Mbps",
+          },
+          {
+            title: "Convert to 720p",
+            bitrate: 4000,
+            extra: "(High) 4Mbps",
+          },
+          {
+            title: "Convert to 720p",
+            bitrate: 3000,
+            extra: "(Medium) 3Mbps",
+          },
+          { title: "Convert to 720p", bitrate: 2000, extra: "2Mbps" },
+          { title: "Convert to 480p", bitrate: 1500, extra: "1.5Mbps" },
+          { title: "Convert to 360p", bitrate: 750, extra: "0.7Mbps" },
+          { title: "Convert to 240p", bitrate: 300, extra: "0.3Mbps" },
+        ]
+      );
+      break;
+  }
+
+  return levels;
 }
