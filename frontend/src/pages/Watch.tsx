@@ -70,6 +70,7 @@ function Watch() {
   const lastAppliedTime = useRef<number>(0);
 
   const [playing, setPlaying] = useState(true);
+  const playingRef = useRef(playing);
   const [ready, setReady] = useState(false);
   const seekToAfterLoad = useRef<number | null>(null);
   const [progress, setProgress] = useState(0);
@@ -167,9 +168,11 @@ function Watch() {
 
   const [showInfo, setShowInfo] = useState(false);
   useEffect(() => {
-    if (!playing) {
+    playingRef.current = playing;
+    
+    if (!playingRef.current) {
       setTimeout(() => {
-        if (!playing) setShowInfo(true);
+        if (!playingRef.current) setShowInfo(true);
       }, 5000);
     } else {
       setShowInfo(false);
