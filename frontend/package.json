@@ -9,6 +9,7 @@
     "@mui/material": "^5.15.15",
     "axios": "^1.6.8",
     "fast-xml-parser": "^4.3.6",
+    "moment": "^2.30.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-player": "^2.16.0",
