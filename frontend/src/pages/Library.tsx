@@ -1,6 +1,6 @@
 import { Box, CircularProgress, Grid, Typography } from "@mui/material";
 import React, { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { getLibraryDir, getLibraryMeta, getSearch } from "../plex";
 import { MovieItem } from "../components/MetaScreen";
 import { queryBuilder } from "../plex/QuickFunctions";
@@ -13,6 +13,7 @@ export default function Library() {
     subdir?: string;
   };
   const navigate = useNavigate();
+  const [, setSearchParams] = useSearchParams();
 
   const results = useQuery(
     ["library", { query: dir, libraryKey: Number(libraryKey), subdir: subdir }],
@@ -52,11 +53,9 @@ export default function Library() {
                     item={item}
                     onClick={async () => {
                       const res = await getLibraryMeta(item.ratingKey);
-                      navigate(
-                        `/browse/${res.librarySectionID}?${queryBuilder({
-                          mid: res.ratingKey,
-                        })}`
-                      );
+                      if (!res) return;
+
+                      setSearchParams({ mid: item.ratingKey.toString() });
                     }}
                   />
                 </Grid>

@@ -4,7 +4,9 @@ import {
   Box,
   Button,
   CircularProgress,
+  Collapse,
   Divider,
+  Fade,
   Grid,
   IconButton,
   LinearProgress,
@@ -28,12 +30,18 @@ import {
   Close,
   PlayArrow,
   StarRate,
+  VolumeOff,
+  VolumeUp,
 } from "@mui/icons-material";
 import { durationToText } from "./MovieItemSlider";
+import ReactPlayer from "react-player";
+import { usePreviewPlayer } from "../states/PreviewPlayerState";
 
 function MetaScreen() {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { MetaScreenPlayerMuted, setMetaScreenPlayerMuted } =
+    usePreviewPlayer();
 
   const { data, status } = useQuery(
     ["meta", searchParams.get("mid")],
@@ -48,10 +56,103 @@ function MetaScreen() {
   const [selectedSeason, setSelectedSeason] = useState<number>(0);
   const [episodes, setEpisodes] = useState<Plex.Metadata[] | null>();
 
+  const [languages, setLanguages] = useState<string[] | null>(null);
+  const [subTitles, setSubTitles] = useState<string[] | null>(null);
+
+  const [previewVidURL, setPreviewVidURL] = useState<string | null>(null);
+  const [previewVidPlaying, setPreviewVidPlaying] = useState<boolean>(false);
+
   useEffect(() => {
     setEpisodes(null);
     setSelectedSeason(0);
+    setLanguages(null);
+    setSubTitles(null);
+    setPreviewVidURL(null);
+    setPreviewVidPlaying(false);
   }, [data?.ratingKey]);
+
+  useEffect(() => {
+    if (!data) return;
+    setSelectedSeason((data.OnDeck?.Metadata?.parentIndex ?? 1) -1);
+
+    if (
+      !data?.Extras?.Metadata?.[0] ||
+      !data?.Extras?.Metadata?.[0]?.Media?.[0]?.Part?.[0]?.key
+    )
+      return;
+
+    setPreviewVidURL(
+      `${localStorage.getItem("server")}${
+        data?.Extras?.Metadata?.[0]?.Media?.[0]?.Part?.[0]?.key
+      }&X-Plex-Token=${localStorage.getItem("accessToken")}`
+    );
+
+    const timeout = setTimeout(() => {
+      setPreviewVidPlaying(true);
+    }, 3000);
+
+    return () => clearTimeout(timeout);
+  }, [data]);
+
+  useEffect(() => {
+    if (languages || subTitles) return;
+    if (!data) return;
+
+    switch(data.type) {
+      case "show": {
+        if (!episodes) return;
+
+        // get the first episode to get the languages and subtitles
+        const firstEpisode = episodes[0];
+    
+        // you need to request the full metadata for the episode to get the media info
+        getLibraryMeta(firstEpisode.ratingKey).then((res) => {
+          if (!res.Media?.[0]?.Part?.[0]?.Stream) return;
+    
+          const uniqueLanguages = Array.from(
+            new Set(
+              res.Media?.[0]?.Part?.[0]?.Stream?.filter(
+                (stream) => stream.streamType === 2
+              ).map((stream) => stream.language ?? stream.displayTitle)
+            )
+          );
+          const uniqueSubTitles = Array.from(
+            new Set(
+              res.Media?.[0]?.Part?.[0]?.Stream?.filter(
+                (stream) => stream.streamType === 3
+              ).map((stream) => stream.language)
+            )
+          );
+    
+          setLanguages(uniqueLanguages);
+          setSubTitles(uniqueSubTitles);
+        });
+      }
+      break;
+      case "movie": {
+        if (!data.Media?.[0]?.Part?.[0]?.Stream) return;
+    
+        const uniqueLanguages = Array.from(
+          new Set(
+            data.Media?.[0]?.Part?.[0]?.Stream?.filter(
+              (stream) => stream.streamType === 2
+            ).map((stream) => stream.language ?? stream.displayTitle)
+          )
+        );
+        const uniqueSubTitles = Array.from(
+          new Set(
+            data.Media?.[0]?.Part?.[0]?.Stream?.filter(
+              (stream) => stream.streamType === 3
+            ).map((stream) => stream.language)
+          )
+        );
+    
+        setLanguages(uniqueLanguages);
+        setSubTitles(uniqueSubTitles);
+      }
+      break;
+    }
+  }, [data?.ratingKey, episodes]);
 
   useEffect(() => {
     setEpisodes(null);
@@ -101,6 +202,9 @@ function MetaScreen() {
           backgroundColor: "#181818",
           mt: 4,
           pb: 4,
+
+          borderTopLeftRadius: "10px",
+          borderTopRightRadius: "10px",
         }}
         onClick={(e) => {
           e.stopPropagation();
@@ -125,19 +229,86 @@ function MetaScreen() {
             alignItems: "flex-start",
             justifyContent: "flex-start",
             padding: "1%",
+            borderTopLeftRadius: "10px",
+            borderTopRightRadius: "10px",
+            position: "relative",
+            zIndex: 0,
+            userSelect: "none",
           }}
         >
-          <IconButton
+          <Box
             sx={{
-              backgroundColor: "#00000088",
-              ml: "auto",
-            }}
-            onClick={() => {
-              setSearchParams(new URLSearchParams());
+              position: "absolute",
+              // make it take up the full width of the parent
+              width: "100%",
+              aspectRatio: "16/9",
+              left: 0,
+              top: 0,
+              filter: "brightness(0.5)",
+              opacity: previewVidPlaying ? 1 : 0,
+              transition: "all 2s ease",
+              backgroundColor: previewVidPlaying ? "#000000" : "transparent",
+              pointerEvents: "none",
+
+              borderTopLeftRadius: "10px",
+              borderTopRightRadius: "10px",
+              overflow: "hidden",
             }}
           >
-            <Close fontSize="medium" />
-          </IconButton>
+            <ReactPlayer
+              url={previewVidURL ?? undefined}
+              controls={false}
+              width="100%"
+              height="100%"
+              autoplay={true}
+              playing={previewVidPlaying}
+              volume={MetaScreenPlayerMuted ? 0 : 0.5}
+              muted={MetaScreenPlayerMuted}
+              onEnded={() => {
+                setPreviewVidPlaying(false);
+              }}
+              pip={false}
+              config={{
+                file: {
+                  attributes: { disablePictureInPicture: true },
+                },
+              }}
+            />
+          </Box>
+          <Box
+            sx={{
+              ml: "auto",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "flex-start",
+              gap: 2,
+            }}
+          >
+            <IconButton
+              sx={{
+                backgroundColor: "#00000088",
+              }}
+              onClick={() => {
+                setSearchParams(new URLSearchParams());
+              }}
+            >
+              <Close fontSize="medium" />
+            </IconButton>
+
+            <IconButton
+              sx={{
+                backgroundColor: "#00000088",
+                opacity: previewVidURL ? 1 : 0,
+                transition: "all 1s ease",
+              }}
+              onClick={() => {
+                setMetaScreenPlayerMuted(!MetaScreenPlayerMuted);
+              }}
+            >
+              {MetaScreenPlayerMuted ? <VolumeOff /> : <VolumeUp />}
+            </IconButton>
+          </Box>
         </Box>
 
         <Box
@@ -147,6 +318,7 @@ function MetaScreen() {
             width: "100%",
             background:
               "linear-gradient(180deg, #18181800, #181818FF, #181818FF)",
+            zIndex: 1,
           }}
         />
 
@@ -160,6 +332,7 @@ function MetaScreen() {
             padding: "0 3%",
             mt: "-55vh",
             gap: "3%",
+            zIndex: 2,
           }}
         >
           <img
@@ -177,6 +350,7 @@ function MetaScreen() {
               boxShadow: "-10px 10px 01px 0px #000000FF",
               backgroundColor: "#00000088",
               objectFit: "cover",
+              borderRadius: "10px",
             }}
           />
 
@@ -226,7 +400,6 @@ function MetaScreen() {
                     letterSpacing: "0.1em",
                     textShadow: "3px 3px 1px #232529",
                     ml: 1,
-                    mt: 1,
                     color: "#e6a104",
                     textTransform: "uppercase",
                   }}
@@ -276,12 +449,29 @@ function MetaScreen() {
                     }}
                   />
                 )}
+                {data?.contentRating && (
+                  <Typography
+                    sx={{
+                      fontSize: "medium",
+                      fontWeight: "light",
+                      color: "#FFFFFF",
+                      textShadow: "0px 0px 10px #000000",
+                      border: "1px dotted #AAAAAA",
+                      borderRadius: "5px",
+                      px: 1,
+                      py: -0.5,
+                    }}
+                  >
+                    {data?.contentRating}
+                  </Typography>
+                )}
                 {data?.year && (
                   <Typography
                     sx={{
                       fontSize: "medium",
                       fontWeight: "light",
                       color: "#FFFFFF",
+                      ml: data?.contentRating ? 1 : 0,
                       textShadow: "0px 0px 10px #000000",
                     }}
                   >
@@ -406,7 +596,9 @@ function MetaScreen() {
                     "&:hover": {
                       backgroundColor: "primary.main",
                     },
+                    cursor: "not-allowed",
                   }}
+                  title="Not yet Implemented"
                 >
                   <Add fontSize="medium" />
                 </IconButton>
@@ -421,7 +613,9 @@ function MetaScreen() {
                     "&:hover": {
                       backgroundColor: "primary.main",
                     },
+                    cursor: "not-allowed",
                   }}
+                  title="Not yet Implemented"
                 >
                   <StarRate fontSize="medium" />
                 </IconButton>
@@ -457,9 +651,73 @@ function MetaScreen() {
                 ))}
               </Box>
 
+              <Collapse in={Boolean(languages || subTitles)}>
+                <Box>
+                  <Box
+                    sx={{
+                      width: "100%",
+                      display: "flex",
+                      flexDirection: "row",
+                      alignItems: "center",
+                      justifyContent: "flex-start",
+                      gap: 0.5,
+                    }}
+                  >
+                    {languages && languages.length > 0 && (
+                      <>
+                        <Typography>Audio: </Typography>
+                        {languages.slice(0, 10).map((lang, index) => (
+                          <Typography
+                            key={index}
+                            sx={{
+                              color: "#FFFFFF",
+                              fontWeight: "bold",
+                            }}
+                          >
+                            {lang}
+                            {index + 1 === languages.slice(0, 10).length ? "" : ","}
+                          </Typography>
+                        ))}
+                      </>
+                    )}
+                  </Box>
+
+                  <Box
+                    sx={{
+                      width: "100%",
+                      display: "flex",
+                      flexDirection: "row",
+                      alignItems: "center",
+                      justifyContent: "flex-start",
+                      gap: 0.5,
+                      whiteSpace: "wrap",
+                      overflow: "hidden",
+                    }}
+                  >
+                    {subTitles && subTitles.length > 0 && (
+                      <>
+                        <Typography>Subtitles: </Typography>
+                        {subTitles.slice(0, 10).map((lang, index) => (
+                          <Typography
+                            key={index}
+                            sx={{
+                              color: "#FFFFFF",
+                              fontWeight: "bold",
+                            }}
+                          >
+                            {lang}
+                            {index + 1 === subTitles.slice(0, 10).length ? "" : ","}
+                          </Typography>
+                        ))}
+                      </>
+                    )}
+                  </Box>
+                </Box>
+              </Collapse>
+
               <Typography
                 sx={{
-                  mt: 1,
+                  mt: 1.5,
                   fontSize: "1rem",
                   fontWeight: "normal",
                   // max 5 lines
@@ -493,6 +751,7 @@ function MetaScreen() {
           <Box
             sx={{
               width: "30%",
+              zIndex: 1,
             }}
           >
             <Typography
@@ -588,6 +847,7 @@ function MetaScreen() {
           <Box
             sx={{
               width: "70%",
+              zIndex: 1,
             }}
           >
             <Box
@@ -651,15 +911,13 @@ function MetaScreen() {
             )}
 
             {data?.type === "movie" && similar.status === "success" && (
-              <Grid container spacing={0.5}>
+              <Grid container spacing={2}>
                 {similar.data?.slice(0, 10).map((movie) => (
                   <Grid item xs={6}>
                     <MovieItem
                       item={movie}
                       onClick={() => {
-                        navigate(
-                          `/browse/${data?.librarySectionID}?mid=${movie.ratingKey}`
-                        );
+                        setSearchParams({ mid: movie.ratingKey });
                       }}
                     />
                   </Grid>
@@ -731,8 +989,11 @@ export function MovieItem({
         flexDirection: "column",
         alignItems: "flex-start",
         justifyContent: "flex-start",
+
         width: "100%",
         aspectRatio: "16/9",
+        borderRadius: "10px",
+
         backgroundColor: "#00000055",
         backgroundImage: ["episode"].includes(item.type)
           ? `url(${getTranscodeImageURL(
@@ -824,6 +1085,11 @@ export function MovieItem({
             fontWeight: "bold",
             color: "#FFFFFF",
             textShadow: "0px 0px 10px #000000",
+
+            textOverflow: "ellipsis",
+            overflow: "hidden",
+            maxLines: 1,
+            maxInlineSize: "100%",
           }}
         >
           {item.title}
@@ -839,6 +1105,11 @@ export function MovieItem({
               mb: 1,
 
               textShadow: "0px 0px 10px #000000",
+
+              textOverflow: "ellipsis",
+              overflow: "hidden",
+              maxLines: 1,
+              maxInlineSize: "100%",
             }}
           >
             {item.grandparentTitle}
@@ -851,6 +1122,11 @@ export function MovieItem({
             color: "#FFFFFF",
             textShadow: "0px 0px 10px #000000",
             mt: -0.5,
+
+            textOverflow: "ellipsis",
+            overflow: "hidden",
+            maxLines: 1,
+            maxInlineSize: "100%",
           }}
         >
           {item.tagline}
@@ -1020,6 +1296,7 @@ function EpisodeItem({
       <Box
         sx={{
           width: "25%",
+          borderRadius: "5px",
           aspectRatio: "16/9",
           backgroundImage: `url(${getTranscodeImageURL(
             `${item.thumb}?X-Plex-Token=${localStorage.getItem("accessToken")}`,

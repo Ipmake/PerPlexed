@@ -42,7 +42,7 @@ export async function getLibraryMetaChildren(id: string): Promise<Plex.Metadata[
 }
 
 export async function getSimilar(id: string): Promise<Plex.Metadata[]> {
-    if(!id) return [];
+    if (!id) return [];
     const res = await authedGet(`/library/metadata/${id}/similar?${queryBuilder({
         limit: 10,
         excludeFields: "summary",
@@ -60,17 +60,23 @@ export async function getUniversalDecision(id: string, limitation: {
     maxVideoBitrate?: number,
 }): Promise<void> {
     await authedGet(`/video/:/transcode/universal/decision?${queryBuilder({
-        hasMDE: 1,
+        ...getStreamProps(id, limitation),
+    })}`);
+    return;
+}
+
+export function getStreamProps(id: string, limitation: {
+    autoAdjustQuality?: boolean,
+    maxVideoBitrate?: number,
+}) {
+    return {
         path: "/library/metadata/" + id,
-        mediaIndex: 0,
-        partIndex: 0,
-        protocol: "dash",
+        protocol: "hls",
         fastSeek: 1,
         directPlay: 0,
         directStream: 1,
         subtitleSize: 100,
-        audioBoost: 100,
-        location: "lan",
+        audioBoost: 200,
         addDebugOverlay: 0,
         directStreamAudio: 1,
         mediaBufferSize: 102400,
@@ -83,8 +89,7 @@ export async function getUniversalDecision(id: string, limitation: {
         ...(limitation.maxVideoBitrate && {
             maxVideoBitrate: limitation.maxVideoBitrate
         })
-    })}`);
-    return;
+    }
 }
 
 export async function putAudioStream(partID: number, streamID: number): Promise<void> {
@@ -134,7 +139,7 @@ export async function getPlayQueue(uri: string): Promise<Plex.Metadata[]> {
 export function getTranscodeImageURL(url: string, width: number, height: number) {
     return `${localStorage.getItem(
         "server"
-      )}/photo/:/transcode?${queryBuilder({
+    )}/photo/:/transcode?${queryBuilder({
         width,
         height,
         minSize: 1,
@@ -147,7 +152,7 @@ export function getTranscodeImageURL(url: string, width: number, height: number)
 export async function getAccessToken(pin: string): Promise<Plex.TokenData> {
     const res = await axios.get(`https://plex.tv/api/v2/pins/${pin}?${queryBuilder({
         "X-Plex-Client-Identifier": localStorage.getItem("clientID")
-    })}`) 
+    })}`)
     return res.data;
 }
 
@@ -175,6 +180,10 @@ export async function getLoggedInUser(): Promise<Plex.UserData | null> {
 export async function getSearch(query: string): Promise<Plex.SearchResult[]> {
     const res = await authedGet(`/library/search?${queryBuilder({
         query,
+        "includeCollections": 1,
+        "includeExtras": 1,
+        "searchTypes": "movies,otherVideos,tv",
+        "limit": 100,
         "X-Plex-Token": localStorage.getItem("accessToken") as string
     })}`);
     return res.MediaContainer.SearchResult;

@@ -58,13 +58,18 @@ export function getXPlexProps() {
         "X-Plex-Model": "bundled",
         "X-Plex-Device": getBrowserName(),
         "X-Plex-Device-Name": getBrowserName(),
-        "X-Plex-Device-Screen-Resolution": "1920x1080,1920x1080",
+        "X-Plex-Device-Screen-Resolution": getResString(),
         "X-Plex-Token": localStorage.getItem("accessToken"),
         "X-Plex-Language": "en",
         "X-Plex-Session-Id": sessionStorage.getItem("sessionID"),
         "X-Plex-Session-Identifier": useSessionStore.getState().XPlexSessionID,
         "session": useSessionStore.getState().sessionID,
     }
+}
+
+export function getResString() {
+    // use the screen resolution to determine the quality
+    return `${window.screen.width}x${window.screen.height}`;
 }
 
 export function getIncludeProps() {

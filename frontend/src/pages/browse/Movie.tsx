@@ -27,7 +27,7 @@ function Movie({ Library }: { Library: Plex.LibraryDetails }) {
         const genreSelection: Plex.Directory[] = [];
 
         // Get 5 random genres
-        while (genreSelection.length < Math.min(5, genres.length)) {
+        while (genreSelection.length < Math.min(8, genres.length)) {
           const genre = genres[Math.floor(Math.random() * genres.length)];
           if (genreSelection.includes(genre)) continue;
           genreSelection.push(genre);
@@ -63,6 +63,7 @@ function Movie({ Library }: { Library: Plex.LibraryDetails }) {
         flexDirection: "column",
         alignItems: "flex-start",
         justifyContent: "flex-start",
+        pb: 8,
       }}
     >
       <HeroDisplay item={featuredItem} />
@@ -177,7 +178,6 @@ function HeroDisplay({ item }: { item: Plex.Metadata }) {
                 ml: 1,
                 color: "#e6a104",
                 textTransform: "uppercase",
-                mt: "8px",
               }}
             >
               {item.type}

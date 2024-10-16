@@ -1,18 +1,20 @@
 import { Box, CircularProgress, Grid, Typography } from "@mui/material";
 import React, { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { getLibraryMeta, getSearch } from "../plex";
 import { MovieItem } from "../components/MetaScreen";
-import { queryBuilder } from "../plex/QuickFunctions";
 
 export default function Search() {
   const { query } = useParams();
+  const [, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
 
   const [results, setResults] = useState<Plex.Metadata[] | null>(null);
+  const [directories, setDirectories] = useState<Plex.Directory[] | null>(null);
 
   useEffect(() => {
     setResults(null);
+    setDirectories(null);
 
     if (!query) return setResults([]);
 
@@ -25,6 +27,18 @@ export default function Search() {
               item.Metadata && ["movie", "show"].includes(item.Metadata.type)
           )
           .map((item) => item.Metadata)
+          .filter(
+            (metadata): metadata is Plex.Metadata => metadata !== undefined
+          )
+      );
+
+      setDirectories(
+        res
+          .filter((item) => item.Directory)
+          .map((item) => item.Directory)
+          .filter(
+            (directory): directory is Plex.Directory => directory !== undefined
+          )
       );
     });
   }, [query]);
@@ -58,18 +72,69 @@ export default function Search() {
       {!results && <CircularProgress sx={{ mt: 4 }} />}
 
       <Grid container spacing={2} sx={{ mt: 2, width: "100%" }}>
+        {directories && directories.length > 0 && (
+          <>
+            <Grid item key={"dir"} xs={12}>
+              <Typography variant="h4">Categories</Typography>
+            </Grid>
+
+            {directories.map((item) => (
+              <Grid item key={item.key} xs={2}>
+                <DirectoryItem
+                  item={item}
+                  onClick={() => {
+                    navigate(`/library/${item.librarySectionID}/dir/genre/${item.id}`);
+                  }}
+                />
+              </Grid>
+            ))}
+
+            <Grid item key={"dir"} xs={12}></Grid>
+          </>
+        )}
+
         {results &&
           results.map((item) => (
             <Grid item key={item.ratingKey} xs={3}>
-                <MovieItem item={item} onClick={async () => { 
-                    const res = await getLibraryMeta(item.ratingKey);
-                    navigate(`/browse/${res.librarySectionID}?${queryBuilder({
-                        mid: res.ratingKey,
-                    })}`)
-                }} />
+              <MovieItem
+                item={item}
+                onClick={async () => {
+                  const res = await getLibraryMeta(item.ratingKey);
+                  setSearchParams({ mid: res.ratingKey });
+                }}
+              />
             </Grid>
           ))}
       </Grid>
+    </Box>
+  );
+}
+
+
+export function DirectoryItem({ item, onClick }: { item: Plex.Directory, onClick: () => void }) {
+  return (
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        width: "100%",
+        height: "100%",
+        bgcolor: "rgba(0,0,0,0.1)",
+        borderRadius: "8px",
+        p: 2,
+        background: "#333333",
+        cursor: "pointer",
+
+        "&:hover": {
+          background: "#444444",
+        },
+        userSelect: "none",
+      }}
+      onClick={onClick}
+    >
+      <Typography variant="h5">{item.librarySectionTitle} - {item.tag}</Typography>
     </Box>
   );
 }
