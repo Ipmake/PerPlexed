@@ -10,6 +10,7 @@ import {
   getUniversalDecision,
   putAudioStream,
   putSubtitleStream,
+  sendUniversalPing,
 } from "../plex";
 import CenteredSpinner from "../components/CenteredSpinner";
 import {
@@ -134,7 +135,7 @@ function Watch() {
   const [url, setURL] = useState<string>("");
   const getUrl = `${localStorage.getItem(
     "server"
-  )}/video/:/transcode/universal/start.m3u8?${queryBuilder({
+  )}/video/:/transcode/universal/start.mpd?${queryBuilder({
     ...getStreamProps(itemID as string, {
       ...(quality.bitrate && {
         maxVideoBitrate: quality
@@ -185,17 +186,37 @@ function Watch() {
     };
   }, [playing, showControls]);
 
+  
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      if (!itemID) return;
+      await sendUniversalPing();
+    }, 10000);
+
+    return () => {
+      clearInterval(interval);
+    };
+  }, [itemID]);
+
   useEffect(() => {
     if (!itemID) return;
     // timeline report update cycle
     const updateInterval = setInterval(async () => {
       if (!itemID || !player.current) return;
-      getTimelineUpdate(
+      const timelineUpdateData = await getTimelineUpdate(
         parseInt(itemID),
         Math.floor(player.current?.getDuration()) * 1000,
         buffering ? "buffering" : playing ? "playing" : "paused",
         Math.floor(player.current?.getCurrentTime()) * 1000
       );
+
+      if(!timelineUpdateData) return;
+
+      if(timelineUpdateData.MediaContainer.terminationCode) {
+        setShowError(`${timelineUpdateData.MediaContainer.terminationCode} - ${timelineUpdateData.MediaContainer.terminationText}`);
+        setPlaying(false);
+        return;
+      }
     }, 5000);
 
     return () => {
@@ -221,11 +242,7 @@ function Watch() {
 
       if (!itemID) return;
   
-      loadMetadata(itemID);
-      await getUniversalDecision(itemID, {
-        maxVideoBitrate: quality.bitrate,
-        autoAdjustQuality: quality.auto,
-      });
+      await loadMetadata(itemID);
       setURL(getUrl);
       setShowError(false);
     })();
@@ -313,7 +330,14 @@ function Watch() {
               variant="contained"
               onClick={() => {
                 setShowError(false);
-                window.location.reload();
+
+                // Reload, if theres a t time in the search params then reload to the current time
+                if (params.has("t")) {
+                  const url = new URL(window.location.href);
+                  url.searchParams.set("t", Math.floor((player.current?.getCurrentTime() ?? 0) * 1000).toString());
+                  window.location.href = url.toString();
+                }
+                else window.location.reload();
               }}
             >
               Reload
@@ -717,14 +741,10 @@ function Watch() {
                       if (!metadata.Media || !itemID) return;
                       setTunePage(0);
                       await loadMetadata(itemID);
-                      await getUniversalDecision(
-                        itemID,
-                        qualityOption.original
-                          ? {}
-                          : {
-                              maxVideoBitrate: qualityOption.bitrate,
-                            }
-                      );
+                      await getUniversalDecision(itemID, {
+                        maxVideoBitrate: qualityOption.bitrate,
+                        autoAdjustQuality: quality.auto,
+                      });
                       setQuality({
                         bitrate: qualityOption.original
                           ? undefined
@@ -745,12 +765,6 @@ function Watch() {
                       if (!seekToAfterLoad.current)
                         seekToAfterLoad.current = progress;
                       setURL("");
-                      await getUniversalDecision(itemID, {
-                        maxVideoBitrate: qualityOption.original
-                        ? undefined
-                        : qualityOption.bitrate,
-                        autoAdjustQuality: quality.auto,
-                      });
                       setURL(getUrl);
                     }}
                   >
@@ -830,10 +844,6 @@ function Watch() {
                       if (!seekToAfterLoad.current)
                         seekToAfterLoad.current = progress;
                       setURL("");
-                      await getUniversalDecision(itemID, {
-                        maxVideoBitrate: quality.bitrate,
-                        autoAdjustQuality: quality.auto,
-                      });
                       setURL(getUrl);
                     }}
                   >
@@ -906,10 +916,6 @@ function Watch() {
                     if (!seekToAfterLoad.current)
                       seekToAfterLoad.current = progress;
                     setURL("");
-                    await getUniversalDecision(itemID, {
-                      maxVideoBitrate: quality.bitrate,
-                      autoAdjustQuality: quality.auto,
-                    });
                     setURL(getUrl);
                   }}
                 >
@@ -962,22 +968,16 @@ function Watch() {
                       );
                       setTunePage(0);
                       await loadMetadata(itemID);
-                      console.log(
-                        await getUniversalDecision(itemID, {
-                          maxVideoBitrate: quality.bitrate,
-                          autoAdjustQuality: quality.auto,
-                        })
-                      );
+                      await getUniversalDecision(itemID, {
+                        maxVideoBitrate: quality.bitrate,
+                        autoAdjustQuality: quality.auto,
+                      });
 
                       const progress = player.current?.getCurrentTime() ?? 0;
 
                       if (!seekToAfterLoad.current)
                         seekToAfterLoad.current = progress;
                       setURL("");
-                      await getUniversalDecision(itemID, {
-                        maxVideoBitrate: quality.bitrate,
-                        autoAdjustQuality: quality.auto,
-                      });
                       setURL(getUrl);
                     }}
                   >
@@ -1587,14 +1587,16 @@ function Watch() {
                 onBufferEnd={() => {
                   setBuffering(false);
                 }}
-                onError={(error) => {
+                onError={(err) => {
                   console.log("Player error:");
-                  console.error(error);
+                  console.error(err);
                   // window.location.reload();
 
+                  setPlaying(false);
+                  if(showError) return;
+                  
                   // filter out links from the error messages
-
-                  const message = error.error.message.replace(
+                  const message = err.error.message.replace(
                     /https?:\/\/[^\s]+/g,
                     "Media"
                   );
@@ -1603,6 +1605,8 @@ function Watch() {
                 }}
                 config={{
                   file: {
+                    forceDisableHls: true,
+                    dashVersion: "4.7.0",
                     attributes: {
                       controlsList: "nodownload",
                       disablePictureInPicture: true,
@@ -1612,7 +1616,7 @@ function Watch() {
                   },
                 }}
                 onEnded={() => {
-                  if (!playQueue) return;
+                  if (!playQueue) return console.log("No play queue");
 
                   if (metadata.type !== "episode")
                     return navigate(

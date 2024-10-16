@@ -65,13 +65,20 @@ export async function getUniversalDecision(id: string, limitation: {
     return;
 }
 
+export async function sendUniversalPing() {
+    await authedGet(`/video/:/transcode/universal/ping?${queryBuilder({
+        ...getXPlexProps()
+    })}`);
+    return;
+}
+
 export function getStreamProps(id: string, limitation: {
     autoAdjustQuality?: boolean,
     maxVideoBitrate?: number,
 }) {
     return {
         path: "/library/metadata/" + id,
-        protocol: "hls",
+        protocol: "dash",
         fastSeek: 1,
         directPlay: 0,
         directStream: 1,
@@ -106,8 +113,8 @@ export async function putSubtitleStream(partID: number, streamID: number): Promi
     })}`, {});
 }
 
-export async function getTimelineUpdate(itemID: number, duration: number, state: string, time: number): Promise<void> {
-    await authedGet(`/:/timeline?${queryBuilder({
+export async function getTimelineUpdate(itemID: number, duration: number, state: string, time: number): Promise<Plex.TimelineUpdateResult> {
+    return await authedGet(`/:/timeline?${queryBuilder({
         ratingKey: itemID,
         key: `/library/metadata/${itemID}/`,
         duration: duration,
@@ -117,7 +124,6 @@ export async function getTimelineUpdate(itemID: number, duration: number, state:
         context: "library",
         ...getXPlexProps()
     })}`);
-    return;
 }
 
 export async function getServerPreferences(): Promise<Plex.ServerPreferences> {

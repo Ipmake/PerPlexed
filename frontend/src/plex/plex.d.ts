@@ -402,4 +402,52 @@ declare namespace Plex {
         Metadata?: Metadata;
         Directory?: Directory;
     }
+
+    interface TimelineUpdateResult {
+        MediaContainer: {
+            size: number;
+            playbackState: string;
+            skipCount: number;
+            terminationCode?: number;
+            terminationText?: string;
+            viewCount: number;
+            viewOffset: number;
+            Bandwidths: {
+                Bandwidth: {
+                    time: number;
+                    bandwidth: number;
+                    resolution: string;
+                }[];
+            }[];
+            TranscodeSession?: TranscodeSession[];
+        }
+    }
+    
+    interface TranscodeSession {
+        key: string;
+        throttled: boolean;
+        complete: boolean;
+        progress: number;
+        size: number;
+        speed: number;
+        error: boolean;
+        duration: number;
+        context: string;
+        sourceVideoCodec: string;
+        sourceAudioCodec: string;
+        videoDecision: string;
+        audioDecision: string;
+        protocol: string;
+        container: string;
+        videoCodec: string;
+        audioCodec: string;
+        audioChannels: number;
+        width: number;
+        height: number;
+        transcodeHwRequested: boolean;
+        transcodeHwFullPipeline: boolean;
+        timeStamp: number;
+        maxOffsetAvailable: number;
+        minOffsetAvailable: number;
+    }
 }
