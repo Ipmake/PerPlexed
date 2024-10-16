@@ -10,6 +10,8 @@ import { makeid, uuidv4 } from "./plex/QuickFunctions";
 import axios from "axios";
 import { getBackendURL } from "./backendURL";
 
+import "@fontsource-variable/quicksand";
+
 if(!localStorage.getItem("clientID")) localStorage.setItem("clientID", makeid(24));
 
 sessionStorage.setItem("sessionID", uuidv4());
@@ -42,6 +44,8 @@ let config: ConfigInterface;
   config = JSON.parse(localStorage.getItem("config") as string) as ConfigInterface;
 })();
 
+if(!localStorage.getItem("quality")) localStorage.setItem("quality", "12000");
+
 export { config };
 
 ReactDOM.render(
@@ -60,11 +64,22 @@ ReactDOM.render(
           paper: "#000000",
         },
       },
+      typography: {
+        fontFamily: '"Quicksand Variable", sans-serif',
+      },
       components: {
         MuiAppBar: {
           styleOverrides: {
             root: {
               backgroundImage: "none",
+            },
+          },
+        },
+        MuiButton: {
+          styleOverrides: {
+            root: {
+              fontFamily: '"Quicksand Variable", sans-serif',
+              borderRadius: "7px",
             },
           },
         },

@@ -67,6 +67,9 @@ function Appbar() {
 
         bgcolor: scrollAtTop ? "#00000000" : `#000000AA`,
         boxShadow: scrollAtTop ? "none" : "0px 0px 10px 0px #000000AA",
+
+        borderBottomLeftRadius: "10px",
+        borderBottomRightRadius: "10px",
       }}
     >
       <Menu
@@ -175,6 +178,12 @@ function Appbar() {
           }
           sx={{
             backgroundColor: "rgba(255, 255, 255, 0.2)",
+            borderRadius: "7px",
+
+            // round the corners of the input
+            "& .MuiOutlinedInput-root": {
+              borderRadius: "7px",
+            },
           }}
         />
         <Avatar
@@ -185,7 +194,7 @@ function Appbar() {
           sx={{
             width: 45,
             height: 45,
-            borderRadius: 2,
+            borderRadius: "10px",
             cursor: "pointer",
 
             "&:hover": {

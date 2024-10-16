@@ -4,6 +4,7 @@ import {
   getLibraryMeta,
   getPlayQueue,
   getServerPreferences,
+  getStreamProps,
   getTimelineUpdate,
   getTranscodeImageURL,
   getUniversalDecision,
@@ -20,6 +21,7 @@ import {
   Popover,
   Slider,
   Theme,
+  Tooltip,
   Typography,
   useTheme,
 } from "@mui/material";
@@ -29,6 +31,7 @@ import {
   ArrowBackIos,
   ArrowBackIosNew,
   Check,
+  CheckCircle,
   Fullscreen,
   Pause,
   PlayArrow,
@@ -39,6 +42,7 @@ import {
 import { VideoSeekSlider } from "react-video-seek-slider";
 import "react-video-seek-slider/styles.css";
 import { useSessionStore } from "../states/SessionState";
+import { durationToText } from "../components/MovieItemSlider";
 
 let SessionID = "";
 export { SessionID };
@@ -130,24 +134,14 @@ function Watch() {
   const [url, setURL] = useState<string>("");
   const getUrl = `${localStorage.getItem(
     "server"
-  )}/video/:/transcode/universal/start.mpd?${queryBuilder({
-    hasMDE: 1,
-    path: `/library/metadata/${itemID}`,
-    mediaIndex: 0,
-    partIndex: 0,
-    protocol: "dash",
-    fastSeek: 1,
-    directPlay: 0,
-    directStream: 1,
-    subtitleSize: 100,
-    audioBoost: 100,
-    location: "lan",
-    autoAdjustQuality: 0,
-    directStreamAudio: 12835,
-    mediaBufferSize: 102400,
-    subtitles: "burn",
-    "Accept-Language": "en",
-    ...getXPlexProps(),
+  )}/video/:/transcode/universal/start.m3u8?${queryBuilder({
+    ...getStreamProps(itemID as string, {
+      ...(quality.bitrate && {
+        maxVideoBitrate: quality
+          ? quality.bitrate
+          : parseInt(localStorage.getItem("quality") ?? "10000"),
+      }),
+    }),
   })}`;
 
   const [showControls, setShowControls] = useState(true);
@@ -202,7 +196,7 @@ function Watch() {
         buffering ? "buffering" : playing ? "playing" : "paused",
         Math.floor(player.current?.getCurrentTime()) * 1000
       );
-    }, 1000);
+    }, 5000);
 
     return () => {
       clearInterval(updateInterval);
@@ -222,13 +216,19 @@ function Watch() {
     `;
     document.head.appendChild(style);
 
-    setReady(false);
+    (async () => {
+      setReady(false);
 
-    if (!itemID) return;
-
-    loadMetadata(itemID);
-    setURL(getUrl);
-    setShowError(false);
+      if (!itemID) return;
+  
+      loadMetadata(itemID);
+      await getUniversalDecision(itemID, {
+        maxVideoBitrate: quality.bitrate,
+        autoAdjustQuality: quality.auto,
+      });
+      setURL(getUrl);
+      setShowError(false);
+    })();
   }, [itemID, theme.palette.primary.main]);
 
   useEffect(() => {
@@ -286,7 +286,7 @@ function Watch() {
       <Backdrop
         open={showError !== false}
         sx={{
-          zIndex: 5000,
+          zIndex: 10000,
         }}
       >
         <Box
@@ -379,7 +379,6 @@ function Watch() {
         </Box>
         <Box
           sx={{
-            background: "#000000BB",
             width: "100vw",
             height: "100vh",
             position: "absolute",
@@ -394,6 +393,9 @@ function Watch() {
 
             opacity: showInfo ? 1 : 0,
             transition: "all 0.5s ease-in-out",
+
+            zIndex: 1000,
+            pointerEvents: "none",
           }}
         >
           <img
@@ -408,7 +410,7 @@ function Watch() {
             style={{
               height: "25vw",
               width: "auto",
-              borderRadius: "0px",
+              borderRadius: "10px",
               boxShadow: "0px 0px 10px 0px #000000AA",
               transform: `translateX(${
                 showInfo ? 0 : -40
@@ -441,6 +443,7 @@ function Watch() {
                 >
                   {metadata?.grandparentTitle}
                 </Typography>
+
                 <Typography
                   sx={{
                     fontSize: "1vw",
@@ -462,6 +465,74 @@ function Watch() {
                 >
                   {metadata?.title}: EP. {metadata?.index}
                 </Typography>
+
+                <Box
+                  sx={{
+                    display: "flex",
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "flex-start",
+                    mt: 0.5,
+                    gap: 1,
+                  }}
+                >
+                  {metadata.year && (
+                    <Typography
+                      sx={{
+                        fontSize: "medium",
+                        fontWeight: "light",
+                        color: "#FFFFFF",
+                        textShadow: "0px 0px 10px #000000",
+                      }}
+                    >
+                      {metadata.year}
+                    </Typography>
+                  )}
+                  {metadata.rating && (
+                    <Typography
+                      sx={{
+                        fontSize: "medium",
+                        fontWeight: "light",
+                        color: "#FFFFFF",
+                        textShadow: "0px 0px 10px #000000",
+                        ml: 1,
+                      }}
+                    >
+                      {metadata.rating}
+                    </Typography>
+                  )}
+                  {metadata.contentRating && (
+                    <Typography
+                      sx={{
+                        fontSize: "medium",
+                        fontWeight: "light",
+                        color: "#FFFFFF",
+                        textShadow: "0px 0px 10px #000000",
+                        ml: 1,
+                        border: "1px dotted #AAAAAA",
+                        borderRadius: "5px",
+                        px: 1,
+                        py: -0.5,
+                      }}
+                    >
+                      {metadata.contentRating}
+                    </Typography>
+                  )}
+                  {metadata.duration && ["episode", "movie"].includes(metadata.type) && (
+                    <Typography
+                      sx={{
+                        fontSize: "medium",
+                        fontWeight: "light",
+                        color: "#FFFFFF",
+                        textShadow: "0px 0px 10px #000000",
+                        ml: 1,
+                      }}
+                    >
+                      {durationToText(metadata.duration)}
+                    </Typography>
+                  )}
+                </Box>
+
                 <Typography
                   sx={{
                     fontSize: "0.75vw",
@@ -483,15 +554,74 @@ function Watch() {
                 >
                   {metadata?.title}
                 </Typography>
-                <Typography
+
+                <Box
                   sx={{
-                    fontSize: "1vw",
-                    color: "#FFF",
-                    mt: "-0.75vw",
+                    display: "flex",
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "flex-start",
+                    mt: 0.5,
+                    gap: 1,
                   }}
                 >
-                  {metadata?.year}
-                </Typography>
+                  {metadata.year && (
+                    <Typography
+                      sx={{
+                        fontSize: "medium",
+                        fontWeight: "light",
+                        color: "#FFFFFF",
+                        textShadow: "0px 0px 10px #000000",
+                      }}
+                    >
+                      {metadata.year}
+                    </Typography>
+                  )}
+                  {metadata.rating && (
+                    <Typography
+                      sx={{
+                        fontSize: "medium",
+                        fontWeight: "light",
+                        color: "#FFFFFF",
+                        textShadow: "0px 0px 10px #000000",
+                        ml: 1,
+                      }}
+                    >
+                      {metadata.rating}
+                    </Typography>
+                  )}
+                  {metadata.contentRating && (
+                    <Typography
+                      sx={{
+                        fontSize: "medium",
+                        fontWeight: "light",
+                        color: "#FFFFFF",
+                        textShadow: "0px 0px 10px #000000",
+                        ml: 1,
+                        border: "1px dotted #AAAAAA",
+                        borderRadius: "5px",
+                        px: 1,
+                        py: -0.5,
+                      }}
+                    >
+                      {metadata.contentRating}
+                    </Typography>
+                  )}
+                  {metadata.duration && ["episode", "movie"].includes(metadata.type) && (
+                    <Typography
+                      sx={{
+                        fontSize: "medium",
+                        fontWeight: "light",
+                        color: "#FFFFFF",
+                        textShadow: "0px 0px 10px #000000",
+                        ml: 1,
+                      }}
+                    >
+                      {durationToText(metadata.duration)}
+                    </Typography>
+                  )}
+                </Box>
+
                 <Typography
                   sx={{
                     fontSize: "1vw",
@@ -615,6 +745,12 @@ function Watch() {
                       if (!seekToAfterLoad.current)
                         seekToAfterLoad.current = progress;
                       setURL("");
+                      await getUniversalDecision(itemID, {
+                        maxVideoBitrate: qualityOption.original
+                        ? undefined
+                        : qualityOption.bitrate,
+                        autoAdjustQuality: quality.auto,
+                      });
                       setURL(getUrl);
                     }}
                   >
@@ -629,7 +765,6 @@ function Watch() {
                     <Typography
                       sx={{
                         fontSize: 14,
-                        fontWeight: "bold",
                       }}
                     >
                       <strong
@@ -695,24 +830,35 @@ function Watch() {
                       if (!seekToAfterLoad.current)
                         seekToAfterLoad.current = progress;
                       setURL("");
+                      await getUniversalDecision(itemID, {
+                        maxVideoBitrate: quality.bitrate,
+                        autoAdjustQuality: quality.auto,
+                      });
                       setURL(getUrl);
                     }}
                   >
-                    {stream.selected && (
-                      <Check
-                        sx={{
-                          mr: "auto",
-                        }}
-                        fontSize="medium"
-                      />
-                    )}
+                    <Check
+                      sx={{
+                        mr: "auto",
+                        opacity: stream.selected ? 1 : 0,
+                      }}
+                      fontSize="medium"
+                    />
                     <Typography
                       sx={{
-                        fontSize: 18,
-                        fontWeight: "bold",
+                        ml: "5px",
+                        fontSize: 16,
+
+                        // Only one line no wrap
+                        textOverflow: "ellipsis",
+                        overflow: "hidden",
+                        maxLines: 1,
+                        maxInlineSize: "100%",
+                        textWrap: "none",
+                        whiteSpace: "nowrap",
                       }}
                     >
-                      {stream.displayTitle}
+                      {stream.extendedDisplayTitle}
                     </Typography>
                   </Box>
                 ))}
@@ -760,6 +906,10 @@ function Watch() {
                     if (!seekToAfterLoad.current)
                       seekToAfterLoad.current = progress;
                     setURL("");
+                    await getUniversalDecision(itemID, {
+                      maxVideoBitrate: quality.bitrate,
+                      autoAdjustQuality: quality.auto,
+                    });
                     setURL(getUrl);
                   }}
                 >
@@ -775,8 +925,7 @@ function Watch() {
                   )}
                   <Typography
                     sx={{
-                      fontSize: 18,
-                      fontWeight: "bold",
+                      fontSize: 16,
                     }}
                   >
                     None
@@ -825,21 +974,35 @@ function Watch() {
                       if (!seekToAfterLoad.current)
                         seekToAfterLoad.current = progress;
                       setURL("");
+                      await getUniversalDecision(itemID, {
+                        maxVideoBitrate: quality.bitrate,
+                        autoAdjustQuality: quality.auto,
+                      });
                       setURL(getUrl);
                     }}
                   >
-                    {stream.selected && (
-                      <Check
-                        sx={{
-                          mr: "auto",
-                        }}
-                        fontSize="medium"
-                      />
-                    )}
+                    <Check
+                      sx={{
+                        mr: "auto",
+                        opacity: stream.selected ? 1 : 0,
+                      }}
+                      fontSize="medium"
+                    />
+
                     <Typography
                       sx={{
-                        fontSize: 18,
-                        fontWeight: "bold",
+                        ml: "5px",
+                        fontSize: 16,
+                        width: "100%",
+                        textAlign: "right",
+
+                        // Only one line no wrap
+                        textOverflow: "ellipsis",
+                        overflow: "hidden",
+                        maxLines: 1,
+                        maxInlineSize: "100%",
+                        textWrap: "none",
+                        whiteSpace: "nowrap",
                       }}
                     >
                       {stream.extendedDisplayTitle}
@@ -1127,6 +1290,7 @@ function Watch() {
 
                     display: "flex",
                     flexDirection: "column",
+                    backgroundColor: "#000000AA",
                   }}
                 >
                   <Box
@@ -1428,7 +1592,8 @@ function Watch() {
                   console.error(error);
                   // window.location.reload();
 
-                  // filter out links from the error message
+                  // filter out links from the error messages
+
                   const message = error.error.message.replace(
                     /https?:\/\/[^\s]+/g,
                     "Media"
@@ -1438,8 +1603,6 @@ function Watch() {
                 }}
                 config={{
                   file: {
-                    forceDASH: true,
-                    forceDisableHls: true,
                     attributes: {
                       controlsList: "nodownload",
                       disablePictureInPicture: true,
@@ -1558,14 +1721,7 @@ export function getCurrentVideoLevels(
     bitrate?: number;
     extra: string;
     original?: boolean;
-  }[] = [
-    {
-      title: "Original",
-      bitrate: 0,
-      extra: extraForOriginal,
-      original: true,
-    },
-  ];
+  }[] = [];
 
   switch (resolution) {
     case "720":

@@ -29,7 +29,7 @@ app.get('/config', (req, res) => {
     res.send({
         PLEX_SERVER: process.env.PLEX_SERVER,
         CONFIG: {
-            DISABLE_PROXY: process.env.DISABLE_PROXY === 'true' ?? false,
+            DISABLE_PROXY: process.env.DISABLE_PROXY === 'true',
         }
     });
 });

@@ -120,6 +120,15 @@ declare namespace Plex {
         prompt?: string;
         search?: boolean;
         type?: string;
+        librarySectionID?: number;
+        librarySectionKey?: string;
+        librarySectionTitle?: string;
+        librarySectionType?: number;
+        id?: number;
+        filter?: string;
+        tag?: string;
+        tagType?: number;
+        count?: number;
     }
 
     interface Type {
@@ -225,6 +234,10 @@ declare namespace Plex {
         Children?: {
             size: number;
             Metadata: Child[];
+        }
+        Extras?: {
+            size: number;
+            Metadata: Metadata[];
         }
     }
 
@@ -386,6 +399,7 @@ declare namespace Plex {
 
     interface SearchResult {
         score: number;
-        Metadata: Metadata;
+        Metadata?: Metadata;
+        Directory?: Directory;
     }
 }
