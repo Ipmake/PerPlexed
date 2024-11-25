@@ -1376,7 +1376,7 @@ function Watch() {
                             player.current?.seekTo(value / 1000);
                           }}
                           getPreviewScreenUrl={(value) => {
-                            if (!metadata.Media) return "";
+                            if (!metadata.Media || !metadata.Media[0].Part[0].indexes) return "";
                             return `${localStorage.getItem(
                               "server"
                             )}/photo/:/transcode?${queryBuilder({
