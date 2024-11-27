@@ -209,7 +209,8 @@ function Watch() {
 
       if (!timelineUpdateData) return;
 
-      const { terminationCode, terminationText } = timelineUpdateData.MediaContainer;
+      const { terminationCode, terminationText } =
+        timelineUpdateData.MediaContainer;
       if (terminationCode) {
         setShowError(`${terminationCode} - ${terminationText}`);
         setPlaying(false);
@@ -243,7 +244,7 @@ function Watch() {
       setURL(getUrl);
       setShowError(false);
     })();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [itemID, theme.palette.primary.main]);
 
   useEffect(() => {
@@ -254,7 +255,7 @@ function Watch() {
     if (!player.current) return;
 
     if (ready && !playing) setPlaying(true);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready]);
 
   // playback controll buttons
@@ -1295,6 +1296,7 @@ function Watch() {
                     display: "flex",
                     flexDirection: "column",
                     backgroundColor: "#000000AA",
+                    pointerEvents: "none",
                   }}
                 >
                   <Box
@@ -1306,6 +1308,8 @@ function Watch() {
                       flexDirection: "row",
                       justifyContent: "flex-start",
                       alignItems: "center",
+
+                      pointerEvents: "all",
                     }}
                   >
                     <IconButton
@@ -1352,6 +1356,7 @@ function Watch() {
                       justifyContent: "space-between",
                       alignItems: "center",
                       gap: 1,
+                      pointerEvents: "all",
                     }}
                   >
                     <Box
@@ -1558,6 +1563,23 @@ function Watch() {
                 ref={player}
                 playing={playing}
                 volume={volume / 100}
+                onClick={(e: MouseEvent) => {
+                  e.preventDefault();
+
+                  switch (e.detail) {
+                    case 1:
+                      setPlaying((state) => !state);
+                      break;
+                    case 2:
+                      if (!document.fullscreenElement) {
+                        document.documentElement.requestFullscreen();
+                        setPlaying(true);
+                      } else document.exitFullscreen();
+                      break;
+                    default:
+                      break;
+                  }
+                }}
                 onReady={() => {
                   if (!player.current) return;
                   setReady(true);
