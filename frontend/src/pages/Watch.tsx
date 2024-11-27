@@ -22,17 +22,15 @@ import {
   Popover,
   Slider,
   Theme,
-  Tooltip,
   Typography,
   useTheme,
 } from "@mui/material";
 import ReactPlayer from "react-player";
-import { getXPlexProps, queryBuilder } from "../plex/QuickFunctions";
+import { queryBuilder } from "../plex/QuickFunctions";
 import {
   ArrowBackIos,
   ArrowBackIosNew,
   Check,
-  CheckCircle,
   Fullscreen,
   Pause,
   PlayArrow,
@@ -186,7 +184,6 @@ function Watch() {
     };
   }, [playing, showControls]);
 
-  
   useEffect(() => {
     const interval = setInterval(async () => {
       if (!itemID) return;
@@ -200,28 +197,29 @@ function Watch() {
 
   useEffect(() => {
     if (!itemID) return;
-    // timeline report update cycle
-    const updateInterval = setInterval(async () => {
-      if (!itemID || !player.current) return;
+
+    const updateTimeline = async () => {
+      if (!player.current) return;
       const timelineUpdateData = await getTimelineUpdate(
         parseInt(itemID),
-        Math.floor(player.current?.getDuration()) * 1000,
+        Math.floor(player.current.getDuration()) * 1000,
         buffering ? "buffering" : playing ? "playing" : "paused",
-        Math.floor(player.current?.getCurrentTime()) * 1000
+        Math.floor(player.current.getCurrentTime()) * 1000
       );
 
-      if(!timelineUpdateData) return;
+      if (!timelineUpdateData) return;
 
-      if(timelineUpdateData.MediaContainer.terminationCode) {
-        setShowError(`${timelineUpdateData.MediaContainer.terminationCode} - ${timelineUpdateData.MediaContainer.terminationText}`);
+      const { terminationCode, terminationText } =
+        timelineUpdateData.MediaContainer;
+      if (terminationCode) {
+        setShowError(`${terminationCode} - ${terminationText}`);
         setPlaying(false);
-        return;
       }
-    }, 5000);
-
-    return () => {
-      clearInterval(updateInterval);
     };
+
+    const updateInterval = setInterval(updateTimeline, 5000);
+
+    return () => clearInterval(updateInterval);
   }, [buffering, itemID, playing]);
 
   useEffect(() => {
@@ -241,11 +239,12 @@ function Watch() {
       setReady(false);
 
       if (!itemID) return;
-  
+
       await loadMetadata(itemID);
       setURL(getUrl);
       setShowError(false);
     })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [itemID, theme.palette.primary.main]);
 
   useEffect(() => {
@@ -256,10 +255,10 @@ function Watch() {
     if (!player.current) return;
 
     if (ready && !playing) setPlaying(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready]);
 
-
-  // playback controll buttons 
+  // playback controll buttons
   // SPACE: play/pause
   // LEFT: seek back 10 seconds
   // RIGHT: seek forward 10 seconds
@@ -270,7 +269,7 @@ function Watch() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === " " && player.current) {
-        setPlaying(!playing);
+        setPlaying((state) => !state);
       }
       if (e.key === "ArrowLeft" && player.current) {
         player.current.seekTo(player.current.getCurrentTime() - 10);
@@ -279,10 +278,10 @@ function Watch() {
         player.current.seekTo(player.current.getCurrentTime() + 10);
       }
       if (e.key === "ArrowUp" && player.current) {
-        setVolume(Math.min(volume + 5, 100));
+        setVolume((state) => Math.min(state + 5, 100));
       }
       if (e.key === "ArrowDown" && player.current) {
-        setVolume(Math.max(volume - 5, 0));
+        setVolume((state) => Math.max(state - 5, 0));
       }
       if (e.key === "," && player.current) {
         player.current.seekTo(player.current.getCurrentTime() - 0.04);
@@ -296,7 +295,7 @@ function Watch() {
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [playing, volume]);
+  }, []);
 
   return (
     <>
@@ -334,10 +333,14 @@ function Watch() {
                 // Reload, if theres a t time in the search params then reload to the current time
                 if (params.has("t")) {
                   const url = new URL(window.location.href);
-                  url.searchParams.set("t", Math.floor((player.current?.getCurrentTime() ?? 0) * 1000).toString());
+                  url.searchParams.set(
+                    "t",
+                    Math.floor(
+                      (player.current?.getCurrentTime() ?? 0) * 1000
+                    ).toString()
+                  );
                   window.location.href = url.toString();
-                }
-                else window.location.reload();
+                } else window.location.reload();
               }}
             >
               Reload
@@ -542,19 +545,20 @@ function Watch() {
                       {metadata.contentRating}
                     </Typography>
                   )}
-                  {metadata.duration && ["episode", "movie"].includes(metadata.type) && (
-                    <Typography
-                      sx={{
-                        fontSize: "medium",
-                        fontWeight: "light",
-                        color: "#FFFFFF",
-                        textShadow: "0px 0px 10px #000000",
-                        ml: 1,
-                      }}
-                    >
-                      {durationToText(metadata.duration)}
-                    </Typography>
-                  )}
+                  {metadata.duration &&
+                    ["episode", "movie"].includes(metadata.type) && (
+                      <Typography
+                        sx={{
+                          fontSize: "medium",
+                          fontWeight: "light",
+                          color: "#FFFFFF",
+                          textShadow: "0px 0px 10px #000000",
+                          ml: 1,
+                        }}
+                      >
+                        {durationToText(metadata.duration)}
+                      </Typography>
+                    )}
                 </Box>
 
                 <Typography
@@ -631,19 +635,20 @@ function Watch() {
                       {metadata.contentRating}
                     </Typography>
                   )}
-                  {metadata.duration && ["episode", "movie"].includes(metadata.type) && (
-                    <Typography
-                      sx={{
-                        fontSize: "medium",
-                        fontWeight: "light",
-                        color: "#FFFFFF",
-                        textShadow: "0px 0px 10px #000000",
-                        ml: 1,
-                      }}
-                    >
-                      {durationToText(metadata.duration)}
-                    </Typography>
-                  )}
+                  {metadata.duration &&
+                    ["episode", "movie"].includes(metadata.type) && (
+                      <Typography
+                        sx={{
+                          fontSize: "medium",
+                          fontWeight: "light",
+                          color: "#FFFFFF",
+                          textShadow: "0px 0px 10px #000000",
+                          ml: 1,
+                        }}
+                      >
+                        {durationToText(metadata.duration)}
+                      </Typography>
+                    )}
                 </Box>
 
                 <Typography
@@ -1291,6 +1296,7 @@ function Watch() {
                     display: "flex",
                     flexDirection: "column",
                     backgroundColor: "#000000AA",
+                    pointerEvents: "none",
                   }}
                 >
                   <Box
@@ -1302,6 +1308,8 @@ function Watch() {
                       flexDirection: "row",
                       justifyContent: "flex-start",
                       alignItems: "center",
+
+                      pointerEvents: "all",
                     }}
                   >
                     <IconButton
@@ -1348,6 +1356,7 @@ function Watch() {
                       justifyContent: "space-between",
                       alignItems: "center",
                       gap: 1,
+                      pointerEvents: "all",
                     }}
                   >
                     <Box
@@ -1368,7 +1377,6 @@ function Watch() {
                         }}
                       >
                         <VideoSeekSlider
-                        
                           max={(player.current?.getDuration() ?? 0) * 1000}
                           currentTime={progress * 1000}
                           bufferTime={buffered * 1000}
@@ -1397,9 +1405,12 @@ function Watch() {
                         />
                       </Box>
                       <Box>
-                        <Typography textAlign="right" sx={{
-                          mb: "-1px",
-                        }}>
+                        <Typography
+                          textAlign="right"
+                          sx={{
+                            mb: "-1px",
+                          }}
+                        >
                           {getFormatedTime(
                             (player.current?.getDuration() ?? 0) - progress
                           )}
@@ -1552,6 +1563,23 @@ function Watch() {
                 ref={player}
                 playing={playing}
                 volume={volume / 100}
+                onClick={(e: MouseEvent) => {
+                  e.preventDefault();
+
+                  switch (e.detail) {
+                    case 1:
+                      setPlaying((state) => !state);
+                      break;
+                    case 2:
+                      if (!document.fullscreenElement) {
+                        document.documentElement.requestFullscreen();
+                        setPlaying(true);
+                      } else document.exitFullscreen();
+                      break;
+                    default:
+                      break;
+                  }
+                }}
                 onReady={() => {
                   if (!player.current) return;
                   setReady(true);
@@ -1593,8 +1621,8 @@ function Watch() {
                   // window.location.reload();
 
                   setPlaying(false);
-                  if(showError) return;
-                  
+                  if (showError) return;
+
                   // filter out links from the error messages
                   const message = err.error.message.replace(
                     /https?:\/\/[^\s]+/g,
