@@ -491,7 +491,7 @@ function MovieItem({
             <Tooltip title="Watched" arrow>
               <CheckCircle
                 sx={{
-                  color: "#000000",
+                  color: "#FFFFFF",
                   fontSize: "large",
                   mb: "2px",
                 }}
