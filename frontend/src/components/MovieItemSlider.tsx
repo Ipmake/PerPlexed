@@ -491,7 +491,18 @@ function MovieItem({
             <Tooltip title="Watched" arrow>
               <CheckCircle
                 sx={{
-                  color: "#00FF00",
+                  color: "#FFFFFF",
+                  fontSize: "large",
+                  mb: "2px",
+                }}
+              />
+            </Tooltip>
+          )}
+          {item.type === "movie" && item?.viewCount && item.viewCount > 0 && (
+            <Tooltip title="Watched" arrow>
+              <CheckCircle
+                sx={{
+                  color: "#FFFFFF",
                   fontSize: "large",
                   mb: "2px",
                 }}

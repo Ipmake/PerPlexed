@@ -432,7 +432,7 @@ function MetaScreen() {
                   data?.leafCount === data?.viewedLeafCount && (
                     <CheckCircle
                       sx={{
-                        color: "#00FF00",
+                        color: "#FFFFFF",
                         fontSize: "large",
                         mt: -0.5,
                         mr: 1,
@@ -442,7 +442,7 @@ function MetaScreen() {
                 {data?.type === "movie" && data?.viewCount && (
                   <CheckCircle
                     sx={{
-                      color: "#00FF00",
+                      color: "#FFFFFF",
                       fontSize: "large",
                       mt: 0.5,
                       mr: 1,
@@ -1145,7 +1145,7 @@ export function MovieItem({
           {item.type === "show" && item.leafCount === item.viewedLeafCount && (
             <CheckCircle
               sx={{
-                color: "#00FF00",
+                color: "#FFFFFF",
                 fontSize: "large",
                 mt: 0.5,
               }}
