@@ -28,6 +28,7 @@ import {
   Add,
   CheckCircle,
   Close,
+  InfoOutlined,
   PlayArrow,
   StarRate,
   VolumeOff,
@@ -434,7 +435,6 @@ function MetaScreen() {
                       sx={{
                         color: "#FFFFFF",
                         fontSize: "large",
-                        mt: -0.5,
                         mr: 1,
                       }}
                     />
@@ -444,7 +444,6 @@ function MetaScreen() {
                     sx={{
                       color: "#FFFFFF",
                       fontSize: "large",
-                      mt: 0.5,
                       mr: 1,
                     }}
                   />
@@ -916,9 +915,6 @@ function MetaScreen() {
                   <Grid item xs={6}>
                     <MovieItem
                       item={movie}
-                      onClick={() => {
-                        setSearchParams({ mid: movie.ratingKey });
-                      }}
                     />
                   </Grid>
                 ))}
@@ -977,22 +973,25 @@ export default MetaScreen;
 
 export function MovieItem({
   item,
-  onClick,
 }: {
   item: Plex.Metadata;
-  onClick?: (event: React.MouseEvent) => void;
 }): JSX.Element {
+  const [, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
+
+  const [playButtonLoading, setPlayButtonLoading] = React.useState(false);
+
+
   return (
     <Box
       sx={{
         display: "flex",
         flexDirection: "column",
         alignItems: "flex-start",
-        justifyContent: "flex-start",
+        justifyContent: "flex-end",
 
         width: "100%",
         aspectRatio: "16/9",
-        borderRadius: "10px",
 
         backgroundColor: "#00000055",
         backgroundImage: ["episode"].includes(item.type)
@@ -1016,27 +1015,40 @@ export function MovieItem({
         clipPath: "inset(0px 0px -10px 0px)",
 
         "&:hover": {
-          backgroundColor: "#000000AA",
-          backgroundBlendMode: "darken",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
+          // backgroundColor: "#000000AA",
+          // backgroundBlendMode: "darken",
+          // backgroundSize: "cover",
+          // backgroundPosition: "center",
+
+          transform: "scale(1.15)",
+          transition: "all 0.5s ease",
+          zIndex: 1000,
+          borderRadius: "10px",
+          boxShadow: "0px 0px 20px #000000",
+
+          pb: "5px",
         },
 
         "&:hover > :nth-child(1)": {
-          transform: "translateX(0%)",
+          height: "32px"
         },
 
-        transition: "all 0.5s ease",
+        "&:hover > :nth-child(3)": {
+          opacity: 1,
+          transition: "all 0.25 ease-in"
+        },
+
+        transition: "all 0.1s ease",
         cursor: "pointer",
-      }}
-      onClick={(e) => {
-        if (onClick) onClick(e);
+
+        position: "relative",
+        borderRadius: "5px"
       }}
     >
       <Box
         sx={{
           width: "100%",
-          height: "100%",
+          height: "auto",
           display: "flex",
           flexDirection: "column",
           alignItems: "flex-start",
@@ -1045,6 +1057,7 @@ export function MovieItem({
           userSelect: "none",
           transition: "all 0.5s ease",
           transform: "translateX(0%)",
+          transformStyle: "preserve-3d"
         }}
       >
         <Box
@@ -1059,7 +1072,7 @@ export function MovieItem({
           <img
             src="/plexIcon.png"
             alt=""
-            height="25"
+            height="23"
             style={{
               aspectRatio: 1,
               borderRadius: 8,
@@ -1067,13 +1080,14 @@ export function MovieItem({
           />
           <Typography
             sx={{
-              fontSize: "16px",
+              fontSize: "14px",
               fontWeight: "900",
               letterSpacing: "0.1em",
-              textShadow: "3px 3px 1px #232529",
+              textShadow: "2px 2px 0px #232529",
               ml: 1,
               color: "#e6a104",
               textTransform: "uppercase",
+              mt: "4px"
             }}
           >
             {item.type}
@@ -1086,6 +1100,10 @@ export function MovieItem({
             color: "#FFFFFF",
             textShadow: "0px 0px 10px #000000",
 
+            "@media (max-width: 2000px)": {
+              fontSize: "1.2rem",
+            },
+
             textOverflow: "ellipsis",
             overflow: "hidden",
             maxLines: 1,
@@ -1096,15 +1114,24 @@ export function MovieItem({
         </Typography>
         {["episode"].includes(item.type) && item.grandparentTitle && (
           <Typography
+            onClick={(e => {
+              e.stopPropagation();
+              if(!item.grandparentKey?.toString()) return;
+              setSearchParams({
+                mid: (item.grandparentRatingKey as string).toString(),
+              })
+            })}
             sx={{
               fontSize: "1rem",
               fontWeight: "normal",
               color: "#FFFFFF",
-              opacity: 0.5,
-              mt: -1,
-              mb: 1,
+              opacity: 0.7,
+              mt: -0.5,
+              mb: 0.5,
 
-              textShadow: "0px 0px 10px #000000",
+              "&:hover": {
+                opacity: 1,
+              },
 
               textOverflow: "ellipsis",
               overflow: "hidden",
@@ -1147,7 +1174,14 @@ export function MovieItem({
               sx={{
                 color: "#FFFFFF",
                 fontSize: "large",
-                mt: 0.5,
+              }}
+            />
+          )}
+          {item.type === "movie" && item?.viewCount && item.viewCount > 0 && (
+            <CheckCircle
+              sx={{
+                color: "#FFFFFF",
+                fontSize: "large",
               }}
             />
           )}
@@ -1184,9 +1218,10 @@ export function MovieItem({
                 color: "#FFFFFF",
                 textShadow: "0px 0px 10px #000000",
                 ml: 1,
-                border: "1px solid #AAAAAA",
+                border: "1px dotted #AAAAAA",
                 borderRadius: "5px",
                 px: 1,
+                py: -0.5,
               }}
             >
               {item.contentRating}
@@ -1235,6 +1270,179 @@ export function MovieItem({
           )}
         </Box>
       </Box>
+      <Box
+        sx={{
+          width: "100%",
+          height: "0px", // 32px
+          overflow: "hidden",
+
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          transition: "all 0.25s ease-in",
+        }}
+      >
+        <Box
+          sx={{
+            width: "100%",
+            display: "flex",
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 1,
+            padding: "2px 10px",
+          }}
+        >
+          <Button
+            variant="contained"
+            sx={{
+              width: "100%",
+              height: "100%",
+              backgroundColor: "#CCCCCC",
+              color: "#000000",
+              letterSpacing: "0.1em",
+              textTransform: "uppercase",
+              "&:hover": {
+                backgroundColor: "primary.main",
+              },
+              gap: 1,
+              transition: "all 0.2s ease-in-out",
+              padding: "0px 10px",
+              fontSize: "12px",
+              display: "flex",
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+            disabled={playButtonLoading}
+            onClick={async () => {
+              setPlayButtonLoading(true);
+
+              switch (item.type) {
+                case "episode":
+                  navigate(
+                    `/watch/${item.ratingKey}${
+                      item.viewOffset ? `?t=${item.viewOffset}` : ""
+                    }`
+                  );
+
+                  setPlayButtonLoading(false);
+                  break;
+                case "show":
+                  {
+                    const data = await getLibraryMeta(item.ratingKey);
+
+                    if (!data) {
+                      setPlayButtonLoading(false);
+                      return;
+                    }
+
+                    if (data.OnDeck?.Metadata) {
+                      navigate(
+                        `/watch/${data.OnDeck.Metadata.ratingKey}${
+                          data.OnDeck.Metadata.viewOffset
+                            ? `?t=${data.OnDeck.Metadata.viewOffset}`
+                            : ""
+                        }`
+                      );
+
+                      setPlayButtonLoading(false);
+                      return;
+                    } else {
+                      if (
+                        data.Children?.size === 0 ||
+                        !data.Children?.Metadata[0]
+                      )
+                        return setPlayButtonLoading(false);
+                      // play first episode
+                      const episodes = await getLibraryMetaChildren(
+                        data.Children?.Metadata[0].ratingKey
+                      );
+                      if (episodes?.length === 0)
+                        return setPlayButtonLoading(false);
+
+                      navigate(`/watch/${episodes[0].ratingKey}`);
+                    }
+                  }
+                  break;
+                case "movie":
+                  navigate(`/watch/${item.ratingKey}`);
+                  setPlayButtonLoading(false);
+                  break;
+              }
+            }}
+          >
+            {playButtonLoading ? (
+              <CircularProgress size="small" />
+            ) : (
+              <>
+                <PlayArrow fontSize="small" /> Play
+              </>
+            )}
+          </Button>
+
+          <Button
+            variant="contained"
+            sx={{
+              width: "100%",
+              height: "100%",
+              backgroundColor: "#555555",
+              color: "#FFFFFF",
+              fontSize: "12px",
+              letterSpacing: "0.1em",
+              textTransform: "uppercase",
+              "&:hover": {
+                backgroundColor: "#333333",
+              },
+              gap: 1,
+              transition: "all 0.2s ease-in-out",
+
+              display: "flex",
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+            onClick={() => {
+              if (item.grandparentRatingKey && ["episode"].includes(item.type))
+                return setSearchParams({ mid: item.grandparentRatingKey });
+
+              setSearchParams({ mid: item.ratingKey.toString() });
+            }}
+          >
+            <InfoOutlined fontSize="small" /> More Info
+          </Button>
+
+          {/* <Button
+            variant="contained"
+            sx={{
+              width: "fit-content",
+              height: "100%",
+              backgroundColor: "#555555",
+              color: "#FFFFFF",
+              fontSize: "12px",
+              letterSpacing: "0.1em",
+              textTransform: "uppercase",
+              "&:hover": {
+                backgroundColor: "#333333",
+              },
+              gap: 1,
+              transition: "all 0.2s ease-in-out",
+
+              display: "flex",
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "center",
+
+              padding: "0px 20px",
+              minWidth: "20px",
+            }}
+            onClick={() => {}}
+          >
+            <BookmarkBorder fontSize="small" />
+          </Button> */}
+        </Box>
+    </Box>
     </Box>
   );
 }

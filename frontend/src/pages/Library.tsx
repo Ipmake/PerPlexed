@@ -51,12 +51,6 @@ export default function Library() {
                 <Grid item key={item.ratingKey} xs={3}>
                   <MovieItem
                     item={item}
-                    onClick={async () => {
-                      const res = await getLibraryMeta(item.ratingKey);
-                      if (!res) return;
-
-                      setSearchParams({ mid: item.ratingKey.toString() });
-                    }}
                   />
                 </Grid>
               ))}

@@ -488,23 +488,21 @@ function MovieItem({
           }}
         >
           {item.type === "show" && item.leafCount === item.viewedLeafCount && (
-            <Tooltip title="Watched" arrow>
+            <Tooltip title="Watched" arrow placement="top">
               <CheckCircle
                 sx={{
                   color: "#FFFFFF",
                   fontSize: "large",
-                  mb: "2px",
                 }}
               />
             </Tooltip>
           )}
           {item.type === "movie" && item?.viewCount && item.viewCount > 0 && (
-            <Tooltip title="Watched" arrow>
+            <Tooltip title="Watched" arrow placement="top">
               <CheckCircle
                 sx={{
                   color: "#FFFFFF",
                   fontSize: "large",
-                  mb: "2px",
                 }}
               />
             </Tooltip>
