@@ -34,4 +34,5 @@ a {
 .ui-video-seek-slider .hover-time .preview-screen {
     width: 240px !important;
     height: 135px !important;
+    background-color: transparent !important;
 }

@@ -1,8 +1,8 @@
 import { Box, CircularProgress, Grid, Typography } from "@mui/material";
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { getLibraryMeta, getSearch } from "../plex";
-import { MovieItem } from "../components/MetaScreen";
+import { getSearch } from "../plex";
+import MovieItem from "../components/MovieItem";
 
 export default function Search() {
   const { query } = useParams();
@@ -57,6 +57,7 @@ export default function Search() {
         py: 2,
 
         pt: 4,
+        pb: 6,
       }}
     >
       <Typography variant="h3" sx={{ mt: 2 }}>
@@ -98,10 +99,6 @@ export default function Search() {
             <Grid item key={item.ratingKey} xs={3}>
               <MovieItem
                 item={item}
-                onClick={async () => {
-                  const res = await getLibraryMeta(item.ratingKey);
-                  setSearchParams({ mid: res.ratingKey });
-                }}
               />
             </Grid>
           ))}
