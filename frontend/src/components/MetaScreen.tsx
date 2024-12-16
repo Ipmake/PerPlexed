@@ -6,13 +6,11 @@ import {
   CircularProgress,
   Collapse,
   Divider,
-  Fade,
   Grid,
   IconButton,
   LinearProgress,
   MenuItem,
   Select,
-  Tooltip,
   Typography,
 } from "@mui/material";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
@@ -28,7 +26,6 @@ import {
   Add,
   CheckCircle,
   Close,
-  InfoOutlined,
   PlayArrow,
   StarRate,
   VolumeOff,
@@ -37,6 +34,7 @@ import {
 import { durationToText } from "./MovieItemSlider";
 import ReactPlayer from "react-player";
 import { usePreviewPlayer } from "../states/PreviewPlayerState";
+import MovieItem from "./MovieItem";
 
 function MetaScreen() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -74,7 +72,7 @@ function MetaScreen() {
 
   useEffect(() => {
     if (!data) return;
-    setSelectedSeason((data.OnDeck?.Metadata?.parentIndex ?? 1) -1);
+    setSelectedSeason((data.OnDeck?.Metadata?.parentIndex ?? 1) - 1);
 
     if (
       !data?.Extras?.Metadata?.[0] ||
@@ -99,59 +97,61 @@ function MetaScreen() {
     if (languages || subTitles) return;
     if (!data) return;
 
-    switch(data.type) {
-      case "show": {
-        if (!episodes) return;
+    switch (data.type) {
+      case "show":
+        {
+          if (!episodes) return;
 
-        // get the first episode to get the languages and subtitles
-        const firstEpisode = episodes[0];
-    
-        // you need to request the full metadata for the episode to get the media info
-        getLibraryMeta(firstEpisode.ratingKey).then((res) => {
-          if (!res.Media?.[0]?.Part?.[0]?.Stream) return;
-    
+          // get the first episode to get the languages and subtitles
+          const firstEpisode = episodes[0];
+
+          // you need to request the full metadata for the episode to get the media info
+          getLibraryMeta(firstEpisode.ratingKey).then((res) => {
+            if (!res.Media?.[0]?.Part?.[0]?.Stream) return;
+
+            const uniqueLanguages = Array.from(
+              new Set(
+                res.Media?.[0]?.Part?.[0]?.Stream?.filter(
+                  (stream) => stream.streamType === 2
+                ).map((stream) => stream.language ?? stream.displayTitle)
+              )
+            );
+            const uniqueSubTitles = Array.from(
+              new Set(
+                res.Media?.[0]?.Part?.[0]?.Stream?.filter(
+                  (stream) => stream.streamType === 3
+                ).map((stream) => stream.language)
+              )
+            );
+
+            setLanguages(uniqueLanguages);
+            setSubTitles(uniqueSubTitles);
+          });
+        }
+        break;
+      case "movie":
+        {
+          if (!data.Media?.[0]?.Part?.[0]?.Stream) return;
+
           const uniqueLanguages = Array.from(
             new Set(
-              res.Media?.[0]?.Part?.[0]?.Stream?.filter(
+              data.Media?.[0]?.Part?.[0]?.Stream?.filter(
                 (stream) => stream.streamType === 2
               ).map((stream) => stream.language ?? stream.displayTitle)
             )
           );
           const uniqueSubTitles = Array.from(
             new Set(
-              res.Media?.[0]?.Part?.[0]?.Stream?.filter(
+              data.Media?.[0]?.Part?.[0]?.Stream?.filter(
                 (stream) => stream.streamType === 3
               ).map((stream) => stream.language)
             )
           );
-    
+
           setLanguages(uniqueLanguages);
           setSubTitles(uniqueSubTitles);
-        });
-      }
-      break;
-      case "movie": {
-        if (!data.Media?.[0]?.Part?.[0]?.Stream) return;
-    
-        const uniqueLanguages = Array.from(
-          new Set(
-            data.Media?.[0]?.Part?.[0]?.Stream?.filter(
-              (stream) => stream.streamType === 2
-            ).map((stream) => stream.language ?? stream.displayTitle)
-          )
-        );
-        const uniqueSubTitles = Array.from(
-          new Set(
-            data.Media?.[0]?.Part?.[0]?.Stream?.filter(
-              (stream) => stream.streamType === 3
-            ).map((stream) => stream.language)
-          )
-        );
-    
-        setLanguages(uniqueLanguages);
-        setSubTitles(uniqueSubTitles);
-      }
-      break;
+        }
+        break;
     }
   }, [data?.ratingKey, episodes]);
 
@@ -674,7 +674,9 @@ function MetaScreen() {
                             }}
                           >
                             {lang}
-                            {index + 1 === languages.slice(0, 10).length ? "" : ","}
+                            {index + 1 === languages.slice(0, 10).length
+                              ? ""
+                              : ","}
                           </Typography>
                         ))}
                       </>
@@ -705,7 +707,9 @@ function MetaScreen() {
                             }}
                           >
                             {lang}
-                            {index + 1 === subTitles.slice(0, 10).length ? "" : ","}
+                            {index + 1 === subTitles.slice(0, 10).length
+                              ? ""
+                              : ","}
                           </Typography>
                         ))}
                       </>
@@ -913,9 +917,7 @@ function MetaScreen() {
               <Grid container spacing={2}>
                 {similar.data?.slice(0, 10).map((movie) => (
                   <Grid item xs={6}>
-                    <MovieItem
-                      item={movie}
-                    />
+                    <MovieItem item={movie} />
                   </Grid>
                 ))}
               </Grid>
@@ -970,482 +972,6 @@ function MetaScreen() {
 }
 
 export default MetaScreen;
-
-export function MovieItem({
-  item,
-}: {
-  item: Plex.Metadata;
-}): JSX.Element {
-  const [, setSearchParams] = useSearchParams();
-  const navigate = useNavigate();
-
-  const [playButtonLoading, setPlayButtonLoading] = React.useState(false);
-
-
-  return (
-    <Box
-      sx={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "flex-start",
-        justifyContent: "flex-end",
-
-        width: "100%",
-        aspectRatio: "16/9",
-
-        backgroundColor: "#00000055",
-        backgroundImage: ["episode"].includes(item.type)
-          ? `url(${getTranscodeImageURL(
-              `${item.thumb}?X-Plex-Token=${localStorage.getItem(
-                "accessToken"
-              )}`,
-              380,
-              214
-            )})`
-          : `url(${getTranscodeImageURL(
-              `${item.art}?X-Plex-Token=${localStorage.getItem("accessToken")}`,
-              380,
-              214
-            )})`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        backgroundBlendMode: "darken",
-        overflow: "hidden",
-        whiteSpace: "nowrap",
-        clipPath: "inset(0px 0px -10px 0px)",
-
-        "&:hover": {
-          // backgroundColor: "#000000AA",
-          // backgroundBlendMode: "darken",
-          // backgroundSize: "cover",
-          // backgroundPosition: "center",
-
-          transform: "scale(1.15)",
-          transition: "all 0.5s ease",
-          zIndex: 1000,
-          borderRadius: "10px",
-          boxShadow: "0px 0px 20px #000000",
-
-          pb: "5px",
-        },
-
-        "&:hover > :nth-child(1)": {
-          height: "32px"
-        },
-
-        "&:hover > :nth-child(3)": {
-          opacity: 1,
-          transition: "all 0.25 ease-in"
-        },
-
-        transition: "all 0.1s ease",
-        cursor: "pointer",
-
-        position: "relative",
-        borderRadius: "5px"
-      }}
-    >
-      <Box
-        sx={{
-          width: "100%",
-          height: "auto",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "flex-start",
-          justifyContent: "flex-end",
-          padding: "10px",
-          userSelect: "none",
-          transition: "all 0.5s ease",
-          transform: "translateX(0%)",
-          transformStyle: "preserve-3d"
-        }}
-      >
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "flex-start",
-            transition: "all 0.5s ease",
-          }}
-        >
-          <img
-            src="/plexIcon.png"
-            alt=""
-            height="23"
-            style={{
-              aspectRatio: 1,
-              borderRadius: 8,
-            }}
-          />
-          <Typography
-            sx={{
-              fontSize: "14px",
-              fontWeight: "900",
-              letterSpacing: "0.1em",
-              textShadow: "2px 2px 0px #232529",
-              ml: 1,
-              color: "#e6a104",
-              textTransform: "uppercase",
-              mt: "4px"
-            }}
-          >
-            {item.type}
-          </Typography>
-        </Box>
-        <Typography
-          sx={{
-            fontSize: "1.5rem",
-            fontWeight: "bold",
-            color: "#FFFFFF",
-            textShadow: "0px 0px 10px #000000",
-
-            "@media (max-width: 2000px)": {
-              fontSize: "1.2rem",
-            },
-
-            textOverflow: "ellipsis",
-            overflow: "hidden",
-            maxLines: 1,
-            maxInlineSize: "100%",
-          }}
-        >
-          {item.title}
-        </Typography>
-        {["episode"].includes(item.type) && item.grandparentTitle && (
-          <Typography
-            onClick={(e => {
-              e.stopPropagation();
-              if(!item.grandparentKey?.toString()) return;
-              setSearchParams({
-                mid: (item.grandparentRatingKey as string).toString(),
-              })
-            })}
-            sx={{
-              fontSize: "1rem",
-              fontWeight: "normal",
-              color: "#FFFFFF",
-              opacity: 0.7,
-              mt: -0.5,
-              mb: 0.5,
-
-              "&:hover": {
-                opacity: 1,
-              },
-
-              textOverflow: "ellipsis",
-              overflow: "hidden",
-              maxLines: 1,
-              maxInlineSize: "100%",
-            }}
-          >
-            {item.grandparentTitle}
-          </Typography>
-        )}
-        <Typography
-          sx={{
-            fontSize: "medium",
-            fontWeight: "light",
-            color: "#FFFFFF",
-            textShadow: "0px 0px 10px #000000",
-            mt: -0.5,
-
-            textOverflow: "ellipsis",
-            overflow: "hidden",
-            maxLines: 1,
-            maxInlineSize: "100%",
-          }}
-        >
-          {item.tagline}
-        </Typography>
-
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "flex-start",
-            mt: 0,
-            gap: 1,
-          }}
-        >
-          {item.type === "show" && item.leafCount === item.viewedLeafCount && (
-            <CheckCircle
-              sx={{
-                color: "#FFFFFF",
-                fontSize: "large",
-              }}
-            />
-          )}
-          {item.type === "movie" && item?.viewCount && item.viewCount > 0 && (
-            <CheckCircle
-              sx={{
-                color: "#FFFFFF",
-                fontSize: "large",
-              }}
-            />
-          )}
-          {item.year && (
-            <Typography
-              sx={{
-                fontSize: "medium",
-                fontWeight: "light",
-                color: "#FFFFFF",
-                textShadow: "0px 0px 10px #000000",
-              }}
-            >
-              {item.year}
-            </Typography>
-          )}
-          {item.rating && (
-            <Typography
-              sx={{
-                fontSize: "medium",
-                fontWeight: "light",
-                color: "#FFFFFF",
-                textShadow: "0px 0px 10px #000000",
-                ml: 1,
-              }}
-            >
-              {item.rating}
-            </Typography>
-          )}
-          {item.contentRating && (
-            <Typography
-              sx={{
-                fontSize: "medium",
-                fontWeight: "light",
-                color: "#FFFFFF",
-                textShadow: "0px 0px 10px #000000",
-                ml: 1,
-                border: "1px dotted #AAAAAA",
-                borderRadius: "5px",
-                px: 1,
-                py: -0.5,
-              }}
-            >
-              {item.contentRating}
-            </Typography>
-          )}
-          {item.type === "episode" && item.index && (
-            <Typography
-              sx={{
-                fontSize: "medium",
-                fontWeight: "light",
-                color: "#FFFFFF",
-                textShadow: "0px 0px 10px #000000",
-                ml: 1,
-              }}
-            >
-              S{item.parentIndex} E{item.index}
-            </Typography>
-          )}
-          {item.duration && ["episode", "movie"].includes(item.type) && (
-            <Typography
-              sx={{
-                fontSize: "medium",
-                fontWeight: "light",
-                color: "#FFFFFF",
-                textShadow: "0px 0px 10px #000000",
-                ml: 1,
-              }}
-            >
-              {durationToText(item.duration)}
-            </Typography>
-          )}
-          {item.type === "show" && item.leafCount && item.childCount && (
-            <Typography
-              sx={{
-                fontSize: "medium",
-                fontWeight: "light",
-                color: "#FFFFFF",
-                textShadow: "0px 0px 10px #000000",
-                ml: 1,
-              }}
-            >
-              {item.childCount > 1
-                ? `${item.childCount} Seasons`
-                : `${item.leafCount} Episode${item.leafCount > 1 ? "s" : ""}`}
-            </Typography>
-          )}
-        </Box>
-      </Box>
-      <Box
-        sx={{
-          width: "100%",
-          height: "0px", // 32px
-          overflow: "hidden",
-
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          transition: "all 0.25s ease-in",
-        }}
-      >
-        <Box
-          sx={{
-            width: "100%",
-            display: "flex",
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 1,
-            padding: "2px 10px",
-          }}
-        >
-          <Button
-            variant="contained"
-            sx={{
-              width: "100%",
-              height: "100%",
-              backgroundColor: "#CCCCCC",
-              color: "#000000",
-              letterSpacing: "0.1em",
-              textTransform: "uppercase",
-              "&:hover": {
-                backgroundColor: "primary.main",
-              },
-              gap: 1,
-              transition: "all 0.2s ease-in-out",
-              padding: "0px 10px",
-              fontSize: "12px",
-              display: "flex",
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-            disabled={playButtonLoading}
-            onClick={async () => {
-              setPlayButtonLoading(true);
-
-              switch (item.type) {
-                case "episode":
-                  navigate(
-                    `/watch/${item.ratingKey}${
-                      item.viewOffset ? `?t=${item.viewOffset}` : ""
-                    }`
-                  );
-
-                  setPlayButtonLoading(false);
-                  break;
-                case "show":
-                  {
-                    const data = await getLibraryMeta(item.ratingKey);
-
-                    if (!data) {
-                      setPlayButtonLoading(false);
-                      return;
-                    }
-
-                    if (data.OnDeck?.Metadata) {
-                      navigate(
-                        `/watch/${data.OnDeck.Metadata.ratingKey}${
-                          data.OnDeck.Metadata.viewOffset
-                            ? `?t=${data.OnDeck.Metadata.viewOffset}`
-                            : ""
-                        }`
-                      );
-
-                      setPlayButtonLoading(false);
-                      return;
-                    } else {
-                      if (
-                        data.Children?.size === 0 ||
-                        !data.Children?.Metadata[0]
-                      )
-                        return setPlayButtonLoading(false);
-                      // play first episode
-                      const episodes = await getLibraryMetaChildren(
-                        data.Children?.Metadata[0].ratingKey
-                      );
-                      if (episodes?.length === 0)
-                        return setPlayButtonLoading(false);
-
-                      navigate(`/watch/${episodes[0].ratingKey}`);
-                    }
-                  }
-                  break;
-                case "movie":
-                  navigate(`/watch/${item.ratingKey}`);
-                  setPlayButtonLoading(false);
-                  break;
-              }
-            }}
-          >
-            {playButtonLoading ? (
-              <CircularProgress size="small" />
-            ) : (
-              <>
-                <PlayArrow fontSize="small" /> Play
-              </>
-            )}
-          </Button>
-
-          <Button
-            variant="contained"
-            sx={{
-              width: "100%",
-              height: "100%",
-              backgroundColor: "#555555",
-              color: "#FFFFFF",
-              fontSize: "12px",
-              letterSpacing: "0.1em",
-              textTransform: "uppercase",
-              "&:hover": {
-                backgroundColor: "#333333",
-              },
-              gap: 1,
-              transition: "all 0.2s ease-in-out",
-
-              display: "flex",
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-            onClick={() => {
-              if (item.grandparentRatingKey && ["episode"].includes(item.type))
-                return setSearchParams({ mid: item.grandparentRatingKey });
-
-              setSearchParams({ mid: item.ratingKey.toString() });
-            }}
-          >
-            <InfoOutlined fontSize="small" /> More Info
-          </Button>
-
-          {/* <Button
-            variant="contained"
-            sx={{
-              width: "fit-content",
-              height: "100%",
-              backgroundColor: "#555555",
-              color: "#FFFFFF",
-              fontSize: "12px",
-              letterSpacing: "0.1em",
-              textTransform: "uppercase",
-              "&:hover": {
-                backgroundColor: "#333333",
-              },
-              gap: 1,
-              transition: "all 0.2s ease-in-out",
-
-              display: "flex",
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "center",
-
-              padding: "0px 20px",
-              minWidth: "20px",
-            }}
-            onClick={() => {}}
-          >
-            <BookmarkBorder fontSize="small" />
-          </Button> */}
-        </Box>
-    </Box>
-    </Box>
-  );
-}
 
 function EpisodeItem({
   item,
