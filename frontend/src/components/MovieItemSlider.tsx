@@ -275,8 +275,9 @@ export function durationToText(duration: number): string {
   const minutes = (duration / 1000 / 60 / 60 - hours) * 60;
 
   return (
-    `${hours}h` + (Math.floor(minutes) > 0 ? ` ${Math.floor(minutes)}m` : "")
-  );
+    (hours > 0 ? `${hours}h` : "") +
+    (Math.floor(minutes) > 0 ? ` ${Math.floor(minutes)}m` : "")
+  ).trim();
 }
 
 export const shuffleArray = (array: any[]) => {

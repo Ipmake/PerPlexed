@@ -4,7 +4,7 @@ import { queryBuilder } from "../plex/QuickFunctions";
 import { useSearchParams } from "react-router-dom";
 import { getAccessToken, getPin } from "../plex";
 import axios from "axios";
-import { getBackendURL, ProxiedRequest } from "../backendURL";
+import { ProxiedRequest } from "../backendURL";
 import { XMLParser } from "fast-xml-parser";
 
 export default function Login() {
@@ -36,15 +36,15 @@ export default function Login() {
           console.log("1", res);
   
           // check token validity against the server
-          const tokenCheck = await ProxiedRequest(`/?${queryBuilder({ "X-Plex-Token": res.authToken })}`, "GET", {})
+          // const tokenCheck = await ProxiedRequest(`/?${queryBuilder({ "X-Plex-Token": res.authToken })}`, "GET", {})
   
-          if (tokenCheck.status === 200) {
-            localStorage.setItem("accessToken", res.authToken);
-            localStorage.setItem("accAccessToken", res.authToken);
-            window.location.href = "/";
-          }
+          // if (tokenCheck.status === 200) {
+          //   localStorage.setItem("accessToken", res.authToken);
+          //   localStorage.setItem("accAccessToken", res.authToken);
+          //   window.location.href = "/";
+          // }
   
-          console.log("2", tokenCheck);
+          // console.log("2", tokenCheck);
   
           const serverIdentity = await ProxiedRequest("/identity", "GET", {
             "X-Plex-Token": res.authToken,
@@ -65,10 +65,15 @@ export default function Login() {
   
           // try getting a shared server
           const sharedServersXML = await axios.get(`https://plex.tv/api/resources?${queryBuilder({ "X-Plex-Token": res.authToken })}`);
-  
+
+          
           const sharedServers = parser.parse(sharedServersXML.data)
-  
-          const targetServer = sharedServers.MediaContainer.Device.find((d: any) => d.clientIdentifier === serverID);
+          console.log("4", sharedServers);
+          
+          let targetServer;
+
+          if(sharedServers.MediaContainer.size === 1) targetServer = sharedServers.MediaContainer.Device;
+          else targetServer = sharedServers.MediaContainer.Device.find((server: any) => server.clientIdentifier === serverID);
   
           if (!targetServer) return setError("You do not have access to this server.");
   

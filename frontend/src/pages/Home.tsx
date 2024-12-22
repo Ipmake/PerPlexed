@@ -94,7 +94,7 @@ export default function Home() {
           {libraries
             ?.filter((e) => ["movie", "show"].includes(e.type || ""))
             .map((library) => (
-              <Grid item xs={12} sm={6} md={3} lg={2} key={library.key}>
+              <Grid item xs={12} sm={6} md={4} lg={3} xl={3} key={library.key}>
                 <Box
                   sx={{
                     width: "100%",
@@ -166,6 +166,7 @@ export default function Home() {
                 title={item.title}
                 libraryID={item.libraryID}
                 dir={item.dir}
+                shuffle={true}
                 link={item.link}
               />
             ))}

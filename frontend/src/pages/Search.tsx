@@ -16,31 +16,35 @@ export default function Search() {
     setResults(null);
     setDirectories(null);
 
-    if (!query) return setResults([]);
+    if (!query) return;
 
-    getSearch(query).then((res) => {
-      if (!res) return setResults([]);
-      setResults(
-        res
-          .filter(
-            (item) =>
-              item.Metadata && ["movie", "show"].includes(item.Metadata.type)
-          )
-          .map((item) => item.Metadata)
-          .filter(
-            (metadata): metadata is Plex.Metadata => metadata !== undefined
-          )
-      );
+    const delayDebounceFn = setTimeout(() => {
+      getSearch(query).then((res) => {
+        if (!res) return setResults([]);
+        setResults(
+          res
+            .filter(
+              (item) =>
+                item.Metadata && ["movie", "show"].includes(item.Metadata.type)
+            )
+            .map((item) => item.Metadata)
+            .filter(
+              (metadata): metadata is Plex.Metadata => metadata !== undefined
+            )
+        );
 
-      setDirectories(
-        res
-          .filter((item) => item.Directory)
-          .map((item) => item.Directory)
-          .filter(
-            (directory): directory is Plex.Directory => directory !== undefined
-          )
-      );
-    });
+        setDirectories(
+          res
+            .filter((item) => item.Directory)
+            .map((item) => item.Directory)
+            .filter(
+              (directory): directory is Plex.Directory => directory !== undefined
+            )
+        );
+      });
+    }, 500); // Adjust the delay as needed
+
+    return () => clearTimeout(delayDebounceFn);
   }, [query]);
 
   return (
@@ -96,7 +100,7 @@ export default function Search() {
 
         {results &&
           results.map((item) => (
-            <Grid item key={item.ratingKey} xs={3}>
+            <Grid item key={item.ratingKey} xl={3} lg={4} md={6} sm={12} xs={12}>
               <MovieItem
                 item={item}
               />

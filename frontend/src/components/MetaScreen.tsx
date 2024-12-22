@@ -552,7 +552,7 @@ function MetaScreen() {
                   }}
                   onClick={async () => {
                     if (data?.type === "movie")
-                      navigate(`/watch/${data?.ratingKey}`);
+                      navigate(`/watch/${data?.ratingKey}${data?.viewOffset ? `?t=${data?.viewOffset}` : ""}`);
 
                     if (data?.type === "show") {
                       if (data?.OnDeck && data?.OnDeck.Metadata) {

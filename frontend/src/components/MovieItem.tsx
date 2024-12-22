@@ -34,13 +34,13 @@ function MovieItem({
                 `${item.thumb}?X-Plex-Token=${localStorage.getItem(
                   "accessToken"
                 )}`,
-                300,
-                170
+                1200,
+                680
               )})`
             : `url(${getTranscodeImageURL(
                 `${item.art}?X-Plex-Token=${localStorage.getItem("accessToken")}`,
-                300,
-                170
+                1200,
+                680
               )})`,
           backgroundSize: "cover",
           backgroundPosition: "center",
@@ -366,6 +366,7 @@ function MovieItem({
                 setPlayButtonLoading(true);
   
                 switch (item.type) {
+                  case "movie":
                   case "episode":
                     navigate(
                       `/watch/${item.ratingKey}${
@@ -411,10 +412,6 @@ function MovieItem({
                         navigate(`/watch/${episodes[0].ratingKey}`);
                       }
                     }
-                    break;
-                  case "movie":
-                    navigate(`/watch/${item.ratingKey}`);
-                    setPlayButtonLoading(false);
                     break;
                 }
               }}
