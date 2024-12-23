@@ -1,11 +1,13 @@
 import axios, { AxiosRequestConfig } from 'axios';
 import express from 'express';
+import https from 'https';
 
 /* 
  * ENVIRONMENT VARIABLES
     *
     * PLEX_SERVER: The URL of the Plex server to proxy requests to
     * DISABLE_PROXY: If set to true, the proxy will be disabled and all requests go directly to the Plex server from the frontend (NOT RECOMMENDED)
+    * DISABLE_TLS_VERIFY: If set to true, the proxy will not check any https ssl certificates
 **/
 
 const app = express();
@@ -57,6 +59,11 @@ app.post('/proxy', (req, res) => {
             'X-Fowarded-For': ip,
         },
         data,
+        ...(process.env.DISABLE_TLS_VERIFY && {
+            httpsAgent: new https.Agent({
+                rejectUnauthorized: false
+            })
+        })
     };
 
     console.log(`PROXY [${new Date().toISOString()}] [${ip}] [${method}] [${url}]`)
