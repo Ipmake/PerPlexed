@@ -59,7 +59,7 @@ app.post('/proxy', (req, res) => {
             'X-Fowarded-For': ip,
         },
         data,
-        ...(process.env.DISABLE_TLS_VERIFY && {
+        ...(process.env.DISABLE_TLS_VERIFY === "true" && {
             httpsAgent: new https.Agent({
                 rejectUnauthorized: false
             })
