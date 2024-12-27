@@ -27,11 +27,11 @@ docker run --name perplexed -p 3000:3000 -e PLEX_SERVER=http://your-plex-server:
 ```
 
 #### Environment Variables
-| Name               | Type       | Required | Description                                    |
-|--------------------|------------|----------|------------------------------------------------|
-| PLEX_SERVER        | string     | Yes      | The url to your plex server starting with http |
-| DISABLE_PROXY      | true/false | No       | Disable the PerPlexed proxy (Not Recommended)  |
-| DISABLE_TLS_VERIFY | true/false | No       | Disable TLS verification on https plex servers |
+| Name               | Type       | Required | Description                                       |
+|--------------------|------------|----------|---------------------------------------------------|
+| PLEX_SERVER        | string     | Yes      | The url to your plex server starting with http(s) |
+| DISABLE_PROXY      | true/false | No       | Disable the PerPlexed proxy (Not Recommended)     |
+| DISABLE_TLS_VERIFY | true/false | No       | Disable TLS verification on https plex servers    |
 
 ## Contributing
 Pull requests are welcome for any feature or bug fix. For major changes, please open an issue first to discuss what you would like to change.
