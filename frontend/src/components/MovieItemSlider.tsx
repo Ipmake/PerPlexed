@@ -1,15 +1,7 @@
-import {
-  Box,
-  Typography,
-} from "@mui/material";
+import { Box, Typography } from "@mui/material";
 import React from "react";
-import {
-  getLibraryMedia,
-} from "../plex";
-import {
-  ArrowBackIos,
-  ArrowForwardIos,
-} from "@mui/icons-material";
+import { getLibraryMedia } from "../plex";
+import { ArrowBackIos, ArrowForwardIos } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import MovieItem from "./MovieItem";
 

@@ -1,14 +1,15 @@
 import React from "react";
 import { getLibraryMedia, getLibrarySecondary } from "../../plex";
-import { Box, Button, CircularProgress, Typography } from "@mui/material";
-import { InfoOutlined, PlayArrow } from "@mui/icons-material";
-import MovieItemSlider, { shuffleArray } from "../../components/MovieItemSlider";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Box, CircularProgress } from "@mui/material";
+import MovieItemSlider, {
+  shuffleArray,
+} from "../../components/MovieItemSlider";
 import HeroDisplay from "../../components/HeroDisplay";
 
 function Movie({ Library }: { Library: Plex.LibraryDetails }) {
-  const [featuredItem, setFeaturedItem] =
-    React.useState<Plex.Metadata | null>(null);
+  const [featuredItem, setFeaturedItem] = React.useState<Plex.Metadata | null>(
+    null
+  );
 
   const [genres, setGenres] = React.useState<Plex.Directory[]>([]);
 

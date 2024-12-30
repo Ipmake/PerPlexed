@@ -153,6 +153,7 @@ function MetaScreen() {
         }
         break;
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data?.ratingKey, episodes]);
 
   useEffect(() => {
@@ -167,6 +168,7 @@ function MetaScreen() {
         setEpisodes(res);
       });
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedSeason, data?.ratingKey]);
 
   if (!searchParams.has("mid")) return <></>;
@@ -552,7 +554,11 @@ function MetaScreen() {
                   }}
                   onClick={async () => {
                     if (data?.type === "movie")
-                      navigate(`/watch/${data?.ratingKey}${data?.viewOffset ? `?t=${data?.viewOffset}` : ""}`);
+                      navigate(
+                        `/watch/${data?.ratingKey}${
+                          data?.viewOffset ? `?t=${data?.viewOffset}` : ""
+                        }`
+                      );
 
                     if (data?.type === "show") {
                       if (data?.OnDeck && data?.OnDeck.Metadata) {

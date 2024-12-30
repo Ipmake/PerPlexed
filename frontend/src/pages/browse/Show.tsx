@@ -1,15 +1,9 @@
 import React from "react";
-import {
-  getLibraryMedia,
-  getLibraryMeta,
-  getLibrarySecondary,
-} from "../../plex";
-import { Box, Button, CircularProgress, Typography } from "@mui/material";
-import { InfoOutlined, PlayArrow } from "@mui/icons-material";
+import { getLibraryMedia, getLibrarySecondary } from "../../plex";
+import { Box, CircularProgress } from "@mui/material";
 import MovieItemSlider, {
   shuffleArray,
 } from "../../components/MovieItemSlider";
-import { useNavigate, useSearchParams } from "react-router-dom";
 import HeroDisplay from "../../components/HeroDisplay";
 
 function Show({ Library }: { Library: Plex.LibraryDetails }) {

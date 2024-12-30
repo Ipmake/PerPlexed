@@ -1,4 +1,10 @@
-import { Alert, Box, CircularProgress, Collapse, Typography } from "@mui/material";
+import {
+  Alert,
+  Box,
+  CircularProgress,
+  Collapse,
+  Typography,
+} from "@mui/material";
 import React, { useEffect } from "react";
 import { queryBuilder } from "../plex/QuickFunctions";
 import { useSearchParams } from "react-router-dom";
@@ -31,58 +37,71 @@ export default function Login() {
         try {
           const res = await getAccessToken(query.get("pinID") as string);
 
-          if (!res.authToken) return setError("Failed to log in. Please try again.");
-  
+          if (!res.authToken)
+            return setError("Failed to log in. Please try again.");
+
           console.log("1", res);
-  
+
           // check token validity against the server
           // const tokenCheck = await ProxiedRequest(`/?${queryBuilder({ "X-Plex-Token": res.authToken })}`, "GET", {})
-  
+
           // if (tokenCheck.status === 200) {
           //   localStorage.setItem("accessToken", res.authToken);
           //   localStorage.setItem("accAccessToken", res.authToken);
           //   window.location.href = "/";
           // }
-  
+
           // console.log("2", tokenCheck);
-  
+
           const serverIdentity = await ProxiedRequest("/identity", "GET", {
             "X-Plex-Token": res.authToken,
           });
-  
+
           console.log("3", serverIdentity);
-  
-          if(!serverIdentity || !serverIdentity.data.MediaContainer) return setError(`Failed to log in: ${serverIdentity.data.errors[0].message || "Unknown error"}`);
-  
+
+          if (!serverIdentity || !serverIdentity.data.MediaContainer)
+            return setError(
+              `Failed to log in: ${
+                serverIdentity.data.errors[0].message || "Unknown error"
+              }`
+            );
+
           const serverID = serverIdentity.data.MediaContainer.machineIdentifier;
-  
+
           const parser = new XMLParser({
             attributeNamePrefix: "",
             textNodeName: "value",
             ignoreAttributes: false,
             parseAttributeValue: true,
           });
-  
-          // try getting a shared server
-          const sharedServersXML = await axios.get(`https://plex.tv/api/resources?${queryBuilder({ "X-Plex-Token": res.authToken })}`);
 
-          
-          const sharedServers = parser.parse(sharedServersXML.data)
+          // try getting a shared server
+          const sharedServersXML = await axios.get(
+            `https://plex.tv/api/resources?${queryBuilder({
+              "X-Plex-Token": res.authToken,
+            })}`
+          );
+
+          const sharedServers = parser.parse(sharedServersXML.data);
           console.log("4", sharedServers);
-          
+
           let targetServer;
 
-          if(sharedServers.MediaContainer.size === 1) targetServer = sharedServers.MediaContainer.Device;
-          else targetServer = sharedServers.MediaContainer.Device.find((server: any) => server.clientIdentifier === serverID);
-  
-          if (!targetServer) return setError("You do not have access to this server.");
-  
+          if (sharedServers.MediaContainer.size === 1)
+            targetServer = sharedServers.MediaContainer.Device;
+          else
+            targetServer = sharedServers.MediaContainer.Device.find(
+              (server: any) => server.clientIdentifier === serverID
+            );
+
+          if (!targetServer)
+            return setError("You do not have access to this server.");
+
           localStorage.setItem("accessToken", targetServer.accessToken);
           localStorage.setItem("accAccessToken", res.authToken);
-  
+
           window.location.href = "/";
-        }
-        catch (e) {
+        } catch (e) {
           console.log(e);
           setError("Failed to log in. Please try again.");
         }
@@ -101,9 +120,7 @@ export default function Login() {
       }}
     >
       <Collapse in={Boolean(error)}>
-        <Alert severity="error">
-          {error}
-        </Alert>
+        <Alert severity="error">{error}</Alert>
       </Collapse>
       {!error && (
         <>
