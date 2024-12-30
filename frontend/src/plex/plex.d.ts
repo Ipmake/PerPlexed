@@ -244,6 +244,12 @@ declare namespace Plex {
             type: string;
             url: string;
         }[]
+        UltraBlurColors?: {
+            topLeft: string;
+            topRight: string;
+            bottomLeft: string;
+            bottomRight: string;
+        }
         Related?: {
             Hub?: Hub[];
         }
