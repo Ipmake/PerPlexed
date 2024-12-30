@@ -66,6 +66,7 @@ function Appbar() {
         transition: "all 0.2s ease-in-out",
 
         bgcolor: scrollAtTop ? "#00000000" : `#000000AA`,
+        backdropFilter: scrollAtTop ? "blur(0px)" : "blur(10px)",
         boxShadow: scrollAtTop ? "none" : "0px 0px 10px 0px #000000AA",
 
         borderBottomLeftRadius: "10px",

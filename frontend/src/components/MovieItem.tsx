@@ -1,4 +1,4 @@
-import { CheckCircle, PlayArrow, InfoOutlined } from "@mui/icons-material";
+import { CheckCircle, PlayArrow, InfoOutlined, BookmarkBorder } from "@mui/icons-material";
 import {
   Box,
   Typography,
@@ -442,7 +442,7 @@ function MovieItem({
           <Button
             variant="contained"
             sx={{
-              width: "100%",
+              width: "fit-content",
               height: "100%",
               backgroundColor: "#555555",
               color: "#FFFFFF",
@@ -467,10 +467,10 @@ function MovieItem({
               setSearchParams({ mid: item.ratingKey.toString() });
             }}
           >
-            <InfoOutlined fontSize="small" /> More Info
+            <InfoOutlined fontSize="small" />
           </Button>
 
-          {/* <Button
+          <Button
               variant="contained"
               sx={{
                 width: "fit-content",
@@ -497,7 +497,7 @@ function MovieItem({
               onClick={() => {}}
             >
               <BookmarkBorder fontSize="small" />
-            </Button> */}
+            </Button>
         </Box>
       </Box>
       {/* <Box sx={{
