@@ -239,6 +239,27 @@ declare namespace Plex {
             size: number;
             Metadata: Metadata[];
         }
+        Image?: {
+            alt: string;
+            type: string;
+            url: string;
+        }[]
+        Related?: {
+            Hub?: Hub[];
+        }
+    }
+
+    interface Hub {
+        hubKey: string;
+        key: string;
+        title: string;  
+        type: LibaryType;
+        hubIdentifier: string;
+        context: string;
+        size: number;
+        more: boolean;
+        style: "shelf";
+        Metadata: Metadata[];
     }
 
     interface Chapter {
