@@ -21,9 +21,11 @@ import {
   getSimilar,
   getTranscodeImageURL,
 } from "../plex";
-import { useQuery } from "react-query";
+import { useQuery, UseQueryResult } from "react-query";
 import {
   Add,
+  Bookmark,
+  BookmarkBorder,
   CheckCircle,
   Close,
   PlayArrow,
@@ -35,6 +37,8 @@ import { durationToText } from "./MovieItemSlider";
 import ReactPlayer from "react-player";
 import { usePreviewPlayer } from "../states/PreviewPlayerState";
 import MovieItem from "./MovieItem";
+import { useBigReader } from "./BigReader";
+import { useWatchListCache } from "../states/WatchListCache";
 
 function MetaScreen() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -52,6 +56,8 @@ function MetaScreen() {
     async () => await getSimilar(searchParams.get("mid") as string)
   );
 
+  const [page, setPage] = useState<number>(0);
+
   const [selectedSeason, setSelectedSeason] = useState<number>(0);
   const [episodes, setEpisodes] = useState<Plex.Metadata[] | null>();
 
@@ -61,6 +67,8 @@ function MetaScreen() {
   const [previewVidURL, setPreviewVidURL] = useState<string | null>(null);
   const [previewVidPlaying, setPreviewVidPlaying] = useState<boolean>(false);
 
+  const WatchList = useWatchListCache();
+
   useEffect(() => {
     setEpisodes(null);
     setSelectedSeason(0);
@@ -68,6 +76,7 @@ function MetaScreen() {
     setSubTitles(null);
     setPreviewVidURL(null);
     setPreviewVidPlaying(false);
+    setPage(0);
   }, [data?.ratingKey]);
 
   useEffect(() => {
@@ -153,7 +162,7 @@ function MetaScreen() {
         }
         break;
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data?.ratingKey, episodes]);
 
   useEffect(() => {
@@ -168,7 +177,7 @@ function MetaScreen() {
         setEpisodes(res);
       });
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedSeason, data?.ratingKey]);
 
   if (!searchParams.has("mid")) return <></>;
@@ -601,28 +610,20 @@ function MetaScreen() {
                     "&:hover": {
                       backgroundColor: "primary.main",
                     },
-                    cursor: "not-allowed",
                   }}
-                  title="Not yet Implemented"
-                >
-                  <Add fontSize="medium" />
-                </IconButton>
-                <IconButton
-                  sx={{
-                    backgroundColor: "#202020",
-                    color: "#FFFFFF",
-                    fontWeight: "bold",
-                    letterSpacing: "0.1em",
-                    textTransform: "uppercase",
-                    border: "1px solid #FFFFFF",
-                    "&:hover": {
-                      backgroundColor: "primary.main",
-                    },
-                    cursor: "not-allowed",
+                  onClick={() => {
+                    if (!data) return;
+                    if(WatchList.isOnWatchList(data?.guid as string)) 
+                      WatchList.removeItem(data?.guid as string);
+                    else 
+                      WatchList.addItem(data);
                   }}
-                  title="Not yet Implemented"
                 >
-                  <StarRate fontSize="medium" />
+                  {WatchList.isOnWatchList(data?.guid as string) ? (
+                    <Bookmark fontSize="medium" />
+                  ) : (
+                    <BookmarkBorder fontSize="medium" />
+                  )}
                 </IconButton>
               </Box>
 
@@ -736,8 +737,13 @@ function MetaScreen() {
                   WebkitLineClamp: 5,
                   WebkitBoxOrient: "vertical",
                   maxInlineSize: "100%",
+                  userSelect: "none",
+                  cursor: "zoom-in",
                 }}
-                title={data?.summary}
+                onClick={() => {
+                  if(!data?.summary) return;
+                  useBigReader.getState().setBigReader(data?.summary);
+                }}
               >
                 {data?.summary}
               </Typography>
@@ -748,229 +754,78 @@ function MetaScreen() {
         <Box
           sx={{
             display: "flex",
-            flexDirection: "row",
+            flexDirection: "column",
             alignItems: "flex-start",
-            justifyContent: "center",
+            justifyContent: "flex-start",
             width: "100%",
-            padding: "0 3%",
-            gap: "3%",
+            px: "3%",
             mt: "3vh",
+            zIndex: 2,
           }}
         >
           <Box
             sx={{
-              width: "30%",
-              zIndex: 1,
+              width: "100%",
+              display: "flex",
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "flex-start",
+              gap: 4,
+              mb: "10px",
             }}
           >
-            <Typography
-              sx={{
-                fontSize: "1.5rem",
-                fontWeight: "bold",
-                textTransform: "uppercase",
-                letterSpacing: "0.1em",
-                mb: 1,
+            <TabButton
+              onClick={() => {
+                setPage(0);
               }}
-            >
-              Cast & Crew
-            </Typography>
+              selected={page === 0}
+              text={data?.type === "movie" ? "Similar Movies" : "Episodes"}
+            />
 
-            <Divider sx={{ mb: 2 }} />
+            {data?.type !== "movie" && (
+              <TabButton
+                onClick={() => {
+                  setPage(1);
+                }}
+                selected={page === 1}
+                text="Recommendations"
+              />
+            )}
 
-            <Grid container spacing={2}>
-              {data?.Role?.map((role) => (
-                <Grid item xs={6}>
-                  <Link
-                    to={`/library/${data?.librarySectionID}/dir/actor/${role.id}`}
-                  >
-                    <Box
-                      sx={{
-                        display: "flex",
-                        flexDirection: "row",
-                        alignItems: "center",
-                        justifyContent: "flex-start",
-                        gap: 1,
+            <TabButton
+              onClick={() => {
+                setPage(2);
+              }}
+              selected={page === 2}
+              text="Info"
+            />
 
-                        width: "100%",
-                        height: "100%",
-
-                        userSelect: "none",
-                        cursor: "pointer",
-
-                        "&:hover": {
-                          transition: "all 0.2s ease-in-out",
-                          transform: "scale(1.05)",
-                        },
-                        transition: "all 0.5s ease-in-out",
-                      }}
-                    >
-                      <Avatar
-                        src={role.thumb}
-                        alt=""
-                        sx={{
-                          display: "flex",
-                          width: "35%",
-                          height: "auto",
-                          aspectRatio: "1/1",
-
-                          borderBottomRightRadius: "0%",
-                          borderTopRightRadius: "0%",
-                        }}
-                      />
-
-                      <Box
-                        sx={{
-                          display: "flex",
-                          flexDirection: "column",
-                          alignItems: "flex-start",
-                          justifyContent: "flex-start",
-                        }}
-                      >
-                        <Typography
-                          sx={{
-                            fontSize: "0.7rem",
-                            fontWeight: "bold",
-                            letterSpacing: "0.1em",
-                          }}
-                        >
-                          {role.tag}
-                        </Typography>
-
-                        <Typography
-                          sx={{
-                            fontSize: "0.6rem",
-                            fontWeight: "normal",
-                            letterSpacing: "0.1em",
-                          }}
-                        >
-                          {role.role}
-                        </Typography>
-                      </Box>
-                    </Box>
-                  </Link>
-                </Grid>
-              ))}
-            </Grid>
+            {data?.type === "show" &&
+              data?.Children &&
+              data?.Children.size > 1 && (
+                <Select
+                  sx={{
+                    ml: "auto",
+                    opacity: page === 0 ? 1 : 0,
+                    transition: "all 0.5s ease",
+                  }}
+                  size="small"
+                  value={selectedSeason}
+                  onChange={(e) => {
+                    setSelectedSeason(e.target.value as number);
+                  }}
+                >
+                  {data?.type === "show" &&
+                    data?.Children?.Metadata?.map((season, index) => (
+                      <MenuItem value={index}>{season.title}</MenuItem>
+                    ))}
+                </Select>
+              )}
           </Box>
 
-          <Box
-            sx={{
-              width: "70%",
-              zIndex: 1,
-            }}
-          >
-            <Box
-              sx={{
-                width: "100%",
-                display: "flex",
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "space-between",
-              }}
-            >
-              <Typography
-                sx={{
-                  fontSize: "1.5rem",
-                  fontWeight: "bold",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.1em",
-                  mb: 1,
-                }}
-              >
-                {data?.type === "movie" ? "Similar Movies" : "Episodes"}
-              </Typography>
+          <Divider sx={{ mb: 2, width: "100%" }} />
 
-              {data?.type === "show" &&
-                data?.Children &&
-                data?.Children.size > 1 && (
-                  <Select
-                    sx={{
-                      mb: 1,
-                    }}
-                    size="small"
-                    value={selectedSeason}
-                    onChange={(e) => {
-                      setSelectedSeason(e.target.value as number);
-                    }}
-                  >
-                    {data?.type === "show" &&
-                      data?.Children?.Metadata?.map((season, index) => (
-                        <MenuItem value={index}>{season.title}</MenuItem>
-                      ))}
-                  </Select>
-                )}
-            </Box>
-
-            <Divider sx={{ mb: 2 }} />
-
-            {data?.type === "movie" && similar.status === "loading" && (
-              <Box
-                sx={{
-                  width: "100%",
-                  height: "100%",
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "flex-start",
-                  mt: 10,
-                }}
-              >
-                <CircularProgress />
-              </Box>
-            )}
-
-            {data?.type === "movie" && similar.status === "success" && (
-              <Grid container spacing={2}>
-                {similar.data?.slice(0, 10).map((movie) => (
-                  <Grid item xs={6}>
-                    <MovieItem item={movie} />
-                  </Grid>
-                ))}
-              </Grid>
-            )}
-
-            {data?.type === "show" && !episodes && (
-              <Box
-                sx={{
-                  width: "100%",
-                  height: "100%",
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "flex-start",
-                  mt: 10,
-                }}
-              >
-                <CircularProgress />
-              </Box>
-            )}
-
-            {data?.type === "show" && episodes && (
-              <Box
-                sx={{
-                  width: "100%",
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "flex-start",
-                  justifyContent: "flex-start",
-                  gap: 1,
-                }}
-              >
-                {episodes?.map((episode) => (
-                  <EpisodeItem
-                    item={episode}
-                    onClick={() => {
-                      navigate(
-                        `/watch/${episode.ratingKey}${
-                          episode.viewOffset ? `?t=${episode.viewOffset} ` : ""
-                        }`
-                      );
-                    }}
-                  />
-                ))}
-              </Box>
-            )}
-          </Box>
+          {page === 0 && MetaPage1(data, similar, episodes, navigate)}
         </Box>
       </Box>
     </Backdrop>
@@ -978,6 +833,85 @@ function MetaScreen() {
 }
 
 export default MetaScreen;
+
+function MetaPage1(
+  data: Plex.Metadata | undefined,
+  similar: UseQueryResult<Plex.Metadata[], unknown>,
+  episodes: Plex.Metadata[] | null | undefined,
+  navigate: (path: string) => void
+) {
+  return (
+    <>
+      {data?.type === "movie" && similar.status === "loading" && (
+        <Box
+          sx={{
+            width: "100%",
+            height: "100%",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "flex-start",
+            mt: 10,
+          }}
+        >
+          <CircularProgress />
+        </Box>
+      )}
+
+      {data?.type === "movie" && similar.status === "success" && (
+        <Grid container spacing={2}>
+          {similar.data?.slice(0, 10).map((movie) => (
+            <Grid item xs={4}>
+              <MovieItem item={movie} />
+            </Grid>
+          ))}
+        </Grid>
+      )}
+
+      {data?.type === "show" && !episodes && (
+        <Box
+          sx={{
+            width: "100%",
+            height: "100%",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "flex-start",
+            mt: 10,
+          }}
+        >
+          <CircularProgress />
+        </Box>
+      )}
+
+      {data?.type === "show" && episodes && (
+        <Box
+          sx={{
+            width: "100%",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "flex-start",
+            justifyContent: "flex-start",
+            gap: 1,
+          }}
+        >
+          {episodes?.map((episode) => (
+            <EpisodeItem
+              item={episode}
+              onClick={() => {
+                navigate(
+                  `/watch/${episode.ratingKey}${
+                    episode.viewOffset ? `?t=${episode.viewOffset} ` : ""
+                  }`
+                );
+              }}
+            />
+          ))}
+        </Box>
+      )}
+    </>
+  );
+}
 
 function EpisodeItem({
   item,
@@ -1035,7 +969,7 @@ function EpisodeItem({
 
       <Box
         sx={{
-          width: "25%",
+          width: "20%",
           borderRadius: "5px",
           aspectRatio: "16/9",
           backgroundImage: `url(${getTranscodeImageURL(
@@ -1162,6 +1096,41 @@ function EpisodeItem({
         </Typography>
       </Box>
     </Box>
+  );
+}
+
+function TabButton({
+  text,
+  onClick,
+  selected,
+}: {
+  text: string;
+  onClick: (event: React.MouseEvent) => void;
+  selected: boolean;
+}) {
+  return (
+    <Typography
+      sx={{
+        fontSize: "1.5rem",
+        fontWeight: "bold",
+        textTransform: "uppercase",
+        letterSpacing: "0.1em",
+        color: selected ? "#AAAAAA" : "#333333",
+
+        cursor: "pointer",
+        userSelect: "none",
+
+        "&:hover": {
+          color: "#CCCCCC",
+          transition: "all 0.5s ease-in-out",
+        },
+
+        transition: "all 0.75s ease-in-out",
+      }}
+      onClick={onClick}
+    >
+      {text}
+    </Typography>
   );
 }
 

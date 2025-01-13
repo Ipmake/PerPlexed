@@ -14,8 +14,8 @@ export async function getLibrary(key: string): Promise<Plex.LibraryDetails> {
     return res.MediaContainer;
 }
 
-export async function getLibraryMedia(key: string, directory: string): Promise<Plex.Metadata[]> {
-    const res = await authedGet(`/library/sections/${key}/${directory}`);
+export async function getLibraryMedia(path: string): Promise<Plex.Metadata[]> {
+    const res = await authedGet(`/library${path}`);
     return res.MediaContainer.Metadata;
 }
 
@@ -25,6 +25,7 @@ export async function getLibrarySecondary(key: string, directory: string): Promi
 }
 
 export async function getLibraryMeta(id: string): Promise<Plex.Metadata> {
+    if(!id) return {} as Plex.Metadata;
     const res = await authedGet(`/library/metadata/${id}?${queryBuilder({
         ...getIncludeProps(),
         ...getXPlexProps()
@@ -206,4 +207,19 @@ export async function getLibraryDir(library: number, directory: string, subDir?:
         library: res.MediaContainer.title1,
         Metadata: res.MediaContainer.Metadata
     }
+}
+
+export async function getItemByGUID(guid: string): Promise<Plex.Metadata | null> {
+    const res = await authedGet(`/library/all?${queryBuilder({
+        guid,
+        "includeExternalMedia": 1,
+        "includeMeta": 1,
+        "includeMarkerCounts": 1,
+        "includeRelated": 1,
+        "X-Plex-Token": localStorage.getItem("accessToken") as string
+    })}`);
+
+    if(res.MediaContainer.Metadata?.[0]?.guid !== guid) return null;
+
+    return res.MediaContainer.Metadata?.[0];
 }

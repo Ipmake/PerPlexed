@@ -230,6 +230,7 @@ function HeadLink({
         color: "inherit",
         fontWeight: 500,
         transition: "all 0.2s ease-in-out",
+        fontFamily: '"Inter Variable", sans-serif',
       }}
       aria-current={active ? "page" : undefined}
     >

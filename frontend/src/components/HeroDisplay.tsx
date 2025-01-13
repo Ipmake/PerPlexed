@@ -1,11 +1,56 @@
-import { PlayArrow, InfoOutlined } from "@mui/icons-material";
-import { Box, Typography, Button } from "@mui/material";
-import React from "react";
+import {
+  PlayArrow,
+  InfoOutlined,
+  VolumeOff,
+  VolumeUp,
+  Pause,
+} from "@mui/icons-material";
+import { Box, Typography, Button, IconButton } from "@mui/material";
+import React, { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
+import { usePreviewPlayer } from "../states/PreviewPlayerState";
+import ReactPlayer from "react-player";
+import { useBigReader } from "./BigReader";
 
 function HeroDisplay({ item }: { item: Plex.Metadata }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
+
+  const { MetaScreenPlayerMuted, setMetaScreenPlayerMuted } =
+    usePreviewPlayer();
+
+  const previewVidURL = item?.Extras?.Metadata?.[0]?.Media?.[0]?.Part?.[0]?.key
+    ? `${localStorage.getItem("server")}${
+        item?.Extras?.Metadata?.[0]?.Media?.[0]?.Part?.[0]?.key
+      }&X-Plex-Token=${localStorage.getItem("accessToken")}`
+    : null;
+
+  const [previewVidPlaying, setPreviewVidPlaying] = useState<boolean>(false);
+
+  useEffect(() => {
+    setPreviewVidPlaying(false);
+
+    if (!previewVidURL) return;
+
+    const timeout = setTimeout(() => {
+      if (window.scrollY > 100) return;
+      if(searchParams.has("mid")) return;
+      if(document.location.href.includes("mid=")) return;
+      setPreviewVidPlaying(true);
+    }, 3000);
+
+    const onScroll = () => {
+      if (window.scrollY > 100) setPreviewVidPlaying(false);
+      else setPreviewVidPlaying(true);
+    };
+
+    window.addEventListener("scroll", onScroll);
+
+    return () => {
+      clearTimeout(timeout);
+      window.removeEventListener("scroll", onScroll);
+    };
+  }, []);
 
   return (
     <Box
@@ -18,6 +63,47 @@ function HeroDisplay({ item }: { item: Plex.Metadata }) {
         justifyContent: "flex-start",
       }}
     >
+      <Box
+        sx={{
+          position: "absolute",
+          right: "1vw",
+          bottom: "20vh",
+          opacity: previewVidURL ? 1 : 0,
+          transition: "all 1s ease",
+          zIndex: 1000,
+          cursor: "pointer",
+          pointerEvents: "all",
+
+          display: "flex",
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 1,
+        }}
+      >
+        <IconButton
+          sx={{
+            backgroundColor: "#00000088",
+          }}
+          onClick={() => {
+            setPreviewVidPlaying(!previewVidPlaying);
+          }}
+        >
+          {previewVidPlaying ? <Pause /> : <PlayArrow />}
+        </IconButton>
+
+        <IconButton
+          sx={{
+            backgroundColor: "#00000088",
+          }}
+          onClick={() => {
+            setMetaScreenPlayerMuted(!MetaScreenPlayerMuted);
+          }}
+        >
+          {MetaScreenPlayerMuted ? <VolumeOff /> : <VolumeUp />}
+        </IconButton>
+      </Box>
+
       <Box
         sx={{
           width: "100%",
@@ -33,8 +119,47 @@ function HeroDisplay({ item }: { item: Plex.Metadata }) {
           backgroundPosition: "center",
           backgroundRepeat: "no-repeat",
           zIndex: 0,
+          position: "relative",
         }}
       >
+        <Box
+          sx={{
+            position: "absolute",
+            // make it take up the full width of the parent
+            width: "100%",
+            height: "100vh",
+            aspectRatio: "16/9",
+            left: 0,
+            top: 0,
+            filter: "brightness(0.5)",
+            opacity: previewVidPlaying ? 1 : 0,
+            transition: "all 2s ease",
+            backgroundColor: previewVidPlaying ? "#000000" : "transparent",
+            pointerEvents: "none",
+
+            overflow: "hidden",
+          }}
+        >
+          <ReactPlayer
+            url={previewVidURL ?? undefined}
+            controls={false}
+            width="100%"
+            height="100%"
+            playing={previewVidPlaying}
+            volume={MetaScreenPlayerMuted ? 0 : 0.5}
+            muted={MetaScreenPlayerMuted}
+            onEnded={() => {
+              setPreviewVidPlaying(false);
+            }}
+            pip={false}
+            config={{
+              file: {
+                attributes: { disablePictureInPicture: true },
+              },
+            }}
+          />
+        </Box>
+
         <Box
           sx={{
             ml: 10,
@@ -94,6 +219,12 @@ function HeroDisplay({ item }: { item: Plex.Metadata }) {
               WebkitBoxOrient: "vertical",
               overflow: "hidden",
               textOverflow: "ellipsis",
+
+              userSelect: "none",
+              cursor: "zoom-in",
+            }}
+            onClick={() => {
+              useBigReader.getState().setBigReader(item.summary);
             }}
           >
             {item.summary}
@@ -150,6 +281,7 @@ function HeroDisplay({ item }: { item: Plex.Metadata }) {
               }}
               onClick={() => {
                 if (!item) return;
+                setPreviewVidPlaying(false);
                 setSearchParams({
                   ...searchParams,
                   mid: item.ratingKey.toString(),

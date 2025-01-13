@@ -1,5 +1,5 @@
 import React from "react";
-import { getLibraryMedia, getLibrarySecondary } from "../../plex";
+import { getLibraryMedia, getLibraryMeta, getLibrarySecondary } from "../../plex";
 import { Box, CircularProgress } from "@mui/material";
 import MovieItemSlider, {
   shuffleArray,
@@ -17,9 +17,15 @@ function Movie({ Library }: { Library: Plex.LibraryDetails }) {
     setFeaturedItem(null);
     setGenres([]);
 
-    getLibraryMedia(Library.librarySectionID.toString(), "unwatched").then(
+    getLibraryMedia(`/sections/${Library.librarySectionID.toString()}/unwatched`).then(
       (media) => {
-        setFeaturedItem(media[Math.floor(Math.random() * media.length)]);
+        const item = media[Math.floor(Math.random() * media.length)];
+
+        getLibraryMeta(item.ratingKey).then(
+          (meta) => {
+            setFeaturedItem(meta);
+          }
+        );
       }
     );
 
@@ -82,20 +88,17 @@ function Movie({ Library }: { Library: Plex.LibraryDetails }) {
       >
         <MovieItemSlider
           title="Continue Watching"
-          libraryID={Library.librarySectionID.toString()}
-          dir="onDeck"
+          dir={`/sections/${Library.librarySectionID}/onDeck`}
           link={`/library/${Library.librarySectionID}/dir/onDeck`}
         />
         <MovieItemSlider
           title="New Releases"
-          libraryID={Library.librarySectionID.toString()}
-          dir="newest"
+          dir={`/sections/${Library.librarySectionID}/newest`}
           link={`/library/${Library.librarySectionID}/dir/newest`}
         />
         <MovieItemSlider
           title="Recently Added"
-          libraryID={Library.librarySectionID.toString()}
-          dir="recentlyAdded"
+          dir={`/sections/${Library.librarySectionID}/recentlyAdded`}
           link={`/library/${Library.librarySectionID}/dir/recentlyAdded`}
         />
         {genres &&
@@ -103,8 +106,7 @@ function Movie({ Library }: { Library: Plex.LibraryDetails }) {
             <MovieItemSlider
               key={index}
               title={genre.title}
-              libraryID={Library.librarySectionID.toString()}
-              dir={`all?genre=${genre.key}`}
+              dir={`/sections/${Library.librarySectionID}/all?genre=${genre.key}`}
               link={`/library/${Library.librarySectionID}/dir/genre/${genre.key}`}
               shuffle={true}
             />
