@@ -213,7 +213,7 @@ function MetaScreen() {
           justifyContent: "flex-start",
           backgroundColor: "#181818",
           mt: 4,
-          pb: 4,
+          pb: "20vh",
 
           borderTopLeftRadius: "10px",
           borderTopRightRadius: "10px",
@@ -613,10 +613,9 @@ function MetaScreen() {
                   }}
                   onClick={() => {
                     if (!data) return;
-                    if(WatchList.isOnWatchList(data?.guid as string)) 
+                    if (WatchList.isOnWatchList(data?.guid as string))
                       WatchList.removeItem(data?.guid as string);
-                    else 
-                      WatchList.addItem(data);
+                    else WatchList.addItem(data);
                   }}
                 >
                   {WatchList.isOnWatchList(data?.guid as string) ? (
@@ -741,7 +740,7 @@ function MetaScreen() {
                   cursor: "zoom-in",
                 }}
                 onClick={() => {
-                  if(!data?.summary) return;
+                  if (!data?.summary) return;
                   useBigReader.getState().setBigReader(data?.summary);
                 }}
               >
@@ -826,6 +825,8 @@ function MetaScreen() {
           <Divider sx={{ mb: 2, width: "100%" }} />
 
           {page === 0 && MetaPage1(data, similar, episodes, navigate)}
+          {page === 1 && MetaPage2(data)}
+          {page === 2 && MetaPage3(data)}
         </Box>
       </Box>
     </Backdrop>
@@ -910,6 +911,178 @@ function MetaPage1(
         </Box>
       )}
     </>
+  );
+}
+
+function MetaPage2(data: Plex.Metadata | undefined) {
+  if (!data) return <></>;
+  if (data.Related?.Hub?.length === 0) return <>Nothing here</>;
+
+  return (
+    <Box
+      sx={{
+        width: "100%",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "flex-start",
+        justifyContent: "flex-start",
+        gap: "60px",
+      }}
+    >
+      {data.Related?.Hub?.map((hub) => (
+        <Box
+          sx={{
+            width: "100%",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "flex-start",
+            justifyContent: "flex-start",
+            gap: 1,
+          }}
+        >
+          <Typography
+            sx={{
+              fontSize: "1.5rem",
+              fontWeight: "bold",
+              color: "#FFFFFF",
+              textShadow: "0px 0px 10px #000000",
+            }}
+          >
+            {hub.title}
+          </Typography>
+
+          <Grid container spacing={2}>
+            {hub.Metadata?.map((item) => (
+              <Grid item lg={3} md={4} sm={6} xs={12}>
+                <MovieItem item={item} />
+              </Grid>
+            ))}
+          </Grid>
+        </Box>
+      ))}
+    </Box>
+  );
+}
+
+function MetaPage3(data: Plex.Metadata | undefined) {
+  return (
+    <Box
+      sx={{
+        width: "100%",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "flex-start",
+        justifyContent: "flex-start",
+        gap: "60px",
+      }}
+    >
+      <Box
+        sx={{
+          width: "100%",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "flex-start",
+          justifyContent: "flex-start",
+          gap: 1,
+        }}
+      >
+        <Typography
+          sx={{
+            fontSize: "1.5rem",
+            fontWeight: "bold",
+            color: "#FFFFFF",
+            textShadow: "0px 0px 10px #000000",
+          }}
+        >
+          Cast
+        </Typography>
+
+        <Grid container spacing={2}>
+          {data?.Role?.map((role) => (
+            <Grid item xl={3} lg={4} md={6} sm={6} xs={6}>
+              <Link
+                to={`/library/${data?.librarySectionID}/dir/actor/${role.id}`}
+              >
+                <Box
+                  sx={{
+                    width: "100%",
+                    display: "flex",
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "flex-start",
+                    gap: "20px",
+                    backgroundColor: "#00000055",
+                    padding: "10px 20px",
+                    borderRadius: "10px",
+
+                    userSelect: "none",
+                    cursor: "pointer",
+
+                    "&:hover": {
+                      backgroundColor: "#00000088",
+                      transition: "all 0.2s ease",
+                    },
+
+                    transition: "all 0.5s ease",
+                  }}
+                >
+                  <Avatar
+                    src={`${getTranscodeImageURL(
+                      `${role.thumb}?X-Plex-Token=${localStorage.getItem(
+                        "accessToken"
+                      )}`,
+                      200,
+                      200
+                    )}`}
+                    sx={{
+                      width: "25%",
+                      height: "auto",
+                      aspectRatio: "1/1",
+                      borderRadius: "50%",
+                    }}
+                  />
+
+                  <Box
+                    sx={{
+                      width: "75%",
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "flex-start",
+                      overflow: "hidden",
+                    }}
+                  >
+                    <Typography
+                      sx={{
+                        fontSize: "1rem",
+                        color: "#FFFFFF",
+                      }}
+                    >
+                      {role.tag}
+                    </Typography>
+                    <Typography
+                      sx={{
+                        fontSize: "0.75rem",
+                        color: "#BBBBBB",
+
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        display: "-webkit-box",
+                        WebkitLineClamp: 1,
+                        whiteSpace: "nowrap",
+
+                        width: "100%",
+                      }}
+                    >
+                      {role.role}
+                    </Typography>
+                  </Box>
+                </Box>
+              </Link>
+            </Grid>
+          ))}
+        </Grid>
+      </Box>
+    </Box>
   );
 }
 
