@@ -25,6 +25,7 @@ export const useWatchListCache = create<WatchListCacheState>((set) => ({
     },
     loadWatchListCache: async () => {
         const watchList = await PlexTv.getWatchlist();
+        if(!watchList) return;
         set({ watchListCache: watchList });
     },
     isOnWatchList: (item): boolean => useWatchListCache.getState().watchListCache.find((i) => i.guid === item) !== undefined,
