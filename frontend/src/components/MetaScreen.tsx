@@ -18,18 +18,14 @@ import React, { useEffect, useState } from "react";
 import {
   getLibraryMeta,
   getLibraryMetaChildren,
-  getSimilar,
   getTranscodeImageURL,
 } from "../plex";
-import { useQuery, UseQueryResult } from "react-query";
 import {
-  Add,
   Bookmark,
   BookmarkBorder,
   CheckCircle,
   Close,
   PlayArrow,
-  StarRate,
   VolumeOff,
   VolumeUp,
 } from "@mui/icons-material";
@@ -46,15 +42,8 @@ function MetaScreen() {
   const { MetaScreenPlayerMuted, setMetaScreenPlayerMuted } =
     usePreviewPlayer();
 
-  const { data, status } = useQuery(
-    ["meta", searchParams.get("mid")],
-    async () => await getLibraryMeta(searchParams.get("mid") as string)
-  );
-
-  const similar = useQuery(
-    ["similar", searchParams.get("mid")],
-    async () => await getSimilar(searchParams.get("mid") as string)
-  );
+  const [loading, setLoading] = useState<boolean>(true);
+  const [data, setData] = useState<Plex.Metadata | undefined>(undefined);
 
   const [page, setPage] = useState<number>(0);
 
@@ -69,7 +58,10 @@ function MetaScreen() {
 
   const WatchList = useWatchListCache();
 
+  const mid = searchParams.get("mid");
+
   useEffect(() => {
+    setLoading(true);
     setEpisodes(null);
     setSelectedSeason(0);
     setLanguages(null);
@@ -77,7 +69,13 @@ function MetaScreen() {
     setPreviewVidURL(null);
     setPreviewVidPlaying(false);
     setPage(0);
-  }, [data?.ratingKey]);
+
+    if (!mid) return;
+    getLibraryMeta(mid).then((res) => {
+      setData(res);
+      setLoading(false);
+    });
+  }, [mid]);
 
   useEffect(() => {
     if (!data) return;
@@ -178,18 +176,17 @@ function MetaScreen() {
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedSeason, data?.ratingKey]);
+  }, [selectedSeason, data]);
 
   if (!searchParams.has("mid")) return <></>;
 
-  if (status === "loading")
+  if (loading)
     return (
       <Backdrop open={true}>
         <CircularProgress />
       </Backdrop>
     );
 
-  console.log(data);
   return (
     <Backdrop
       open={searchParams.has("mid")}
@@ -811,6 +808,7 @@ function MetaScreen() {
                   size="small"
                   value={selectedSeason}
                   onChange={(e) => {
+                    if (e.target.value === selectedSeason) return;
                     setSelectedSeason(e.target.value as number);
                   }}
                 >
@@ -824,7 +822,7 @@ function MetaScreen() {
 
           <Divider sx={{ mb: 2, width: "100%" }} />
 
-          {page === 0 && MetaPage1(data, similar, episodes, navigate)}
+          {page === 0 && MetaPage1(data, loading, episodes, navigate)}
           {page === 1 && MetaPage2(data)}
           {page === 2 && MetaPage3(data)}
         </Box>
@@ -837,13 +835,13 @@ export default MetaScreen;
 
 function MetaPage1(
   data: Plex.Metadata | undefined,
-  similar: UseQueryResult<Plex.Metadata[], unknown>,
+  loading: boolean,
   episodes: Plex.Metadata[] | null | undefined,
   navigate: (path: string) => void
 ) {
   return (
     <>
-      {data?.type === "movie" && similar.status === "loading" && (
+      {data?.type === "movie" && !data && (
         <Box
           sx={{
             width: "100%",
@@ -859,9 +857,9 @@ function MetaPage1(
         </Box>
       )}
 
-      {data?.type === "movie" && similar.status === "success" && (
+      {data?.type === "movie" && data.Related?.Hub?.[0] && (
         <Grid container spacing={2}>
-          {similar.data?.slice(0, 10).map((movie) => (
+          {data.Related?.Hub?.[0]?.Metadata?.slice(0, 10).map((movie) => (
             <Grid item xs={4}>
               <MovieItem item={movie} />
             </Grid>
@@ -927,6 +925,8 @@ function MetaPage2(data: Plex.Metadata | undefined) {
         alignItems: "flex-start",
         justifyContent: "flex-start",
         gap: "60px",
+
+        userSelect: "none",
       }}
     >
       {data.Related?.Hub?.map((hub) => (
@@ -974,6 +974,8 @@ function MetaPage3(data: Plex.Metadata | undefined) {
         alignItems: "flex-start",
         justifyContent: "flex-start",
         gap: "60px",
+
+        userSelect: "none",
       }}
     >
       <Box

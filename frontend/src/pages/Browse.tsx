@@ -1,5 +1,4 @@
-import React from "react";
-import { useQuery } from "react-query";
+import React, { useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { getLibrary } from "../plex";
 import { Box, CircularProgress } from "@mui/material";
@@ -8,11 +7,16 @@ import Show from "./browse/Show";
 
 function Library() {
   const { libraryID } = useParams<{ libraryID: string }>();
-  const library = useQuery(["library", libraryID], async () =>
-    getLibrary(libraryID as string)
-  );
+  const [library, setLibrary] = React.useState<Plex.LibraryDetails | null>(null);
 
-  if (library.isLoading) {
+  useEffect(() => {
+    if(!libraryID) return;
+    getLibrary(libraryID).then((data) => {
+      setLibrary(data);
+    });
+  }, [libraryID]);
+
+  if (!library) {
     return (
       <Box
         sx={{
@@ -28,11 +32,11 @@ function Library() {
     );
   }
 
-  switch (library.data?.Type[0].type) {
+  switch (library?.Type[0].type) {
     case "movie":
-      return <Movie Library={library.data} />;
+      return <Movie Library={library} />;
     case "show":
-      return <Show Library={library.data} />;
+      return <Show Library={library} />;
     default:
       return <div>Unknown</div>;
   }

@@ -84,7 +84,13 @@ export default function Search() {
             </Grid>
 
             {directories.map((item) => (
-              <Grid item key={item.key} xs={2}>
+              <Grid item key={item.key} 
+              xl={2}
+              lg={3}
+              md={6}
+              sm={12}
+              xs={12}
+              >
                 <DirectoryItem
                   item={item}
                   onClick={() => {
@@ -105,8 +111,8 @@ export default function Search() {
             <Grid
               item
               key={item.ratingKey}
-              xl={3}
-              lg={4}
+              xl={2}
+              lg={3}
               md={6}
               sm={12}
               xs={12}

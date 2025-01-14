@@ -196,11 +196,13 @@ export async function getSearch(query: string): Promise<Plex.SearchResult[]> {
     return res.MediaContainer.SearchResult;
 }
 
-export async function getLibraryDir(library: number, directory: string, subDir?: string): Promise<{
+export interface LibraryDir {
     title: string;
     library: string;
     Metadata: Plex.Metadata[];
-}> {
+}
+
+export async function getLibraryDir(library: number, directory: string, subDir?: string): Promise<LibraryDir> {
     const res = await authedGet(`/library/sections/${library}/${directory}/${subDir ?? ""}`);
     return {
         title: res.MediaContainer.title2,
