@@ -1,10 +1,16 @@
 import { Avatar, Box, CircularProgress, Grid, Typography } from "@mui/material";
 import React, { useEffect } from "react";
-import { getAllLibraries, getLibraryMedia, getLibrarySecondary } from "../plex";
+import {
+  getAllLibraries,
+  getLibraryMedia,
+  getLibraryMeta,
+  getLibrarySecondary,
+} from "../plex";
 import { useNavigate } from "react-router-dom";
 import { shuffleArray } from "../common/ArrayExtra";
 import MovieItemSlider from "../components/MovieItemSlider";
 import HeroDisplay from "../components/HeroDisplay";
+import { useWatchListCache } from "../states/WatchListCache";
 
 export default function Home() {
   const [libraries, setLibraries] = React.useState<Plex.LibarySection[]>([]);
@@ -14,6 +20,8 @@ export default function Home() {
   const [randomItem, setRandomItem] = React.useState<Plex.Metadata | null>(
     null
   );
+  const { watchListCache } = useWatchListCache();
+
   const [loading, setLoading] = React.useState(true);
 
   useEffect(() => {
@@ -36,7 +44,11 @@ export default function Home() {
           randomItemData = await getRandomItem(filteredLibraries);
           attempts++;
         }
-        setRandomItem(randomItemData);
+
+        if (!randomItemData) return;
+
+        const data = await getLibraryMeta(randomItemData?.ratingKey as string);
+        setRandomItem(data);
       } catch (error) {
         console.error("Error fetching data", error);
       } finally {
@@ -159,13 +171,22 @@ export default function Home() {
             gap: 8,
           }}
         >
+          <MovieItemSlider
+            title="Continue Watching"
+            dir="/onDeck"
+            link={`/library/onDeck`}
+          />
+
+          {watchListCache && watchListCache.length > 0 && (
+            <MovieItemSlider title="Watchlist" data={watchListCache} plexTvSource={true} />
+          )}
+
           {featured &&
             featured.map((item, index) => (
               <MovieItemSlider
                 key={index}
                 title={item.title}
-                libraryID={item.libraryID}
-                dir={item.dir}
+                dir={`/sections/${item.libraryID}/${item.dir}`}
                 shuffle={true}
                 link={item.link}
               />
@@ -213,8 +234,9 @@ async function getRandomItem(libraries: Plex.Directory[]) {
     const dirs = await getLibrarySecondary(library.key, "genre");
 
     const items = await getLibraryMedia(
-      library.key,
-      `all?genre=${dirs[Math.floor(Math.random() * dirs.length)].key}`
+      `/sections/${library.key}/all?genre=${
+        dirs[Math.floor(Math.random() * dirs.length)].key
+      }`
     );
 
     return items[Math.floor(Math.random() * items.length)];

@@ -1,18 +1,10 @@
-import {
-  CheckCircle,
-  PlayArrow,
-  InfoOutlined,
-  BookmarkBorder,
-  CheckCircleOutline,
-  Bookmark,
-} from "@mui/icons-material";
+import { CheckCircle, PlayArrow, InfoOutlined, BookmarkBorder } from "@mui/icons-material";
 import {
   Box,
   Typography,
   Tooltip,
   Button,
   CircularProgress,
-  LinearProgress,
 } from "@mui/material";
 import React from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
@@ -20,22 +12,15 @@ import {
   getTranscodeImageURL,
   getLibraryMeta,
   getLibraryMetaChildren,
-  getItemByGUID,
 } from "../plex";
 import { durationToText } from "./MovieItemSlider";
-import { useWatchListCache } from "../states/WatchListCache";
-import { useBigReader } from "./BigReader";
 
-function MovieItem({
+function MovieItemLegacy({
   item,
   itemsPerPage,
-  index,
-  PlexTvSource,
 }: {
   item: Plex.Metadata;
   itemsPerPage?: number;
-  index?: number;
-  PlexTvSource?: boolean;
 }): JSX.Element {
   const [, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -56,11 +41,28 @@ function MovieItem({
         minWidth: itemsPerPage
           ? `calc((100vw / ${itemsPerPage}) - 10px - (5vw / ${itemsPerPage}))`
           : "100%",
-        backgroundColor: "#1C1C1C",
+        aspectRatio: "16/9",
+        backgroundColor: "#00000055",
+        backgroundImage: ["episode"].includes(item.type)
+          ? `url(${getTranscodeImageURL(
+              `${item.thumb}?X-Plex-Token=${localStorage.getItem(
+                "accessToken"
+              )}`,
+              1200,
+              680
+            )})`
+          : `url(${getTranscodeImageURL(
+              `${item.art}?X-Plex-Token=${localStorage.getItem("accessToken")}`,
+              1200,
+              680
+            )})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundBlendMode: "darken",
+        // clipPath: "inset(0px 0px -10px 0px)",
+        position: "relative",
 
-        borderRadius: "7px",
-        overflow: "hidden",
-        mb: "0px",
+        borderRadius: "5px",
 
         "&:hover": {
           // backgroundColor: "#000000AA",
@@ -69,30 +71,24 @@ function MovieItem({
           // backgroundPosition: "center",
 
           transform: "scale(1.15)",
-          transition: "all 0.2s ease, transform 0.5s ease",
+          transition: "all 0.5s ease",
           zIndex: 1000,
+          borderRadius: "10px",
           boxShadow: "0px 0px 20px #000000",
-          position: "relative",
 
-          pb: "10px",
-
-          mb: "-42px",
+          pb: "5px",
         },
 
-        [`&:hover > :nth-child(${
-          item.type === "episode" || (item.type === "movie" && item.viewOffset)
-            ? 4
-            : 3
-        })`]: {
+        "&:hover > :nth-child(2)": {
           height: "32px",
         },
 
-        // "&:hover > :nth-child(3)": {
-        //   opacity: 1,
-        //   transition: "all 0.25s ease-in",
-        // },
+        "&:hover > :nth-child(3)": {
+          opacity: 1,
+          transition: "all 0.25s ease-in",
+        },
 
-        transition: "all 0.2s ease, transform 0.5s ease",
+        transition: "all 0.1s ease",
         cursor: "pointer",
       }}
       // onClick={() => {
@@ -108,73 +104,6 @@ function MovieItem({
       <Box
         sx={{
           width: "100%",
-          aspectRatio: "16/9",
-
-          backgroundImage: ["episode"].includes(item.type)
-            ? `url(${getTranscodeImageURL(
-                `${item.thumb}?X-Plex-Token=${localStorage.getItem(
-                  "accessToken"
-                )}`,
-                1200,
-                680
-              )})`
-            : `url(${getTranscodeImageURL(
-                `${item.art}?X-Plex-Token=${localStorage.getItem(
-                  "accessToken"
-                )}`,
-                1200,
-                680
-              )})`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-
-          position: "relative",
-        }}
-      >
-        {((item.type === "show" && item.leafCount === item.viewedLeafCount) ||
-          (item.type === "movie" && item?.viewCount && item.viewCount > 0)) && (
-          <Box
-            sx={{
-              width: "80px",
-              height: "40px",
-              position: "absolute",
-              top: "-6px",
-              right: "-26px",
-              transform: "rotate(45deg)",
-
-              backgroundColor: "#000000AA",
-
-              display: "flex",
-              flexDirection: "row",
-              alignItems: "flex-end",
-              justifyContent: "center",
-              padding: "4px",
-            }}
-          >
-            <Tooltip title="Watched" arrow placement="top">
-              <CheckCircleOutline
-                fontSize="medium"
-                sx={{
-                  transform: "rotate(-45deg)",
-                }}
-              />
-            </Tooltip>
-          </Box>
-        )}
-      </Box>
-      {(item.type === "episode" ||
-        (item.type === "movie" && item.viewOffset)) && (
-        <LinearProgress
-          variant="determinate"
-          value={((item?.viewOffset ?? 0) / item.duration) * 100}
-          sx={{
-            width: "100%",
-          }}
-        />
-      )}
-      <Box
-        sx={{
-          width: "100%",
           height: "auto",
           display: "flex",
           flexDirection: "column",
@@ -187,20 +116,39 @@ function MovieItem({
           transformStyle: "preserve-3d",
         }}
       >
-        <Typography
+        <Box
           sx={{
-            fontSize: "14px",
-            fontWeight: "700",
-            letterSpacing: "0.15em",
-            textShadow: "2px 2px 0px #232529",
-            color: "#e6a104",
-            textTransform: "uppercase",
-            mt: "2px",
+            display: "flex",
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "flex-start",
+            transition: "all 0.5s ease",
           }}
         >
-          {item.type} {item.type === "episode" && item.index}
-        </Typography>
-
+          <img
+            src="/plexIcon.png"
+            alt=""
+            height="23"
+            style={{
+              aspectRatio: 1,
+              borderRadius: 8,
+            }}
+          />
+          <Typography
+            sx={{
+              fontSize: "14px",
+              fontWeight: "900",
+              letterSpacing: "0.1em",
+              textShadow: "2px 2px 0px #232529",
+              ml: 1,
+              color: "#e6a104",
+              textTransform: "uppercase",
+              mt: "4px",
+            }}
+          >
+            {item.type}
+          </Typography>
+        </Box>
         <Typography
           sx={{
             fontSize: "1.5rem",
@@ -212,15 +160,12 @@ function MovieItem({
             },
             textOverflow: "ellipsis",
             overflow: "hidden",
-            whiteSpace: "nowrap",
             maxLines: 1,
             maxInlineSize: "100%",
-            mt: ["episode"].includes(item.type) ? "4px" : "0px",
           }}
         >
           {item.title}
         </Typography>
-
         {["episode"].includes(item.type) && item.grandparentTitle && (
           <Typography
             onClick={(e) => {
@@ -235,7 +180,7 @@ function MovieItem({
               fontWeight: "normal",
               color: "#FFFFFF",
               opacity: 0.7,
-              mt: "4px",
+              mt: -0.5,
               mb: 0.5,
 
               transition: "all 0.5s ease",
@@ -252,18 +197,66 @@ function MovieItem({
             {item.grandparentTitle}
           </Typography>
         )}
+        <Typography
+          sx={{
+            fontSize: "medium",
+            fontWeight: "light",
+            color: "#FFFFFF",
+            textShadow: "0px 0px 10px #000000",
+            mt: -0.5,
+
+            textOverflow: "ellipsis",
+            overflow: "hidden",
+            maxLines: 1,
+            maxInlineSize: "100%",
+          }}
+        >
+          {item.tagline}
+        </Typography>
+
         <Box
           sx={{
-            width: "100%",
             display: "flex",
             flexDirection: "row",
             alignItems: "center",
-            justifyContent: "space-between",
-            mt: "4px",
+            justifyContent: "flex-start",
+            mt: 0,
             gap: 1,
           }}
         >
-          {/* {item.rating && (
+          {item.type === "show" && item.leafCount === item.viewedLeafCount && (
+            <Tooltip title="Watched" arrow placement="top">
+              <CheckCircle
+                sx={{
+                  color: "#FFFFFF",
+                  fontSize: "large",
+                }}
+              />
+            </Tooltip>
+          )}
+          {item.type === "movie" && item?.viewCount && item.viewCount > 0 && (
+            <Tooltip title="Watched" arrow placement="top">
+              <CheckCircle
+                sx={{
+                  color: "#FFFFFF",
+                  fontSize: "large",
+                }}
+              />
+            </Tooltip>
+          )}
+          {item.year && (
+            <Typography
+              sx={{
+                fontSize: "medium",
+                fontWeight: "light",
+                color: "#FFFFFF",
+                textShadow: "0px 0px 10px #000000",
+              }}
+            >
+              {item.year}
+            </Typography>
+          )}
+          {item.rating && (
             <Typography
               sx={{
                 fontSize: "medium",
@@ -292,8 +285,8 @@ function MovieItem({
             >
               {item.contentRating}
             </Typography>
-          )} */}
-          {/* {item.type === "episode" && item.index && (
+          )}
+          {item.type === "episode" && item.index && (
             <Typography
               sx={{
                 fontSize: "medium",
@@ -305,14 +298,15 @@ function MovieItem({
             >
               S{item.parentIndex} E{item.index}
             </Typography>
-          )} */}
+          )}
           {item.duration && ["episode", "movie"].includes(item.type) && (
             <Typography
               sx={{
-                fontSize: "14px",
+                fontSize: "medium",
                 fontWeight: "light",
                 color: "#FFFFFF",
                 textShadow: "0px 0px 10px #000000",
+                ml: 1,
               }}
             >
               {durationToText(item.duration)}
@@ -321,28 +315,16 @@ function MovieItem({
           {item.type === "show" && item.leafCount && item.childCount && (
             <Typography
               sx={{
-                fontSize: "14px",
+                fontSize: "medium",
                 fontWeight: "light",
                 color: "#FFFFFF",
                 textShadow: "0px 0px 10px #000000",
+                ml: 1,
               }}
             >
               {item.childCount > 1
                 ? `${item.childCount} Seasons`
                 : `${item.leafCount} Episode${item.leafCount > 1 ? "s" : ""}`}
-            </Typography>
-          )}
-
-          {item.year && (
-            <Typography
-              sx={{
-                fontSize: "14px",
-                fontWeight: "light",
-                color: "#FFFFFF",
-                textShadow: "0px 0px 10px #000000",
-              }}
-            >
-              {item.year}
             </Typography>
           )}
         </Box>
@@ -358,7 +340,7 @@ function MovieItem({
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          transition: "all 0.2s ease",
+          transition: "all 0.25s ease-in",
         }}
       >
         <Box
@@ -394,34 +376,15 @@ function MovieItem({
               justifyContent: "center",
             }}
             disabled={playButtonLoading}
-            onClick={async (e) => {
-              if(!item) return;
+            onClick={async () => {
               setPlayButtonLoading(true);
-
-              let PlexTvSrcData: Plex.Metadata | null = null;
-              if (PlexTvSource) {
-                PlexTvSrcData = await getItemByGUID(item.guid);
-
-                if (!PlexTvSrcData) {
-                  useBigReader
-                    .getState()
-                    .setBigReader(
-                      `"${item.title}" is not available on this Plex Server`
-                    );
-                  return;
-                }
-              }
-
-              if(PlexTvSource && !PlexTvSrcData) return;
-
-              let localItem = PlexTvSource ? PlexTvSrcData as Plex.Metadata : item;
 
               switch (item.type) {
                 case "movie":
                 case "episode":
                   navigate(
-                    `/watch/${localItem.ratingKey}${
-                      localItem.viewOffset ? `?t=${localItem.viewOffset}` : ""
+                    `/watch/${item.ratingKey}${
+                      item.viewOffset ? `?t=${item.viewOffset}` : ""
                     }`
                   );
 
@@ -429,7 +392,7 @@ function MovieItem({
                   break;
                 case "show":
                   {
-                    const data = await getLibraryMeta(localItem.ratingKey);
+                    const data = await getLibraryMeta(item.ratingKey);
 
                     if (!data) {
                       setPlayButtonLoading(false);
@@ -497,34 +460,44 @@ function MovieItem({
               alignItems: "center",
               justifyContent: "center",
             }}
-            onClick={async () => {
-              if (PlexTvSource) {
-                const data = await getItemByGUID(item.guid);
-                if (!data) {
-                  useBigReader
-                    .getState()
-                    .setBigReader(
-                      `"${item.title}" is not available on this Plex Server`
-                    );
-                  return;
-                }
+            onClick={() => {
+              if (item.grandparentRatingKey && ["episode"].includes(item.type))
+                return setSearchParams({ mid: item.grandparentRatingKey });
 
-                setSearchParams({ mid: data.ratingKey.toString() });
-              } else {
-                if (
-                  item.grandparentRatingKey &&
-                  ["episode"].includes(item.type)
-                )
-                  return setSearchParams({ mid: item.grandparentRatingKey });
-
-                setSearchParams({ mid: item.ratingKey.toString() });
-              }
+              setSearchParams({ mid: item.ratingKey.toString() });
             }}
           >
             <InfoOutlined fontSize="small" />
           </Button>
 
-          <WatchListButton item={item} />
+          <Button
+              variant="contained"
+              sx={{
+                width: "fit-content",
+                height: "100%",
+                backgroundColor: "#555555",
+                color: "#FFFFFF",
+                fontSize: "12px",
+                letterSpacing: "0.1em",
+                textTransform: "uppercase",
+                "&:hover": {
+                  backgroundColor: "#333333",
+                },
+                gap: 1,
+                transition: "all 0.2s ease-in-out",
+  
+                display: "flex",
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "center",
+  
+                padding: "0px 20px",
+                minWidth: "20px",
+              }}
+              onClick={() => {}}
+            >
+              <BookmarkBorder fontSize="small" />
+            </Button>
         </Box>
       </Box>
       {/* <Box sx={{
@@ -558,49 +531,4 @@ function MovieItem({
   );
 }
 
-export default MovieItem;
-
-function WatchListButton({ item }: { item: Plex.Metadata }) {
-  const WatchList = useWatchListCache();
-
-  return (
-    <Button
-      variant="contained"
-      sx={{
-        width: "fit-content",
-        height: "100%",
-        backgroundColor: "#555555",
-        color: "#FFFFFF",
-        fontSize: "12px",
-        letterSpacing: "0.1em",
-        textTransform: "uppercase",
-        "&:hover": {
-          backgroundColor: "#333333",
-        },
-        gap: 1,
-        transition: "all 0.2s ease-in-out",
-
-        display: "flex",
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "center",
-
-        padding: "0px 20px",
-        minWidth: "20px",
-      }}
-      onClick={() => {
-        if (!item) return;
-        if (WatchList.isOnWatchList(item.guid))
-          return WatchList.removeItem(item.guid);
-
-        WatchList.addItem(item);
-      }}
-    >
-      {WatchList.isOnWatchList(item.guid) ? (
-        <Bookmark fontSize="small" />
-      ) : (
-        <BookmarkBorder fontSize="small" />
-      )}
-    </Button>
-  );
-}
+export default MovieItemLegacy;

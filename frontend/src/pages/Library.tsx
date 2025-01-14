@@ -28,7 +28,7 @@ export default function Library() {
         height: "fit-content",
         mt: "64px",
         px: 6,
-        
+
         pt: 4,
         pb: 2,
       }}
@@ -45,10 +45,16 @@ export default function Library() {
           <Grid container spacing={2} sx={{ mt: 2, width: "100%" }}>
             {results &&
               results.data.Metadata.map((item) => (
-                <Grid item key={item.ratingKey} xl={3} lg={4} md={6} sm={12} xs={12}>
-                  <MovieItem
-                    item={item}
-                  />
+                <Grid
+                  item
+                  key={item.ratingKey}
+                  xl={3}
+                  lg={4}
+                  md={6}
+                  sm={12}
+                  xs={12}
+                >
+                  <MovieItem item={item} />
                 </Grid>
               ))}
           </Grid>

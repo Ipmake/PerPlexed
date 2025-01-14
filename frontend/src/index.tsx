@@ -11,6 +11,9 @@ import axios from "axios";
 import { getBackendURL } from "./backendURL";
 
 import "@fontsource-variable/quicksand";
+import '@fontsource-variable/rubik';
+import '@fontsource/ibm-plex-sans';
+import '@fontsource-variable/inter';
 
 if(!localStorage.getItem("clientID")) localStorage.setItem("clientID", makeid(24));
 
@@ -65,7 +68,7 @@ ReactDOM.render(
         },
       },
       typography: {
-        fontFamily: '"Quicksand Variable", sans-serif',
+        fontFamily: '"Inter Variable", sans-serif',
       },
       components: {
         MuiAppBar: {
@@ -78,11 +81,18 @@ ReactDOM.render(
         MuiButton: {
           styleOverrides: {
             root: {
-              fontFamily: '"Quicksand Variable", sans-serif',
+              fontFamily: '"Inter Variable", sans-serif',
               borderRadius: "7px",
             },
           },
         },
+        MuiBackdrop: {
+          styleOverrides: {
+            root: {
+              height: "100vh",
+            },
+          },
+        }
       }
     })}
   >

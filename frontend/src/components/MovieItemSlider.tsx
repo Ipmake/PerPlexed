@@ -1,44 +1,41 @@
-import {
-  Box,
-  Typography,
-} from "@mui/material";
+import { Box, Typography } from "@mui/material";
 import React from "react";
-import {
-  getLibraryMedia,
-} from "../plex";
-import {
-  ArrowBackIos,
-  ArrowForwardIos,
-} from "@mui/icons-material";
+import { getLibraryMedia } from "../plex";
+import { ArrowForwardIos } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import MovieItem from "./MovieItem";
 
 function MovieItemSlider({
   title,
-  libraryID,
   dir,
   link,
   shuffle,
+  data,
+  plexTvSource,
 }: {
   title: string;
-  libraryID: string;
-  dir: string;
-  link: string;
+  dir?: string;
+  link?: string;
   shuffle?: boolean;
+  data?: Plex.Metadata[];
+  plexTvSource?: boolean;
 }) {
   const navigate = useNavigate();
-  const [items, setItems] = React.useState<Plex.Metadata[] | null>(null);
+  const [items, setItems] = React.useState<Plex.Metadata[] | null>(
+    data ?? null
+  );
 
   const [currPage, setCurrPage] = React.useState(0);
 
   const calculateItemsPerPage = (width: number) => {
     if (width < 400) return 1;
-    if (width < 600) return 2;
-    if (width < 1200) return 3;
+    if (width < 600) return 1;
+    if (width < 1200) return 2;
     if (width < 1500) return 4;
     if (width < 2000) return 5;
     if (width < 3000) return 6;
     if (width < 4000) return 7;
+    if (width < 5000) return 8;
     return 6;
   };
 
@@ -55,17 +52,23 @@ function MovieItemSlider({
   }, []);
 
   React.useEffect(() => {
-    getLibraryMedia(libraryID, dir).then((media) => {
+    if (data) {
+      setItems(data);
+      return;
+    }
+
+    if(!dir) return;
+
+    getLibraryMedia(dir).then((media) => {
       // cut the array down so its a multiple of itemsPerPage
       if (!media) return;
-      const roundedMedia = media.slice(0, itemsPerPage * 5);
-      console.log(roundedMedia.length);
-
-      setItems(shuffle ? shuffleArray(roundedMedia) : roundedMedia);
+      setItems(shuffle ? shuffleArray(media) : media);
     });
-  }, [dir, itemsPerPage, libraryID, shuffle]);
+  }, [data, dir, shuffle]);
 
   if (!items) return <></>;
+
+  const itemCount = items.slice(0, itemsPerPage * 5).length;
 
   return (
     <Box
@@ -98,7 +101,7 @@ function MovieItemSlider({
             justifyContent: "center",
             gap: "10px",
             mb: "-10px",
-            cursor: "pointer",
+            cursor: link ? "pointer" : "default",
             "&:hover": {
               gap: "20px",
             },
@@ -109,7 +112,7 @@ function MovieItemSlider({
             transition: "all 0.5s ease",
           }}
           onClick={() => {
-            navigate(link);
+            if (link) navigate(link);
           }}
         >
           <Typography
@@ -123,8 +126,9 @@ function MovieItemSlider({
             {title}
           </Typography>
 
-          <Box
-            sx={{
+            {link && (
+            <Box
+              sx={{
               display: "flex",
               flexDirection: "row",
               alignItems: "center",
@@ -134,23 +138,24 @@ function MovieItemSlider({
               gap: "0px",
               transition: "all 0.5s ease",
               color: "primary.main",
-            }}
-          >
-            <Typography sx={{ fontSize: "1rem" }}>Browse</Typography>
-            <ArrowForwardIos fontSize="small" />
-          </Box>
+              }}
+            >
+              <Typography sx={{ fontSize: "1rem" }}>Browse</Typography>
+              <ArrowForwardIos fontSize="small" />
+            </Box>
+            )}
         </Box>
 
         <Box
           sx={{
             display: "flex",
             flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "center",
-            visibility: items.length > itemsPerPage ? "visible" : "hidden",
+            alignItems: "flex-start",
+            justifyContent: "flex-start",
+            visibility: itemCount > itemsPerPage ? "visible" : "hidden",
           }}
         >
-          {Array(Math.ceil(items.length / itemsPerPage))
+          {Array(Math.ceil(itemCount / itemsPerPage))
             .fill(0)
             .map((_, i) => {
               return (
@@ -199,7 +204,7 @@ function MovieItemSlider({
             alignItems: "center",
             justifyContent: "center",
             cursor: "pointer",
-            visibility: items.length > itemsPerPage ? "visible" : "hidden",
+            visibility: itemCount > itemsPerPage ? "visible" : "hidden",
 
             "&:hover": {
               backgroundColor: "#000000AA",
@@ -210,27 +215,34 @@ function MovieItemSlider({
           onClick={() => {
             setCurrPage((currPage) =>
               currPage - 1 < 0
-                ? Math.ceil(items.length / itemsPerPage) - 1
+                ? Math.ceil(itemCount / itemsPerPage) - 1
                 : currPage - 1
             );
           }}
         >
-          <ArrowBackIos fontSize="large" />
+          <ArrowForwardIos
+            sx={{
+              transform: "rotate(180deg)",
+            }}
+            fontSize="large"
+          />
         </Box>
         <Box
           sx={{
             display: "flex",
             flexDirection: "row",
             transform: `translateX(calc((-${currPage} * (100vw - 5vw) + 2.5vw)))`,
-            alignItems: "center",
+            alignItems: "flex-start",
             justifyContent: "center",
             width: `auto`,
             gap: "10px",
-            transition: "transform 2s ease",
+            transition: "transform 1.5s ease",
           }}
         >
-          {items?.map((item) => {
-            return <MovieItem item={item} itemsPerPage={itemsPerPage} />;
+          {items?.slice(0, itemsPerPage * 5).map((item, i) => {
+            return (
+              <MovieItem item={item} itemsPerPage={itemsPerPage} index={i} PlexTvSource={plexTvSource} />
+            );
           })}
         </Box>
         <Box
@@ -245,7 +257,7 @@ function MovieItemSlider({
             alignItems: "center",
             justifyContent: "center",
             cursor: "pointer",
-            visibility: items.length > itemsPerPage ? "visible" : "hidden",
+            visibility: itemCount > itemsPerPage ? "visible" : "hidden",
 
             "&:hover": {
               backgroundColor: "#000000AA",
@@ -255,7 +267,7 @@ function MovieItemSlider({
           }}
           onClick={() => {
             setCurrPage(
-              currPage + 1 > Math.ceil(items.length / itemsPerPage) - 1
+              currPage + 1 > Math.ceil(itemCount / itemsPerPage) - 1
                 ? 0
                 : currPage + 1
             );
