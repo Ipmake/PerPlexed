@@ -1,0 +1,37 @@
+name: Publish Preview Docker image
+
+on:
+  push:
+    branches:
+      - dev
+
+jobs:
+  push_to_registry:
+    name: Push Docker image to Docker Hub
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: read
+      attestations: write
+      id-token: write
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      
+      - name: Create builder instance
+        run: docker buildx create --name perplexedBuilder --use
+
+      - name: Build and push the amd64 image
+        run: docker buildx build --platform linux/amd64 -t ipmake/perplexed:preview-amd64 . --push
+
+      - name: Build and push the arm64 image
+        run: docker buildx build --platform linux/arm64 -t ipmake/perplexed:preview-arm64 . --push
+
+      - name: Build and push multi-platform Docker image
+        run: docker buildx imagetools create --tag ipmake/perplexed:preview ipmake/perplexed:preview-amd64 ipmake/perplexed:preview-arm64
