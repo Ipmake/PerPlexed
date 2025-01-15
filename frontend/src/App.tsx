@@ -11,6 +11,30 @@ import Home from "./pages/Home";
 import Library from "./pages/Library";
 import BigReader from "./components/BigReader";
 import { useWatchListCache } from "./states/WatchListCache";
+import Startup, { useStartupState } from "./pages/Startup";
+
+function AppManager() {
+  const { loading } = useStartupState();
+  const [showApp, setShowApp] = React.useState(false);
+  const [fadeOut, setFadeOut] = React.useState(false);
+
+  useEffect(() => {
+    if (loading) return;
+
+    setFadeOut(true);
+    setTimeout(() => setShowApp(true), 500);
+  }, [loading]);
+
+  if (!showApp) {
+    return (
+      <div style={{ opacity: fadeOut ? 0 : 1, transition: "opacity 0.5s" }}>
+        <Startup />
+      </div>
+    );
+  }
+
+  return <App />;
+}
 
 function App() {
   const location = useLocation();
@@ -63,4 +87,4 @@ function App() {
   );
 }
 
-export default App;
+export default AppManager;
