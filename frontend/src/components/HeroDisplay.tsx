@@ -154,7 +154,11 @@ function HeroDisplay({ item }: { item: Plex.Metadata }) {
             pip={false}
             config={{
               file: {
-                attributes: { disablePictureInPicture: true },
+                attributes: {
+                  controlsList: "nodownload",
+                  disablePictureInPicture: true,
+                  disableRemotePlayback: true,
+                },
               },
             }}
           />
