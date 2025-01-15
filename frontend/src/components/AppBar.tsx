@@ -502,6 +502,7 @@ function HeadLink({
         fontWeight: 500,
         transition: "all 0.2s ease-in-out",
         fontFamily: '"Inter Variable", sans-serif',
+        userSelect: "none",
       }}
       aria-current={active ? "page" : undefined}
     >
