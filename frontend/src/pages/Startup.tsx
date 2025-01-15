@@ -71,6 +71,8 @@ function Startup() {
       if (res.error) setShowDiagnostic(true);
     };
 
+    fetchStatus();
+
     const interval = setInterval(fetchStatus, 2500);
 
     return () => {
