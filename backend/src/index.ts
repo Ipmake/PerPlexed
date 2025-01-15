@@ -7,9 +7,8 @@ import { randomBytes } from 'crypto';
 /* 
  * ENVIRONMENT VARIABLES
     *
-    * PLEX_SERVERS: A comma separated list of Plex servers the frontend can connect to
-    * PROXY_PLEX_SERVER: The URL of the Plex server to proxy requests to
-    * FRONTEND_SERVER_CHECK_TIMEOUT?: The timeout in milliseconds for the proxy to check if the frontend server is reachable (default: 2000)
+    * PLEX_SERVER: The URL of the Plex server that the frontend will connect to
+    * PROXY_PLEX_SERVER?: The URL of the Plex server to proxy requests to
     * DISABLE_PROXY?: If set to true, the proxy will be disabled and all requests go directly to the Plex server from the frontend (NOT RECOMMENDED)
     * DISABLE_TLS_VERIFY?: If set to true, the proxy will not check any https ssl certificates
 **/
@@ -26,37 +25,23 @@ const app = express();
 app.use(express.json());
 
 (async () => {
-    if (process.env.PLEX_SERVER) {
+    if (!process.env.PLEX_SERVER) {
         status.error = true;
-        status.message = 'PLEX_SERVER has changed to PLEX_SERVERS. Please view the upgrade guide in the 1.0.0 release notes on github. https://github.com/Ipmake/PerPlexed/releases/tag/v1.0.0';
-        return;
-    }
-
-    if (!process.env.PLEX_SERVERS) {
-        status.error = true;
-        status.message = 'PLEX_SERVERS environment variable not set';
+        status.message = 'PLEX_SERVER environment variable not set';
         console.error('PLEX_SERVER environment variable not set');
         return;
     }
 
-    if (!process.env.PROXY_PLEX_SERVER && process.env.DISABLE_PROXY !== 'true') {
-        status.error = true;
-        status.message = 'PROXY_PLEX_SERVER environment variable not set. Please view the upgrade guide in the 1.0.0 release notes on github. https://github.com/Ipmake/PerPlexed/releases/tag/v1.0.0';
-        console.error('PROXY_PLEX_SERVER environment variable not set');
-        return;
-    }
+    if (!process.env.PROXY_PLEX_SERVER && process.env.DISABLE_PROXY !== 'true') process.env.PROXY_PLEX_SERVER = process.env.PLEX_SERVER
 
-    if (process.env.PLEX_SERVERS) {
-        // check if the PLEX_SERVERS environment variable is a comma separated list and whether each server is a valid URL, the URL must not end with a /
-        const servers = process.env.PLEX_SERVERS.split(',');
-        const invalidServers = servers.filter((server) => !server.trim().match(/^https?:\/\/[^\/]+$/));
-
-        if (invalidServers.length > 0) {
+    if (process.env.PLEX_SERVER) {
+        // check if the PLEX_SERVER environment variable is a valid URL, the URL must not end with a /
+        if (!process.env.PLEX_SERVER.match(/^https?:\/\/[^\/]+$/)) {
             status.error = true;
-            status.message = 'Invalid PLEX_SERVERS environment variable. The URL must start with http:// or https:// and must not end with a /';
-            console.error('Invalid PLEX_SERVERS environment variable. The URL must start with http:// or https:// and must not end with a /');
+            status.message = 'Invalid PLEX_SERVER environment variable. The URL must start with http:// or https:// and must not end with a /';
+            console.error('Invalid PLEX_SERVER environment variable. The URL must start with http:// or https:// and must not end with a /');
             return;
-        } 
+        }
     }
 
     if (process.env.PROXY_PLEX_SERVER && process.env.DISABLE_PROXY !== 'true') {
@@ -99,11 +84,10 @@ app.get('/status', (req, res) => {
 
 app.get('/config', (req, res) => {
     res.send({
-        PLEX_SERVERS: (process.env.PLEX_SERVERS as string).split(",").map((server) => server.trim()),
+        PLEX_SERVER: process.env.PLEX_SERVER,
         DEPLOYMENTID: deploymentID,
         CONFIG: {
             DISABLE_PROXY: process.env.DISABLE_PROXY === 'true',
-            FRONTEND_SERVER_CHECK_TIMEOUT: parseInt(process.env.FRONTEND_SERVER_CHECK_TIMEOUT || '2000'),
         }
     });
 });

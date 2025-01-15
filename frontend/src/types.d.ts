@@ -13,11 +13,10 @@ declare namespace PerPlexed {
     }
 
     interface Config {
-        PLEX_SERVERS: string[];
+        PLEX_SERVER: string;
         DEPLOYMENTID: string;
         CONFIG: {
             DISABLE_PROXY: boolean;
-            FRONTEND_SERVER_CHECK_TIMEOUT: number;
         }
     }
 }
