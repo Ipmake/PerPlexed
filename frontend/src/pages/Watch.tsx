@@ -19,7 +19,9 @@ import {
   Button,
   Fade,
   IconButton,
+  Paper,
   Popover,
+  Popper,
   Slider,
   Theme,
   Typography,
@@ -268,34 +270,84 @@ function Watch() {
   // . (period): Forward 1 frame
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === " " && player.current) {
-        setPlaying((state) => !state);
-      }
-      if (e.key === "ArrowLeft" && player.current) {
-        player.current.seekTo(player.current.getCurrentTime() - 10);
-      }
-      if (e.key === "ArrowRight" && player.current) {
-        player.current.seekTo(player.current.getCurrentTime() + 10);
-      }
-      if (e.key === "ArrowUp" && player.current) {
-        setVolume((state) => Math.min(state + 5, 100));
-      }
-      if (e.key === "ArrowDown" && player.current) {
-        setVolume((state) => Math.max(state - 5, 0));
-      }
-      if (e.key === "," && player.current) {
-        player.current.seekTo(player.current.getCurrentTime() - 0.04);
-      }
-      if (e.key === "." && player.current) {
-        player.current.seekTo(player.current.getCurrentTime() + 0.04);
-      }
+      const actions: { [key: string]: () => void } = {
+        " ": () => setPlaying((state) => !state),
+        k: () => setPlaying((state) => !state),
+        j: () => player.current?.seekTo(player.current.getCurrentTime() - 10),
+        l: () => player.current?.seekTo(player.current.getCurrentTime() + 10),
+        s: () => {
+          if (!metadata || !player.current) return;
+          // if there is a marker like credits skip it
+          const time = player.current.getCurrentTime();
+          for (const marker of metadata.Marker ?? []) {
+            if (
+              !(
+                marker.startTimeOffset / 1000 <= time &&
+                marker.endTimeOffset / 1000 >= time
+              )
+            )
+              continue;
+
+            switch (marker.type) {
+              case "credits":
+                {
+                  if (!marker.final) {
+                    player.current.seekTo(marker.endTimeOffset / 1000 + 1);
+                    return;
+                  }
+
+                  if (metadata.type === "movie")
+                    return navigate(
+                      `/browse/${metadata.librarySectionID}?${queryBuilder({
+                        mid: metadata.ratingKey,
+                      })}`
+                    );
+
+                  if (!playQueue) return;
+                  const next = playQueue[1];
+                  if (!next)
+                    return navigate(
+                      `/browse/${metadata.librarySectionID}?${queryBuilder({
+                        mid: metadata.grandparentRatingKey,
+                        pid: metadata.parentRatingKey,
+                        iid: metadata.ratingKey,
+                      })}`
+                    );
+
+                  navigate(`/watch/${next.ratingKey}`);
+                }
+                break;
+              case "intro":
+                player.current.seekTo(marker.endTimeOffset / 1000 + 1);
+                break;
+            }
+          }
+        },
+        f: () => {
+          if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen();
+          } else document.exitFullscreen();
+        },
+        ArrowLeft: () =>
+          player.current?.seekTo(player.current.getCurrentTime() - 10),
+        ArrowRight: () =>
+          player.current?.seekTo(player.current.getCurrentTime() + 10),
+        ArrowUp: () => setVolume((state) => Math.min(state + 5, 100)),
+        ArrowDown: () => setVolume((state) => Math.max(state - 5, 0)),
+        ",": () =>
+          player.current?.seekTo(player.current.getCurrentTime() - 0.04),
+        ".": () =>
+          player.current?.seekTo(player.current.getCurrentTime() + 0.04),
+      };
+
+      if (actions[e.key]) actions[e.key]();
     };
 
     document.addEventListener("keydown", handleKeyDown);
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, []);
+  }, [metadata, navigate, playQueue]);
 
   return (
     <>
@@ -475,7 +527,7 @@ function Watch() {
                   sx={{
                     fontSize: "1vw",
                     color: "#FFF",
-                    mt: "-0.75vw",
+                    mt: "-0.70vw",
                   }}
                 >
                   {showmetadata?.childCount &&
@@ -487,7 +539,7 @@ function Watch() {
                     fontSize: "1vw",
                     fontWeight: "bold",
                     color: "#FFF",
-                    mt: "10px",
+                    mt: "6px",
                   }}
                 >
                   {metadata?.title}: EP. {metadata?.index}
@@ -499,7 +551,7 @@ function Watch() {
                     flexDirection: "row",
                     alignItems: "center",
                     justifyContent: "flex-start",
-                    mt: 0.5,
+                    mt: "2px",
                     gap: 1,
                   }}
                 >
@@ -565,6 +617,7 @@ function Watch() {
                   sx={{
                     fontSize: "0.75vw",
                     color: "#FFF",
+                    mt: "2px",
                   }}
                 >
                   {metadata?.summary}
@@ -1450,15 +1503,7 @@ function Watch() {
                           )}
                         </IconButton>
 
-                        {playQueue && playQueue[1] && (
-                          <IconButton
-                            onClick={() => {
-                              navigate(`/watch/${playQueue[1].ratingKey}`);
-                            }}
-                          >
-                            <SkipNext fontSize="large" />
-                          </IconButton>
-                        )}
+                        {playQueue && <NextEPButton queue={playQueue} />}
                       </Box>
 
                       {metadata.type === "movie" && (
@@ -1628,6 +1673,7 @@ function Watch() {
                   if (showError) return;
 
                   // filter out links from the error messages
+                  if (!err.error) return;
                   const message = err.error.message.replace(
                     /https?:\/\/[^\s]+/g,
                     "Media"
@@ -1682,6 +1728,131 @@ function Watch() {
 }
 
 export default Watch;
+
+function NextEPButton({ queue }: { queue?: Plex.Metadata[] }) {
+  const navigate = useNavigate();
+
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+
+  if (!queue) return <></>;
+
+  return (
+    <>
+      <Popper
+        open={Boolean(anchorEl)}
+        anchorEl={anchorEl}
+        placement="top-start"
+        transition
+        sx={{ zIndex: 10000 }}
+        modifiers={[
+          {
+            name: "offset",
+            options: {
+              offset: [0, 10],
+            },
+          },
+        ]}
+      >
+        {({ TransitionProps }) => (
+          <Fade {...TransitionProps} timeout={350}>
+            <Paper
+              sx={{
+                width: "575px",
+                height: "160px",
+                overflow: "hidden",
+                background: "#101010",
+
+                display: "flex",
+                flexDirection: "row",
+                alignItems: "flex-start",
+                justifyContent: "flex-start",
+              }}
+            >
+              <img
+                src={`${getTranscodeImageURL(
+                  `${queue[1].thumb}?X-Plex-Token=${localStorage.getItem(
+                    "accessToken"
+                  )}`,
+                  500,
+                  500
+                )}`}
+                alt=""
+                style={{
+                  height: "100%",
+                  aspectRatio: "16/9",
+                  width: "auto",
+                }}
+              />
+
+              <Box
+                sx={{
+                  width: "100%",
+                  height: "100%",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "flex-start",
+                  justifyContent: "flex-start",
+                  p: 2,
+                }}
+              >
+                <Typography
+                  sx={{
+                    fontSize: "12px",
+                    fontWeight: "700",
+                    letterSpacing: "0.15em",
+                    color: "#e6a104",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  {queue[1].type}{" "}
+                  {queue[1].type === "episode" && queue[1].index}
+                </Typography>
+                <Typography
+                  sx={{
+                    fontSize: "14px",
+                    fontWeight: "bold",
+                    color: "#FFF",
+                  }}
+                >
+                  {queue[1].title}
+                </Typography>
+
+                <Typography
+                  sx={{
+                    mt: "2px",
+                    fontSize: "10px",
+                    color: "#FFF",
+
+                    // max 5 lines
+                    display: "-webkit-box",
+                    WebkitLineClamp: 5,
+                    WebkitBoxOrient: "vertical",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}
+                >
+                  {queue[1].summary}
+                </Typography>
+              </Box>
+            </Paper>
+          </Fade>
+        )}
+      </Popper>
+      {queue && queue[1] && (
+        <IconButton
+          onClick={() => {
+            navigate(`/watch/${queue[1].ratingKey}`);
+          }}
+          onMouseEnter={(e) => setAnchorEl(e.currentTarget)}
+          onMouseLeave={() => setAnchorEl(null)}
+        >
+          <SkipNext fontSize="large" />
+        </IconButton>
+      )}
+    </>
+  );
+}
+
 function TuneSettingTab(
   theme: Theme,
   setTunePage: React.Dispatch<React.SetStateAction<number>>,
