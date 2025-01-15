@@ -110,6 +110,7 @@ function MovieItemSlider({
               gap: "5px",
             },
             transition: "all 0.5s ease",
+            userSelect: "none",
           }}
           onClick={() => {
             if (link) navigate(link);

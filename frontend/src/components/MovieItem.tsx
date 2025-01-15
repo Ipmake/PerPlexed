@@ -95,15 +95,29 @@ function MovieItem({
         transition: "all 0.2s ease, transform 0.5s ease",
         cursor: "pointer",
       }}
-      // onClick={() => {
-      //   if (["episode"].includes(item.type))
-      //     return navigate(
-      //       `/watch/${item.ratingKey}${
-      //         item.viewOffset ? `?t=${item.viewOffset}` : ""
-      //       }`
-      //     );
-      //   setSearchParams({ mid: item.ratingKey.toString() });
-      // }}
+      onClick={async () => {
+        if (PlexTvSource) {
+          const data = await getItemByGUID(item.guid);
+          if (!data) {
+            useBigReader
+              .getState()
+              .setBigReader(
+                `"${item.title}" is not available on this Plex Server`
+              );
+            return;
+          }
+
+          setSearchParams({ mid: data.ratingKey.toString() });
+        } else {
+          if (
+            item.grandparentRatingKey &&
+            ["episode"].includes(item.type)
+          )
+            return setSearchParams({ mid: item.grandparentRatingKey });
+
+          setSearchParams({ mid: item.ratingKey.toString() });
+        }
+      }}
     >
       <Box
         sx={{
@@ -396,6 +410,7 @@ function MovieItem({
             disabled={playButtonLoading}
             onClick={async (e) => {
               if(!item) return;
+              e.stopPropagation();
               setPlayButtonLoading(true);
 
               let PlexTvSrcData: Plex.Metadata | null = null;
@@ -497,7 +512,8 @@ function MovieItem({
               alignItems: "center",
               justifyContent: "center",
             }}
-            onClick={async () => {
+            onClick={async (e) => {
+              e.stopPropagation();
               if (PlexTvSource) {
                 const data = await getItemByGUID(item.guid);
                 if (!data) {
@@ -588,7 +604,8 @@ function WatchListButton({ item }: { item: Plex.Metadata }) {
         padding: "0px 20px",
         minWidth: "20px",
       }}
-      onClick={() => {
+      onClick={(e) => {
+        e.stopPropagation();
         if (!item) return;
         if (WatchList.isOnWatchList(item.guid))
           return WatchList.removeItem(item.guid);
