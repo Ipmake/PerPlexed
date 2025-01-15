@@ -129,19 +129,22 @@ function Startup() {
             return null;
           }
 
-          const reachableServers = await Promise.all(
+            const reachableServers = await Promise.all(
             servers.map((server) =>
               axios
-                .get(`${server}/identity`, {
-                  timeout: config.CONFIG.FRONTEND_SERVER_CHECK_TIMEOUT,
-                })
-                .then((res) => {
-                  if(res.data?.MediaContainer?.machineIdentifier) return server;
-                  return null;
-                })
-                .catch(() => null)
+              .get(`${server}/identity`, {
+                timeout: config.CONFIG.FRONTEND_SERVER_CHECK_TIMEOUT,
+              })
+              .then((res) => {
+                if (res.data?.MediaContainer?.machineIdentifier) return server;
+                return null;
+              })
+              .catch((error) => {
+                if (error.response && error.response.status === 0) return server; // CORS error
+                return null;
+              })
             )
-          );
+            );
 
           // server priority goes from left to right from highest to lowest
           const bestServer = reachableServers.find((server) => server !== null);
