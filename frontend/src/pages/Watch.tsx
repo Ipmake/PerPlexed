@@ -382,8 +382,8 @@ function Watch() {
               onClick={() => {
                 setShowError(false);
 
-                // Reload, if theres a t time in the search params then reload to the current time
-                if (params.has("t")) {
+                // If the video is already 5 seconds in, reload the page with the current time
+                if (player.current?.getCurrentTime() ?? 0 > 5) {
                   const url = new URL(window.location.href);
                   url.searchParams.set(
                     "t",
@@ -1638,15 +1638,16 @@ function Watch() {
                     seekToAfterLoad.current = null;
                   }
 
-                  if (!params.has("t")) return;
-                  if (
-                    lastAppliedTime.current === parseInt(params.get("t") ?? "0")
-                  )
-                    return;
-                  player.current.seekTo(
-                    parseInt(params.get("t") ?? "0") / 1000
-                  );
-                  lastAppliedTime.current = parseInt(params.get("t") ?? "0");
+                  const seekTo = params.has("t")
+                    ? parseInt(params.get("t") as string)
+                    : (metadata?.viewOffset && metadata?.viewOffset > 5
+                        ? metadata?.viewOffset
+                        : null) ?? null;
+
+                  if (!seekTo) return;
+                  if (lastAppliedTime.current === seekTo) return;
+                  player.current.seekTo(seekTo / 1000);
+                  lastAppliedTime.current = seekTo;
                 }}
                 onProgress={(progress) => {
                   setProgress(progress.playedSeconds);
@@ -1757,8 +1758,9 @@ function NextEPButton({ queue }: { queue?: Plex.Metadata[] }) {
           <Fade {...TransitionProps} timeout={350}>
             <Paper
               sx={{
-                width: "575px",
-                height: "160px",
+                width: "35vw",
+                height: "auto",
+                aspectRatio: "32/8",
                 overflow: "hidden",
                 background: "#101010",
 
@@ -1797,7 +1799,7 @@ function NextEPButton({ queue }: { queue?: Plex.Metadata[] }) {
               >
                 <Typography
                   sx={{
-                    fontSize: "12px",
+                    fontSize: "0.7vw",
                     fontWeight: "700",
                     letterSpacing: "0.15em",
                     color: "#e6a104",
@@ -1809,7 +1811,7 @@ function NextEPButton({ queue }: { queue?: Plex.Metadata[] }) {
                 </Typography>
                 <Typography
                   sx={{
-                    fontSize: "14px",
+                    fontSize: "0.8vw",
                     fontWeight: "bold",
                     color: "#FFF",
                   }}
@@ -1820,7 +1822,7 @@ function NextEPButton({ queue }: { queue?: Plex.Metadata[] }) {
                 <Typography
                   sx={{
                     mt: "2px",
-                    fontSize: "10px",
+                    fontSize: "0.6vw",
                     color: "#FFF",
 
                     // max 5 lines
