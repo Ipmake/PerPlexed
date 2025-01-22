@@ -12,6 +12,8 @@ import Library from "./pages/Library";
 import BigReader from "./components/BigReader";
 import { useWatchListCache } from "./states/WatchListCache";
 import Startup, { useStartupState } from "./pages/Startup";
+import PerPlexedSync from "./components/PerPlexedSync";
+import WaitingRoom from "./pages/WaitingRoom";
 
 function AppManager() {
   const { loading } = useStartupState();
@@ -61,9 +63,11 @@ function App() {
   return (
     <>
       <BigReader />
+      <PerPlexedSync />
       <Routes>
         <Route path="*" element={<AppBar />} />
         <Route path="/watch/:itemID" element={<></>} />
+        <Route path="/sync/waitingroom" element={<></>} />
       </Routes>
       <Box
         sx={{
@@ -77,6 +81,7 @@ function App() {
           <Route path="/watch/:itemID" element={<Watch />} />
           <Route path="/login" element={<Login />} />
           <Route path="/search/:query?" element={<Search />} />
+          <Route path="/sync/waitingroom" element={<WaitingRoom />} />
           <Route
             path="/library/:libraryKey/dir/:dir/:subdir?"
             element={<Library />}

@@ -27,12 +27,15 @@ docker run --name perplexed -p 3000:3000 -e PLEX_SERVER=http://your-plex-server:
 ```
 
 #### Environment Variables
-| Name               | Type       | Required | Description                                         |
-|--------------------|------------|----------|-----------------------------------------------------|
-| PLEX_SERVER        | string     | Yes      | The url to your plex server starting with http(s)   |
-| PROXY_PLEX_SERVER  | string     | No       | The url to your plex server that the proxy will use |
-| DISABLE_PROXY      | true/false | No       | Disable the PerPlexed proxy (Not Recommended)       |
-| DISABLE_TLS_VERIFY | true/false | No       | Disable TLS verification on https plex servers      |
+| Name                   | Type       | Required | Description                                                                 |
+|------------------------|------------|----------|-----------------------------------------------------------------------------|
+| PLEX_SERVER            | string     | Yes      | The URL of the Plex server that the frontend will connect to                |
+| PROXY_PLEX_SERVER      | string     | No       | The URL of the Plex server to proxy requests to                             |
+| DISABLE_PROXY          | true/false | No       | If set to true, the proxy will be disabled and all requests go directly to the Plex server from the frontend (NOT RECOMMENDED) |
+| DISABLE_TLS_VERIFY     | true/false | No       | If set to true, the proxy will not check any https ssl certificates         |
+| DISABLE_PERPLEXED_SYNC | true/false | No       | If set to true, perplexed sync (watch together) will be disabled            |
+| DISABLE_REQUEST_LOGGING| true/false | No       | If set to true, the server will not log any requests                        |
+
 
 
 ## Contributing

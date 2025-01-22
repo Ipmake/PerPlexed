@@ -1,8 +1,12 @@
 import axios, { AxiosRequestConfig } from 'axios';
 import express from 'express';
+import http from 'http';
 import https from 'https';
+import { Server as SocketIOServer } from 'socket.io';
 import { PerPlexed } from './types';
 import { randomBytes } from 'crypto';
+import { PrismaClient } from '@prisma/client';
+import { CheckPlexUser } from './common/plex';
 
 /* 
  * ENVIRONMENT VARIABLES
@@ -11,6 +15,8 @@ import { randomBytes } from 'crypto';
     * PROXY_PLEX_SERVER?: The URL of the Plex server to proxy requests to
     * DISABLE_PROXY?: If set to true, the proxy will be disabled and all requests go directly to the Plex server from the frontend (NOT RECOMMENDED)
     * DISABLE_TLS_VERIFY?: If set to true, the proxy will not check any https ssl certificates
+    * DISABLE_PERPLEXED_SYNC?: If set to true, perplexed sync (watch together) will be disabled
+    * DISABLE_REQUEST_LOGGING?: If set to true, the server will not log any requests
 **/
 const deploymentID = randomBytes(8).toString('hex');
 
@@ -21,6 +27,8 @@ const status: PerPlexed.Status = {
 }
 
 const app = express();
+const prisma = new PrismaClient();
+
 
 app.use(express.json());
 
@@ -71,7 +79,7 @@ app.use(express.json());
 })();
 
 app.use((req, res, next) => {
-    console.log(`[${new Date().toISOString()}] [${req.method}] ${req.url}`);
+    if (process.env.DISABLE_REQUEST_LOGGING != "true") console.log(`[${new Date().toISOString()}] [${req.method}] ${req.url}`);
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
     res.header('Access-Control-Allow-Headers', '*'); // Add this line
@@ -88,14 +96,68 @@ app.get('/config', (req, res) => {
         DEPLOYMENTID: deploymentID,
         CONFIG: {
             DISABLE_PROXY: process.env.DISABLE_PROXY === 'true',
+            DISABLE_PERPLEXED_SYNC: process.env.DISABLE_PERPLEXED_SYNC === 'true',
         }
     });
+});
+
+app.get('/user/options', async (req, res) => {
+    if(!req.headers['X-Plex-Token']) return res.status(401).send('Unauthorized');
+
+    const user = await CheckPlexUser(req.headers['X-Plex-Token'] as string);
+    if(!user) return res.status(401).send('Unauthorized');
+
+    const options = await prisma.userOption.findMany({
+        where: {
+            userUid: user.uuid,
+        }
+    }).catch(() => {
+        res.status(500).send('Internal server error');
+        return null;
+    });
+    if(!options) return;
+
+    res.send(options);
+});
+
+app.post('/user/options', async (req, res) => {
+    if(!req.headers['X-Plex-Token']) return res.status(401).send('Unauthorized');
+
+    const user = await CheckPlexUser(req.headers['X-Plex-Token'] as string);
+    if(!user) return res.status(401).send('Unauthorized');
+
+    const { key, value } = req.body;
+
+    if(!key || !value) return res.status(400).send('Bad request');
+
+    const option = await prisma.userOption.upsert({
+        where: {
+            userUid_key: {
+                userUid: user.uuid,
+                key,
+            }
+        },
+        update: {
+            value,
+        },
+        create: {
+            userUid: user.uuid,
+            key,
+            value,
+        }
+    }).catch(() => {
+        res.status(500).send('Internal server error');
+        return null;
+    });
+    if(!option) return;
+
+    res.send(option);
 });
 
 app.use(express.static('www'));
 
 app.post('/proxy', (req, res) => {
-    if(process.env.DISABLE_PROXY === 'true') return res.status(400).send('Proxy is disabled');
+    if (process.env.DISABLE_PROXY === 'true') return res.status(400).send('Proxy is disabled');
 
     const { url, method, headers, data } = req.body;
     const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
@@ -144,11 +206,21 @@ app.options('*', (req, res) => {
     res.send();
 });
 
-app.use((req, res) => {
-    console.log(req.url);
+app.use((req, res, next) => {
+    if(req.url.startsWith('/socket.io')) return next();
     res.sendFile('index.html', { root: 'www' });
 });
 
-app.listen(3000, () => {
+const server = app.listen(3000, () => {
     console.log('Server started on http://localhost:3000');
 });
+
+let io = (process.env.DISABLE_PERPLEXED_SYNC === 'true') ? null : new SocketIOServer(server, {
+    cors: {
+        origin: '*',
+    },
+});
+
+export { app, server, io, deploymentID, prisma };
+
+import './common/sync';

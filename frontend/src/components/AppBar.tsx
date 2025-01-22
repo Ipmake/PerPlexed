@@ -1,3 +1,4 @@
+/* eslint-disable no-lone-blocks */
 import { Theme } from "@emotion/react";
 import {
   AppBar,
@@ -6,7 +7,10 @@ import {
   Box,
   CircularProgress,
   Divider,
+  IconButton,
   InputAdornment,
+  ListItemIcon,
+  ListItemText,
   Menu,
   MenuItem,
   Popper,
@@ -15,11 +19,24 @@ import {
   Typography,
 } from "@mui/material";
 import React, { useEffect, useState } from "react";
-import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import {
+  Link,
+  useLocation,
+  useNavigate,
+  useSearchParams,
+} from "react-router-dom";
 import { getAllLibraries, getSearch, getTranscodeImageURL } from "../plex";
 import MetaScreen from "./MetaScreen";
 import { useUserSessionStore } from "../states/UserSession";
-import { Search } from "@mui/icons-material";
+import {
+  Fullscreen,
+  Logout,
+  People,
+  Search,
+  Settings,
+} from "@mui/icons-material";
+import { useSyncInterfaceState } from "./PerPlexedSync";
+import { useSyncSessionState } from "../states/SyncSessionState";
 
 const BarSide: SxProps<Theme> = {
   display: "flex",
@@ -32,7 +49,7 @@ const BarSide: SxProps<Theme> = {
 function Appbar() {
   const [scrollAtTop, setScrollAtTop] = useState(true);
   const location = useLocation();
-  const navigate = useNavigate();
+  const { room } = useSyncSessionState();
 
   const { user } = useUserSessionStore();
 
@@ -92,6 +109,8 @@ function Appbar() {
           vertical: "top",
           horizontal: "center",
         }}
+        sx={{
+        }}
       >
         <Typography
           sx={{
@@ -109,12 +128,53 @@ function Appbar() {
 
         <MenuItem
           onClick={() => {
+            useSyncInterfaceState.getState().setOpen(true);
+            setAnchorEl(null)
+          }}
+        >
+          <ListItemIcon>
+            <People fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>Watch2Gether</ListItemText>
+        </MenuItem>
+
+        <MenuItem
+          onClick={() => {
+            // toggle Fullscreen
+            if (document.fullscreenElement) document.exitFullscreen();
+            else document.documentElement.requestFullscreen();
+          }}
+        >
+          <ListItemIcon>
+            <Fullscreen fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>Fullscreen</ListItemText>
+        </MenuItem>
+
+        <MenuItem
+          onClick={() => {
+            setAnchorEl(null)
+            // navigate("/settings");
+          }}
+          disabled
+        >
+          <ListItemIcon>
+            <Settings fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>Settings</ListItemText>
+        </MenuItem>
+
+        <MenuItem
+          onClick={() => {
             localStorage.removeItem("accessToken");
             localStorage.removeItem("accAccessToken");
             window.location.reload();
           }}
         >
-          Logout
+          <ListItemIcon>
+            <Logout fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>Logout</ListItemText>
         </MenuItem>
       </Menu>
       <MetaScreen />
@@ -172,6 +232,23 @@ function Appbar() {
       >
         <SearchBar />
 
+        {room && (
+          <IconButton
+            onClick={() => {
+              useSyncInterfaceState.getState().setOpen(true);
+            }}
+            sx={{
+              borderRadius: "10px",
+              padding: 1,
+              "&:hover": {
+                backgroundColor: "#000000AA",
+              },
+            }}
+          >
+            <People />
+          </IconButton>
+        )}
+
         <Avatar
           src={user?.thumb}
           variant="square"
@@ -211,6 +288,8 @@ function SearchBar() {
   const [, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
 
+  const [selectedIndex, setSelectedIndex] = React.useState<number | null>(null);
+
   useEffect(() => {
     // listen to strg + f
 
@@ -218,7 +297,7 @@ function SearchBar() {
       if (e.key === "f" && e.ctrlKey) {
         e.preventDefault();
         e.stopPropagation();
-        if(searchAnchorElRef.current) {
+        if (searchAnchorElRef.current) {
           searchAnchorElRef.current.blur();
           setSearchAnchorEl(null);
           return;
@@ -241,6 +320,7 @@ function SearchBar() {
   }, [searchAnchorEl]);
 
   useEffect(() => {
+    setSelectedIndex(null);
     if (searchValue.length === 0) {
       setSearchResults([]);
       return;
@@ -283,7 +363,7 @@ function SearchBar() {
       <Backdrop
         open={searchOpen}
         sx={{
-          zIndex: 10000
+          zIndex: 10000,
         }}
         onClick={() => {
           setSearchAnchorEl(null);
@@ -302,11 +382,56 @@ function SearchBar() {
         variant="outlined"
         size="small"
         onKeyDown={(e) => {
-          if (e.key === "Enter") {
-            navigate(`/search/${encodeURIComponent(searchValue.trim())}`);
+          switch (e.key) {
+            case "Escape":
+              setSearchAnchorEl(null);
+              searchAnchorEl?.blur();
+              break;
+            case "ArrowDown":
+              e.preventDefault();
+              if(searchResults.length === 0) return;
+              setSelectedIndex((prev) =>
+                prev === null ? 0 : Math.min(prev + 1, searchResults.length - 1)
+              );
+              break;
+            case "ArrowUp":
+              e.preventDefault();
+              if(searchResults.length === 0) return;
+              if(selectedIndex === 0) return setSelectedIndex(null);
 
-            searchAnchorEl?.blur();
-            setSearchAnchorEl(null);
+              setSelectedIndex((prev) =>
+                prev === null ? 0 : Math.max(prev - 1, 0)
+              );
+              break;
+            case "Tab":
+              e.preventDefault();
+              if(searchResults.length === 0) return;
+              // if it gets to the last item, then set to null
+              if(selectedIndex === searchResults.length - 1) return setSelectedIndex(null);
+              setSelectedIndex((prev) =>
+                prev === null ? 0 : Math.min(prev + 1, searchResults.length - 1)
+              );
+              break;
+            case "Enter":
+              if(searchValue.length === 0) return;
+
+              if (selectedIndex !== null && searchResults.length > 0) {
+                if (searchResults[selectedIndex].Metadata?.ratingKey) {
+                  setSearchParams(new URLSearchParams({
+                    mid: searchResults[selectedIndex].Metadata?.ratingKey || '',
+                  }));
+                } else if (searchResults[selectedIndex].Directory) {
+                  navigate(
+                    `/library/${searchResults[selectedIndex].Directory?.librarySectionID}/dir/genre/${searchResults[selectedIndex].Directory?.id}`
+                  );
+                }
+              } else {
+                navigate(`/search/${encodeURIComponent(searchValue.trim())}`);
+              }
+
+              searchAnchorEl?.blur();
+              setSearchAnchorEl(null);
+              break;
           }
         }}
         onChange={(e) => {
@@ -373,7 +498,7 @@ function SearchBar() {
 
         {!searchLoading &&
           searchResults.length > 0 &&
-          searchResults.map((item) => {
+          searchResults.map((item, index) => {
             if (item.Metadata) {
               return (
                 <Box
@@ -390,6 +515,10 @@ function SearchBar() {
                       backgroundColor: "#303030",
                       transition: "all 0.2s ease-in-out",
                     },
+
+                    ...(selectedIndex === index && {
+                      backgroundColor: "#303030",
+                    }),
 
                     transition: "all 0.4s ease-in-out",
 
@@ -457,6 +586,10 @@ function SearchBar() {
                       transition: "all 0.2s ease-in-out",
                     },
 
+                    ...(selectedIndex === index && {
+                      backgroundColor: "#303030",
+                    }),
+
                     transition: "all 0.4s ease-in-out",
 
                     userSelect: "none",
@@ -466,7 +599,9 @@ function SearchBar() {
                     console.log("test");
                     e.stopPropagation();
                     e.preventDefault();
-                    navigate(`/library/${item.Directory?.librarySectionID}/dir/genre/${item.Directory?.id}`);
+                    navigate(
+                      `/library/${item.Directory?.librarySectionID}/dir/genre/${item.Directory?.id}`
+                    );
                     searchAnchorEl?.blur();
                     setSearchAnchorEl(null);
                   }}

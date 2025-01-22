@@ -17,6 +17,7 @@ declare namespace PerPlexed {
         DEPLOYMENTID: string;
         CONFIG: {
             DISABLE_PROXY: boolean;
+            DISABLE_PERPLEXED_SYNC: boolean;
         }
     }
 }
