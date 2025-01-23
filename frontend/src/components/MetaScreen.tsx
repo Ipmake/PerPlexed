@@ -407,7 +407,6 @@ function MetaScreen() {
                     fontSize: "30px",
                     fontWeight: "900",
                     letterSpacing: "0.1em",
-                    textShadow: "3px 3px 1px #232529",
                     ml: 1,
                     color: "#e6a104",
                     textTransform: "uppercase",
@@ -462,7 +461,6 @@ function MetaScreen() {
                       fontSize: "medium",
                       fontWeight: "light",
                       color: "#FFFFFF",
-                      textShadow: "0px 0px 10px #000000",
                       border: "1px dotted #AAAAAA",
                       borderRadius: "5px",
                       px: 1,
@@ -479,7 +477,6 @@ function MetaScreen() {
                       fontWeight: "light",
                       color: "#FFFFFF",
                       ml: data?.contentRating ? 1 : 0,
-                      textShadow: "0px 0px 10px #000000",
                     }}
                   >
                     {data?.year}
@@ -491,7 +488,7 @@ function MetaScreen() {
                       fontSize: "medium",
                       fontWeight: "light",
                       color: "#FFFFFF",
-                      textShadow: "0px 0px 10px #000000",
+
                       ml: 1,
                     }}
                   >
@@ -505,7 +502,6 @@ function MetaScreen() {
                         fontSize: "medium",
                         fontWeight: "light",
                         color: "#FFFFFF",
-                        textShadow: "0px 0px 10px #000000",
                         ml: 1,
                       }}
                     >
@@ -520,7 +516,6 @@ function MetaScreen() {
                         fontSize: "medium",
                         fontWeight: "light",
                         color: "#FFFFFF",
-                        textShadow: "0px 0px 10px #000000",
                         ml: 1,
                       }}
                     >
@@ -945,7 +940,6 @@ function MetaPage2(data: Plex.Metadata | undefined) {
               fontSize: "1.5rem",
               fontWeight: "bold",
               color: "#FFFFFF",
-              textShadow: "0px 0px 10px #000000",
             }}
           >
             {hub.title}
@@ -993,7 +987,6 @@ function MetaPage3(data: Plex.Metadata | undefined) {
             fontSize: "1.5rem",
             fontWeight: "bold",
             color: "#FFFFFF",
-            textShadow: "0px 0px 10px #000000",
           }}
         >
           Cast
@@ -1134,7 +1127,6 @@ function EpisodeItem({
             fontSize: "1.25rem",
             fontWeight: "bold",
             color: "#FFFFFF",
-            textShadow: "0px 0px 10px #000000",
             textAlign: "center",
           }}
         >
@@ -1224,7 +1216,6 @@ function EpisodeItem({
               fontSize: "1.5rem",
               fontWeight: "bold",
               color: "#FFFFFF",
-              textShadow: "0px 0px 10px #000000",
               // make it so the text doesnt resize the parent nor overflow max 3 rows
               overflow: "hidden",
               textOverflow: "ellipsis",
@@ -1256,7 +1247,6 @@ function EpisodeItem({
             fontWeight: "light",
             color: "#FFFFFF",
             opacity: 0.7,
-            textShadow: "0px 0px 10px #000000",
             mt: -0.5,
             // make it so the text doesnt resize the parent nor overflow max 3 rows
             overflow: "hidden",

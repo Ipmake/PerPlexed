@@ -206,7 +206,6 @@ function MovieItem({
             fontSize: "14px",
             fontWeight: "700",
             letterSpacing: "0.15em",
-            textShadow: "2px 2px 0px #232529",
             color: "#e6a104",
             textTransform: "uppercase",
             mt: "2px",
@@ -220,7 +219,6 @@ function MovieItem({
             fontSize: "1.5rem",
             fontWeight: "bold",
             color: "#FFFFFF",
-            textShadow: "0px 0px 10px #000000",
             "@media (max-width: 2000px)": {
               fontSize: "1.2rem",
             },
@@ -229,7 +227,7 @@ function MovieItem({
             whiteSpace: "nowrap",
             maxLines: 1,
             maxInlineSize: "100%",
-            mt: ["episode"].includes(item.type) ? "4px" : "0px",
+            mt: ["episode"].includes(item.type) ? "2px" : "0px",
           }}
         >
           {item.title}
@@ -283,7 +281,6 @@ function MovieItem({
                 fontSize: "medium",
                 fontWeight: "light",
                 color: "#FFFFFF",
-                textShadow: "0px 0px 10px #000000",
                 ml: 1,
               }}
             >
@@ -296,7 +293,6 @@ function MovieItem({
                 fontSize: "medium",
                 fontWeight: "light",
                 color: "#FFFFFF",
-                textShadow: "0px 0px 10px #000000",
                 ml: 1,
                 border: "1px dotted #AAAAAA",
                 borderRadius: "5px",
@@ -313,7 +309,6 @@ function MovieItem({
                 fontSize: "medium",
                 fontWeight: "light",
                 color: "#FFFFFF",
-                textShadow: "0px 0px 10px #000000",
                 ml: 1,
               }}
             >
@@ -326,7 +321,6 @@ function MovieItem({
                 fontSize: "14px",
                 fontWeight: "light",
                 color: "#FFFFFF",
-                textShadow: "0px 0px 10px #000000",
               }}
             >
               {durationToText(item.duration)}
@@ -338,7 +332,6 @@ function MovieItem({
                 fontSize: "14px",
                 fontWeight: "light",
                 color: "#FFFFFF",
-                textShadow: "0px 0px 10px #000000",
               }}
             >
               {item.childCount > 1
@@ -353,7 +346,6 @@ function MovieItem({
                 fontSize: "14px",
                 fontWeight: "light",
                 color: "#FFFFFF",
-                textShadow: "0px 0px 10px #000000",
               }}
             >
               {item.year}

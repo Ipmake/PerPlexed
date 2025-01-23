@@ -655,7 +655,6 @@ function Watch() {
                         fontSize: "medium",
                         fontWeight: "light",
                         color: "#FFFFFF",
-                        textShadow: "0px 0px 10px #000000",
                       }}
                     >
                       {metadata.year}
@@ -667,7 +666,6 @@ function Watch() {
                         fontSize: "medium",
                         fontWeight: "light",
                         color: "#FFFFFF",
-                        textShadow: "0px 0px 10px #000000",
                         ml: 1,
                       }}
                     >
@@ -680,7 +678,6 @@ function Watch() {
                         fontSize: "medium",
                         fontWeight: "light",
                         color: "#FFFFFF",
-                        textShadow: "0px 0px 10px #000000",
                         ml: 1,
                         border: "1px dotted #AAAAAA",
                         borderRadius: "5px",
@@ -698,7 +695,6 @@ function Watch() {
                           fontSize: "medium",
                           fontWeight: "light",
                           color: "#FFFFFF",
-                          textShadow: "0px 0px 10px #000000",
                           ml: 1,
                         }}
                       >
@@ -746,7 +742,6 @@ function Watch() {
                         fontSize: "medium",
                         fontWeight: "light",
                         color: "#FFFFFF",
-                        textShadow: "0px 0px 10px #000000",
                       }}
                     >
                       {metadata.year}
@@ -758,7 +753,6 @@ function Watch() {
                         fontSize: "medium",
                         fontWeight: "light",
                         color: "#FFFFFF",
-                        textShadow: "0px 0px 10px #000000",
                         ml: 1,
                       }}
                     >
@@ -771,7 +765,6 @@ function Watch() {
                         fontSize: "medium",
                         fontWeight: "light",
                         color: "#FFFFFF",
-                        textShadow: "0px 0px 10px #000000",
                         ml: 1,
                         border: "1px dotted #AAAAAA",
                         borderRadius: "5px",
@@ -789,7 +782,6 @@ function Watch() {
                           fontSize: "medium",
                           fontWeight: "light",
                           color: "#FFFFFF",
-                          textShadow: "0px 0px 10px #000000",
                           ml: 1,
                         }}
                       >

@@ -130,13 +130,13 @@ function Appbar() {
         <MenuItem
           onClick={() => {
             setAnchorEl(null);
-            window.open("https://github.com/sponsors/Ipmake", "_blank");
+            window.open("https://g.ipmake.dev/perplexed", "_blank");
           }}
         >
           <ListItemIcon>
             <Favorite fontSize="small" />
           </ListItemIcon>
-          <ListItemText>Support</ListItemText>
+          <ListItemText>Sponsor</ListItemText>
         </MenuItem>
 
         {!config.DISABLE_PERPLEXED_SYNC && (

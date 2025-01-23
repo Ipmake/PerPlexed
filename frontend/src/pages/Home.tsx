@@ -150,7 +150,6 @@ export default function Home() {
                       fontSize: "1.5rem",
                       fontWeight: "bold",
                       color: "white",
-                      textShadow: "3px 3px 1px #232529",
                       mt: 1,
                     }}
                   >

@@ -198,7 +198,6 @@ function HeroDisplay({ item }: { item: Plex.Metadata }) {
                 fontSize: "24px",
                 fontWeight: "900",
                 letterSpacing: "0.1em",
-                textShadow: "3px 3px 1px #232529",
                 ml: 1,
                 color: "#e6a104",
                 textTransform: "uppercase",
