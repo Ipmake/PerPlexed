@@ -11,10 +11,14 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { usePreviewPlayer } from "../states/PreviewPlayerState";
 import ReactPlayer from "react-player";
 import { useBigReader } from "./BigReader";
+import { useWatchListCache } from "../states/WatchListCache";
+import { WatchListButton } from "./MovieItem";
 
 function HeroDisplay({ item }: { item: Plex.Metadata }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
+
+  const { addItem, removeItem, isOnWatchList } = useWatchListCache()
 
   const { MetaScreenPlayerMuted, setMetaScreenPlayerMuted } =
     usePreviewPlayer();
@@ -243,6 +247,7 @@ function HeroDisplay({ item }: { item: Plex.Metadata }) {
               mt: 4,
               gap: 2,
               ml: 0,
+              height: "36.5px",
             }}
           >
             <Button
@@ -253,11 +258,10 @@ function HeroDisplay({ item }: { item: Plex.Metadata }) {
                 fontWeight: "bold",
                 letterSpacing: "0.1em",
                 textTransform: "uppercase",
+                gap: "10px",
                 "&:hover": {
                   backgroundColor: "primary.main",
-                  gap: 1.5,
                 },
-                gap: 1,
                 transition: "all 0.2s ease-in-out",
               }}
               onClick={() => {
@@ -267,6 +271,7 @@ function HeroDisplay({ item }: { item: Plex.Metadata }) {
             >
               <PlayArrow fontSize="medium" /> Play
             </Button>
+
             <Button
               variant="contained"
               sx={{
@@ -276,11 +281,13 @@ function HeroDisplay({ item }: { item: Plex.Metadata }) {
                 letterSpacing: "0.1em",
                 textTransform: "uppercase",
                 "&:hover": {
-                  opacity: 0.7,
                   backgroundColor: "#555555",
-                  gap: 1.5,
+
+                  "& > *:nth-child(2)": {
+                    width: "91px",
+                    ml: "10px",
+                  },
                 },
-                gap: 1,
                 transition: "all 0.2s ease-in-out",
               }}
               onClick={() => {
@@ -292,8 +299,20 @@ function HeroDisplay({ item }: { item: Plex.Metadata }) {
                 });
               }}
             >
-              <InfoOutlined fontSize="medium" /> More Info
+              <InfoOutlined fontSize="medium" /> <Typography sx={{
+                width: "0px",
+                userSelect: "none",
+                display: "inline",
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                transition: "all 0.2s ease-in-out",
+
+                fontSize: "0.875rem",
+                lineHeight: "1.75",
+              }}>More Info</Typography>
             </Button>
+
+            <WatchListButton item={item} />
           </Box>
         </Box>
       </Box>

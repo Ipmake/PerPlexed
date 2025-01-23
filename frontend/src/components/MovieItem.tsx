@@ -576,7 +576,7 @@ function MovieItem({
 
 export default MovieItem;
 
-function WatchListButton({ item }: { item: Plex.Metadata }) {
+export function WatchListButton({ item }: { item: Plex.Metadata }) {
   const WatchList = useWatchListCache();
 
   return (
