@@ -29,6 +29,7 @@ import { getAllLibraries, getSearch, getTranscodeImageURL } from "../plex";
 import MetaScreen from "./MetaScreen";
 import { useUserSessionStore } from "../states/UserSession";
 import {
+  Favorite,
   Fullscreen,
   Logout,
   People,
@@ -37,6 +38,7 @@ import {
 } from "@mui/icons-material";
 import { useSyncInterfaceState } from "./PerPlexedSync";
 import { useSyncSessionState } from "../states/SyncSessionState";
+import { config } from "..";
 
 const BarSide: SxProps<Theme> = {
   display: "flex",
@@ -109,8 +111,7 @@ function Appbar() {
           vertical: "top",
           horizontal: "center",
         }}
-        sx={{
-        }}
+        sx={{}}
       >
         <Typography
           sx={{
@@ -128,15 +129,29 @@ function Appbar() {
 
         <MenuItem
           onClick={() => {
-            useSyncInterfaceState.getState().setOpen(true);
-            setAnchorEl(null)
+            setAnchorEl(null);
+            window.open("https://github.com/sponsors/Ipmake", "_blank");
           }}
         >
           <ListItemIcon>
-            <People fontSize="small" />
+            <Favorite fontSize="small" />
           </ListItemIcon>
-          <ListItemText>Watch2Gether</ListItemText>
+          <ListItemText>Support</ListItemText>
         </MenuItem>
+
+        {!config.DISABLE_PERPLEXED_SYNC && (
+          <MenuItem
+            onClick={() => {
+              useSyncInterfaceState.getState().setOpen(true);
+              setAnchorEl(null);
+            }}
+          >
+            <ListItemIcon>
+              <People fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>Watch2Gether</ListItemText>
+          </MenuItem>
+        )}
 
         <MenuItem
           onClick={() => {
@@ -153,7 +168,7 @@ function Appbar() {
 
         <MenuItem
           onClick={() => {
-            setAnchorEl(null)
+            setAnchorEl(null);
             // navigate("/settings");
           }}
           disabled
@@ -389,15 +404,15 @@ function SearchBar() {
               break;
             case "ArrowDown":
               e.preventDefault();
-              if(searchResults.length === 0) return;
+              if (searchResults.length === 0) return;
               setSelectedIndex((prev) =>
                 prev === null ? 0 : Math.min(prev + 1, searchResults.length - 1)
               );
               break;
             case "ArrowUp":
               e.preventDefault();
-              if(searchResults.length === 0) return;
-              if(selectedIndex === 0) return setSelectedIndex(null);
+              if (searchResults.length === 0) return;
+              if (selectedIndex === 0) return setSelectedIndex(null);
 
               setSelectedIndex((prev) =>
                 prev === null ? 0 : Math.max(prev - 1, 0)
@@ -405,21 +420,25 @@ function SearchBar() {
               break;
             case "Tab":
               e.preventDefault();
-              if(searchResults.length === 0) return;
+              if (searchResults.length === 0) return;
               // if it gets to the last item, then set to null
-              if(selectedIndex === searchResults.length - 1) return setSelectedIndex(null);
+              if (selectedIndex === searchResults.length - 1)
+                return setSelectedIndex(null);
               setSelectedIndex((prev) =>
                 prev === null ? 0 : Math.min(prev + 1, searchResults.length - 1)
               );
               break;
             case "Enter":
-              if(searchValue.length === 0) return;
+              if (searchValue.length === 0) return;
 
               if (selectedIndex !== null && searchResults.length > 0) {
                 if (searchResults[selectedIndex].Metadata?.ratingKey) {
-                  setSearchParams(new URLSearchParams({
-                    mid: searchResults[selectedIndex].Metadata?.ratingKey || '',
-                  }));
+                  setSearchParams(
+                    new URLSearchParams({
+                      mid:
+                        searchResults[selectedIndex].Metadata?.ratingKey || "",
+                    })
+                  );
                 } else if (searchResults[selectedIndex].Directory) {
                   navigate(
                     `/library/${searchResults[selectedIndex].Directory?.librarySectionID}/dir/genre/${searchResults[selectedIndex].Directory?.id}`

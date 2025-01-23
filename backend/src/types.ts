@@ -7,13 +7,26 @@ export namespace PerPlexed {
 
     export namespace Sync {
         export interface SocketError {
-            type: string;   
+            type: string;
             message: string;
         }
 
         export interface Ready {
             room: string;
             host: boolean;
+        }
+
+        export interface PlayBackState {
+            key?: string;
+            state: string;
+            time?: number;
+        }
+
+        export interface Member {
+            uid: string;
+            socket: string;
+            name: string;
+            avatar: string;
         }
     }
 

@@ -14,6 +14,7 @@ import { useWatchListCache } from "./states/WatchListCache";
 import Startup, { useStartupState } from "./pages/Startup";
 import PerPlexedSync from "./components/PerPlexedSync";
 import WaitingRoom from "./pages/WaitingRoom";
+import ToastManager from "./components/ToastManager";
 
 function AppManager() {
   const { loading } = useStartupState();
@@ -64,6 +65,7 @@ function App() {
     <>
       <BigReader />
       <PerPlexedSync />
+      <ToastManager />
       <Routes>
         <Route path="*" element={<AppBar />} />
         <Route path="/watch/:itemID" element={<></>} />

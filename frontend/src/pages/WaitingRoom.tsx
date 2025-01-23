@@ -7,13 +7,22 @@ import { useNavigate } from "react-router-dom";
 function WaitingRoom() {
   const [loading, setLoading] = React.useState(true);
 
-  const { room, isHost } = useSyncSessionState();
+  const { room, isHost, socket } = useSyncSessionState();
   const { setOpen } = useSyncInterfaceState();
   const navigate = useNavigate();
 
   useEffect(() => {
     if (isHost || !room) navigate("/");
   }, [room, isHost, navigate]);
+
+  useEffect(() => {
+    if(!socket) return;
+
+    socket.once("RES_SYNC_RESYNC_PLAYBACK", (user, data: PerPlexed.Sync.PlayBackState) => {
+      console.log("Playback resync received", data);
+      navigate(`/watch/${data.key}?t=${data.time}`);
+    })
+  }, [navigate, socket]);
 
   return (
     <Box

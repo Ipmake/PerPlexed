@@ -17,15 +17,14 @@ if(!localStorage.getItem("clientID")) localStorage.setItem("clientID", makeid(24
 
 sessionStorage.setItem("sessionID", uuidv4());
 
-interface ConfigInterface {
-  [key: string]: any;
-}
-
-let config: ConfigInterface;
+let config: PerPlexed.ConfigOptions = {
+  DISABLE_PROXY: false,
+  DISABLE_PERPLEXED_SYNC: false
+};
 
 (() => {
   if(!localStorage.getItem("config")) return
-  config = JSON.parse(localStorage.getItem("config") as string) as ConfigInterface;
+  config = JSON.parse(localStorage.getItem("config") as string) as PerPlexed.ConfigOptions;
 })();
 
 if(!localStorage.getItem("quality")) localStorage.setItem("quality", "12000");

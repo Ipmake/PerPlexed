@@ -15,9 +15,36 @@ declare namespace PerPlexed {
     interface Config {
         PLEX_SERVER: string;
         DEPLOYMENTID: string;
-        CONFIG: {
-            DISABLE_PROXY: boolean;
-            DISABLE_PERPLEXED_SYNC: boolean;
+        CONFIG: ConfigOptions
+    }
+
+    interface ConfigOptions {
+        DISABLE_PROXY: boolean;
+        DISABLE_PERPLEXED_SYNC: boolean;
+    }
+
+    namespace Sync {
+        interface SocketError {
+            type: string;
+            message: string;
+        }
+
+        interface Ready {
+            room: string;
+            host: boolean;
+        }
+
+        interface PlayBackState {
+            key?: string;
+            state: string;
+            time?: number;
+        }
+
+        interface Member {
+            uid: string;
+            socket: string;
+            name: string;
+            avatar: string;
         }
     }
 }

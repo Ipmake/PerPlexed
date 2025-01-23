@@ -240,7 +240,7 @@ function PerPlexedSync() {
                   setPage("load");
                   const res = await useSyncSessionState
                     .getState()
-                    .connect(inputRoom);
+                    .connect(inputRoom, navigate);
 
                   console.log(res);
 
@@ -292,7 +292,7 @@ function PerPlexedSync() {
                 color="primary"
                 onClick={async () => {
                   setPage("load");
-                  const res = await useSyncSessionState.getState().connect();
+                  const res = await useSyncSessionState.getState().connect(undefined, navigate);
                   if (res !== true) {
                     setError(res.message);
                     setPage("home");

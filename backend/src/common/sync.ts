@@ -79,6 +79,15 @@ io?.on('connection', async (socket) => {
         host: isHost
     } satisfies PerPlexed.Sync.Ready);
 
+    io?.to(room).emit('EVNT_USER_JOIN', {
+        uid: user.uuid,
+        socket: socket.id,
+        name: user.friendlyName,
+        avatar: user.thumb
+    } satisfies PerPlexed.Sync.Member);
+
+    AddEvents(socket, isHost, room);
+
     socket.on('disconnect', () => {
         console.log(`SYNC [${socket.id}] disconnected`);
 
@@ -95,12 +104,52 @@ io?.on('connection', async (socket) => {
                     io?.sockets.sockets.get(client)?.disconnect();
                 });
             }
+        } else {
+            io?.to(room).emit('EVNT_USER_LEAVE', {
+                uid: user.uuid,
+                socket: socket.id,
+                name: user.friendlyName,
+                avatar: user.thumb
+            } satisfies PerPlexed.Sync.Member);
         }
     });
 })
 
-function AddEvents(socket: Socket, isHost: boolean) {
+function AddEvents(socket: Socket, isHost: boolean, room: string) {
+    const user = socket.data.user as PerPlexed.PlexTV.User;
 
+    socket.onAny((event, ...args) => {
+        if(!event.startsWith('SYNC_')) return;
+
+        console.log(`SYNC [${socket.id}] emitting HOST ${event} to ${room}`);
+        io?.to(room).emit(`HOST_${event}`, ...args);
+    });
+
+    socket.onAny((event, ...args) => {
+        if(!isHost) return;
+        if(!event.startsWith('RES_')) return;
+
+        console.log(`SYNC [${socket.id}] emitting ${event} to ${room}`);
+        io?.to(room).emit(`${event}`, {
+            uid: user.uuid,
+            socket: socket.id,
+            name: user.friendlyName,
+            avatar: user.thumb
+        } satisfies PerPlexed.Sync.Member, ...args);
+    });
+
+    socket.onAny((event, ...args) => {
+        if(!event.startsWith("EVNT_")) return; 
+
+        console.log(`SYNC [${socket.id}] emitting EVENT ${event} to ${room}`);
+        io?.to(room).emit(`${event}`, {
+            uid: user.uuid,
+            socket: socket.id,
+            name: user.friendlyName,
+            avatar: user.thumb
+        } satisfies PerPlexed.Sync.Member, ...args);
+    })
+        
 }
 
 function GenerateRoomID() {
