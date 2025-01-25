@@ -285,6 +285,7 @@ function HeroDisplay({ item }: { item: Plex.Metadata }) {
                   "& > *:nth-child(2)": {
                     width: "91px",
                     ml: "10px",
+                    backgroundColor: "#333333",
                   },
                 },
                 transition: "all 0.2s ease-in-out",
