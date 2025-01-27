@@ -39,7 +39,6 @@ function Library() {
     setCategories([]);
 
     if (!library) return;
-
     getLibraryDir(
       `/library/sections/${library.librarySectionID.toString()}/unwatched`
     ).then(async (media) => {
@@ -84,7 +83,7 @@ function Library() {
         getLibraryDir(
           `/library/sections/${library.librarySectionID.toString()}/all`,
           {
-            type: "2",
+            type: library.Type?.[0].type === "movie" ? "1" : "2",
             sort: "lastViewedAt:desc",
             limit: "20",
             unwatched: "0",
@@ -117,7 +116,6 @@ function Library() {
           });
         }
       }
-
       // if lastviewed has more than 3 items, get some random item that isnt the first one and add a category called "More Like This"
       if (lastViewed.length > 3) {
         const randomItem =
