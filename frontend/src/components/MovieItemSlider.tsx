@@ -1,6 +1,6 @@
 import { Box, Typography } from "@mui/material";
 import React from "react";
-import { getLibraryMedia } from "../plex";
+import { getLibraryDir } from "../plex";
 import { ArrowForwardIos } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import MovieItem from "./MovieItem";
@@ -8,6 +8,8 @@ import MovieItem from "./MovieItem";
 function MovieItemSlider({
   title,
   dir,
+  props,
+  filter,
   link,
   shuffle,
   data,
@@ -15,6 +17,8 @@ function MovieItemSlider({
 }: {
   title: string;
   dir?: string;
+  props?: { [key: string]: any }
+  filter?: (item: Plex.Metadata) => boolean;
   link?: string;
   shuffle?: boolean;
   data?: Plex.Metadata[];
@@ -52,19 +56,20 @@ function MovieItemSlider({
   }, []);
 
   React.useEffect(() => {
-    if (data) {
-      setItems(data);
-      return;
-    }
-
+    if (data) return setItems(data);
     if(!dir) return;
 
-    getLibraryMedia(dir).then((media) => {
+    getLibraryDir(dir, props).then((res) => {
       // cut the array down so its a multiple of itemsPerPage
+      if(!res.Metadata) return;
+      
+      let media: Plex.Metadata[] = res.Metadata;
+      if(filter) media = res.Metadata.filter(filter);
+
       if (!media) return;
       setItems(shuffle ? shuffleArray(media) : media);
     });
-  }, [data, dir, shuffle]);
+  }, [data, dir, filter, props, shuffle]);
 
   if (!items) return <></>;
 

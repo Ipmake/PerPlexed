@@ -7,16 +7,34 @@ export async function getAllLibraries(): Promise<Plex.LibarySection[]> {
     return res.MediaContainer.Directory;
 }
 
-export async function getLibrary(key: string): Promise<Plex.LibraryDetails> {
+export async function getLibrary(key: string): Promise<Plex.MediaContainer> {
     const res = await authedGet(`/library/sections/${key}?${queryBuilder({
         ...getIncludeProps(),
     })}`);
     return res.MediaContainer;
 }
 
+/**
+ * @deprecated This function is deprecated. Use `getLibraryDir` instead.
+ */
 export async function getLibraryMedia(path: string): Promise<Plex.Metadata[]> {
     const res = await authedGet(`/library${path}`);
     return res.MediaContainer.Metadata;
+}
+
+/**
+ * Fetches the items from the library directory.
+ *
+ * @param {string} key - The uri to identify the library directory. e.g. /library/sections/1/all
+ * @param {Object.<string, any>} props - Additional properties to include in the query.
+ * @returns {Promise<Plex.Metadata[]>} - A promise that resolves to an array of metadata items.
+ */
+export async function getLibraryDir(key: string, props?: { [key: string]: any }): Promise<Plex.MediaContainer> {
+    const res = await authedGet(`${key}?${queryBuilder({
+        ...props,
+        ...getIncludeProps(),
+    })}`);
+    return res.MediaContainer;
 }
 
 export async function getLibrarySecondary(key: string, directory: string): Promise<Plex.Directory[]> {
@@ -202,14 +220,6 @@ export interface LibraryDir {
     Metadata: Plex.Metadata[];
 }
 
-export async function getLibraryDir(library: number, directory: string, subDir?: string): Promise<LibraryDir> {
-    const res = await authedGet(`/library/sections/${library}/${directory}/${subDir ?? ""}`);
-    return {
-        title: res.MediaContainer.title2,
-        library: res.MediaContainer.title1,
-        Metadata: res.MediaContainer.Metadata
-    }
-}
 
 export async function getItemByGUID(guid: string): Promise<Plex.Metadata | null> {
     const res = await authedGet(`/library/all?${queryBuilder({

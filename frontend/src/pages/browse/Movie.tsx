@@ -6,7 +6,7 @@ import MovieItemSlider, {
 } from "../../components/MovieItemSlider";
 import HeroDisplay from "../../components/HeroDisplay";
 
-function Movie({ Library }: { Library: Plex.LibraryDetails }) {
+function Movie({ Library }: { Library: Plex.MediaContainer }) {
   const [featuredItem, setFeaturedItem] = React.useState<Plex.Metadata | null>(
     null
   );

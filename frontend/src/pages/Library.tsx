@@ -1,24 +1,27 @@
 import { Box, CircularProgress, Grid, Typography } from "@mui/material";
 import React from "react";
-import { useParams } from "react-router-dom";
-import { getLibraryDir, LibraryDir } from "../plex";
+import { useParams, useSearchParams } from "react-router-dom";
+import { getLibraryDir } from "../plex";
 import MovieItem from "../components/MovieItem";
 
 export default function Library() {
-  const { libraryKey, dir, subdir } = useParams() as {
-    libraryKey: string;
+  const { dir } = useParams() as {
     dir: string;
-    subdir?: string;
   };
+  // get the query strings from react router
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  const [results, setResults] = React.useState<LibraryDir | null>(null);
+  const [results, setResults] = React.useState<Plex.MediaContainer | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const [isError, setIsError] = React.useState(false);
 
   React.useEffect(() => {
     const fetchData = async () => {
       try {
-        const data = await getLibraryDir(Number(libraryKey), dir, subdir);
+        const params = new URLSearchParams(searchParams);
+        if (params.has("mid")) params.delete("mid");
+
+        const data = await getLibraryDir(dir, searchParams);
         setResults(data);
       } catch (error) {
         setIsError(true);
@@ -28,7 +31,7 @@ export default function Library() {
     };
 
     fetchData();
-  }, [libraryKey, dir, subdir]);
+  }, [dir, searchParams]);
 
   return (
     <Box
@@ -52,12 +55,12 @@ export default function Library() {
       {results && (
         <>
           <Typography variant="h3" sx={{ mt: 2 }}>
-            {results.library} - {results.title}
+            {results.title1} - {results.title2}
           </Typography>
           {!results && <CircularProgress sx={{ mt: 4 }} />}
           <Grid container spacing={2} sx={{ mt: 2, width: "100%" }}>
             {results &&
-              results.Metadata.map((item) => (
+              results.Metadata?.map((item) => (
                 <Grid
                   item
                   key={item.ratingKey}

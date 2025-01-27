@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { getLibraryMedia, getLibraryMeta, getLibrarySecondary } from "../../plex";
 import { Box, CircularProgress } from "@mui/material";
 import MovieItemSlider, {
@@ -6,14 +6,14 @@ import MovieItemSlider, {
 } from "../../components/MovieItemSlider";
 import HeroDisplay from "../../components/HeroDisplay";
 
-function Show({ Library }: { Library: Plex.LibraryDetails }) {
-  const [featuredItem, setFeaturedItem] = React.useState<Plex.Metadata | null>(
+function Show({ Library }: { Library: Plex.MediaContainer }) {
+  const [featuredItem, setFeaturedItem] = useState<Plex.Metadata | null>(
     null
   );
 
-  const [genres, setGenres] = React.useState<Plex.Directory[]>([]);
+  const [genres, setGenres] = useState<Plex.Directory[]>([]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     setFeaturedItem(null);
     setGenres([]);
 

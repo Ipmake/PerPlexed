@@ -52,7 +52,7 @@ declare namespace Plex {
         voiceSearch: boolean;
     }
 
-    type LibaryType = 'movie' | 'show' | 'artist' | 'photo' | 'episode' | 'track' | 'season' | 'album';
+    type LibaryType = 'movie' | 'show' | 'artist' | 'photo' | 'episode' | 'track' | 'season' | 'album' | 'secondary';
 
     interface LibarySection {
         allowSync: boolean;
@@ -76,41 +76,6 @@ declare namespace Plex {
         contentChangedAt: number;
         hidden: number;
         Location: Location[];
-    }
-
-    interface LibraryDetails {
-        size: number;
-        allowSync: boolean;
-        art: string;
-        content: string;
-        identifier: string;
-        librarySectionID: number;
-        mediaTagPrefix: string;
-        mediaTagVersion: number;
-        thumb: string;
-        title1: string;
-        viewGroup: string;
-        viewMode: number;
-        Directory: Directory[];
-        Type: Type[];
-        FieldType: FieldType[];
-    }
-
-    interface LibrarySecondary {
-        size: number;
-        allowSync: boolean;
-        art: string;
-        content: string;
-        identifier: string;
-        librarySectionID: number;
-        mediaTagPrefix: string;
-        mediaTagVersion: number;
-        thumb: string;
-        title1: string;
-        title2: string;
-        viewGroup: string;
-        viewMode: number;
-        Directory: Directory[];
     }
 
     interface Directory {
@@ -173,6 +138,31 @@ declare namespace Plex {
     interface Operator {
         key: string;
         title: string;
+    }
+
+    interface MediaContainer {
+        size: number;
+        allowSync?: boolean;
+        art?: string;
+        content?: string;
+        identifier?: string;
+        librarySectionID: number;
+        librarySectionTitle?: string;
+        librarySectionUUID?: string;
+        mediaTagPrefix: string;
+        mediaTagVersion: number;
+        mixedParents?: boolean;
+        nocache?: boolean;
+        thumb?: string;
+        title1?: string;
+        title2?: string;
+        viewGroup: LibaryType;
+
+        Metadata?: Metadata[];
+        Directory?: Directory[];
+
+        Type?: Type[];
+        FieldType?: FieldType[];
     }
 
     interface Metadata {
