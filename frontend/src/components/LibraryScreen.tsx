@@ -11,6 +11,10 @@ import { useSearchParams } from "react-router-dom";
 import { getLibraryDir } from "../plex";
 import MovieItem from "./MovieItem";
 import { useInView } from "react-intersection-observer";
+import LibrarySortDropDown, {
+  LibrarySort,
+  sortMetadata,
+} from "./LibrarySortDropDown";
 
 function LibraryScreen() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -18,6 +22,10 @@ function LibraryScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [library, setLibrary] = useState<Plex.MediaContainer | null>(null);
+
+  const [sortBy, setSortBy] = useState<LibrarySort>(
+    (localStorage.getItem("sortBy") as LibrarySort) || "title:asc"
+  );
 
   const bkey = searchParams.has("bkey")
     ? decodeURIComponent(searchParams.get("bkey") as string)
@@ -55,7 +63,7 @@ function LibraryScreen() {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          zIndex: 9999,
+          zIndex: 1200,
         }}
         onClick={() => {
           setSearchParams(new URLSearchParams());
@@ -74,7 +82,7 @@ function LibraryScreen() {
           display: "flex",
           alignItems: "flex-start",
           justifyContent: "center",
-          zIndex: 9999,
+          zIndex: 1200,
         }}
         onClick={() => {
           setSearchParams(new URLSearchParams());
@@ -129,22 +137,36 @@ function LibraryScreen() {
             >
               {library?.title1} {library?.title2 && ` - ${library?.title2}`}
             </Typography>
+
+            <Box
+              sx={{
+                marginLeft: "auto",
+                display: "flex",
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "flex-end",
+                gap: 2,
+              }}
+            >
+              <LibrarySortDropDown sortHook={[sortBy, setSortBy]} />
+            </Box>
           </Box>
 
           <Grid container spacing={2}>
-            {library?.Metadata?.map((item, index) => (
-              <Grid
-                item
-                xs={12}
-                sm={6}
-                md={4}
-                lg={3}
-                xl={3}
-                key={item.ratingKey}
-              >
-                <Element item={item} key={`${index}`} />
-              </Grid>
-            ))}
+            {library?.Metadata &&
+              sortMetadata(library?.Metadata, sortBy).map((item, index) => (
+                <Grid
+                  item
+                  xs={12}
+                  sm={6}
+                  md={4}
+                  lg={3}
+                  xl={3}
+                  key={item.ratingKey}
+                >
+                  <Element item={item} key={`${index}`} />
+                </Grid>
+              ))}
           </Grid>
         </Box>
       </Backdrop>
