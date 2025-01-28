@@ -17,7 +17,7 @@ function MovieItemSlider({
 }: {
   title: string;
   dir?: string;
-  props?: { [key: string]: any }
+  props?: { [key: string]: any };
   filter?: (item: Plex.Metadata) => boolean;
   link?: string;
   shuffle?: boolean;
@@ -57,14 +57,14 @@ function MovieItemSlider({
 
   React.useEffect(() => {
     if (data) return setItems(data);
-    if(!dir) return;
+    if (!dir) return;
 
     getLibraryDir(dir, props).then((res) => {
       // cut the array down so its a multiple of itemsPerPage
-      if(!res.Metadata) return;
-      
+      if (!res.Metadata) return;
+
       let media: Plex.Metadata[] = res.Metadata;
-      if(filter) media = res.Metadata.filter(filter);
+      if (filter) media = res.Metadata.filter(filter);
 
       if (!media) return;
       setItems(shuffle ? shuffleArray(media) : media);
@@ -118,9 +118,12 @@ function MovieItemSlider({
             userSelect: "none",
           }}
           onClick={() => {
-            if (link) setSearchParams(new URLSearchParams({
-              bkey: link
-            }));
+            if (link)
+              setSearchParams(
+                new URLSearchParams({
+                  bkey: link,
+                })
+              );
           }}
         >
           <Typography
@@ -134,24 +137,24 @@ function MovieItemSlider({
             {title}
           </Typography>
 
-            {link && (
+          {link && (
             <Box
               sx={{
-              display: "flex",
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "center",
-              mt: "0px",
-              opacity: 0,
-              gap: "0px",
-              transition: "all 0.5s ease",
-              color: "primary.main",
+                display: "flex",
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "center",
+                mt: "0px",
+                opacity: 0,
+                gap: "0px",
+                transition: "all 0.5s ease",
+                color: "primary.main",
               }}
             >
               <Typography sx={{ fontSize: "1rem" }}>Browse</Typography>
               <ArrowForwardIos fontSize="small" />
             </Box>
-            )}
+          )}
         </Box>
 
         <Box
@@ -248,9 +251,30 @@ function MovieItemSlider({
           }}
         >
           {items?.slice(0, itemsPerPage * 5).map((item, i) => {
-            return (
-              <MovieItem item={item} itemsPerPage={itemsPerPage} index={i} PlexTvSource={plexTvSource} />
-            );
+            const start = currPage * itemsPerPage - itemsPerPage;
+            const end = currPage * itemsPerPage + itemsPerPage * 2;
+
+            if (i >= start && i < end) {
+              return (
+                <MovieItem
+                  key={item.ratingKey}
+                  item={item}
+                  itemsPerPage={itemsPerPage}
+                  index={i}
+                  PlexTvSource={plexTvSource}
+                />
+              );
+            } else {
+              return (
+                <Box
+                  key={i}
+                  sx={{
+                    width: `calc((100vw - 5vw) / ${itemsPerPage} - 10px)`,
+                    height: "auto",
+                  }}
+                />
+              );
+            }
           })}
         </Box>
         <Box

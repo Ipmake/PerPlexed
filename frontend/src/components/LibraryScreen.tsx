@@ -10,6 +10,7 @@ import React, { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { getLibraryDir } from "../plex";
 import MovieItem from "./MovieItem";
+import { useInView } from "react-intersection-observer";
 
 function LibraryScreen() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -18,7 +19,9 @@ function LibraryScreen() {
   const [error, setError] = useState<string | null>(null);
   const [library, setLibrary] = useState<Plex.MediaContainer | null>(null);
 
-  const bkey = searchParams.has("bkey") ? decodeURIComponent(searchParams.get("bkey") as string) : null;
+  const bkey = searchParams.has("bkey")
+    ? decodeURIComponent(searchParams.get("bkey") as string)
+    : null;
 
   useEffect(() => {
     if (!(searchParams.has("mid") && searchParams.has("bkey"))) return;
@@ -88,8 +91,8 @@ function LibraryScreen() {
             mt: 4,
             padding: "20px",
 
-            ...(((library?.Metadata?.length ?? 0) > 10) && {
-                pb: "10vh"
+            ...((library?.Metadata?.length ?? 0) > 10 && {
+              pb: "10vh",
             }),
 
             borderRadius: "10px",
@@ -129,7 +132,7 @@ function LibraryScreen() {
           </Box>
 
           <Grid container spacing={2}>
-            {library?.Metadata?.map((item) => (
+            {library?.Metadata?.map((item, index) => (
               <Grid
                 item
                 xs={12}
@@ -139,7 +142,7 @@ function LibraryScreen() {
                 xl={3}
                 key={item.ratingKey}
               >
-                <MovieItem item={item} />
+                <Element item={item} key={`${index}`} />
               </Grid>
             ))}
           </Grid>
@@ -148,6 +151,22 @@ function LibraryScreen() {
     );
 
   return <></>;
+}
+
+function Element({ item }: { item: Plex.Metadata }) {
+  const { inView, ref } = useInView();
+
+  return (
+    <div ref={ref}>
+      {inView && <MovieItem item={item} />}
+      {!inView && (
+        <Box style={{ width: "100%" }}>
+          <Box sx={{ width: "100%", height: "auto", aspectRatio: "16/9" }} />
+          <Box sx={{ width: "100%", height: "104px" }} />
+        </Box>
+      )}
+    </div>
+  );
 }
 
 export default LibraryScreen;
