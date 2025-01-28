@@ -483,54 +483,7 @@ function MovieItem({
             )}
           </Button>
 
-          <Button
-            variant="contained"
-            sx={{
-              width: "fit-content",
-              height: "100%",
-              backgroundColor: "#555555",
-              color: "#FFFFFF",
-              fontSize: "12px",
-              letterSpacing: "0.1em",
-              textTransform: "uppercase",
-              "&:hover": {
-                backgroundColor: "#333333",
-              },
-              gap: 1,
-              transition: "all 0.2s ease-in-out",
 
-              display: "flex",
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-            onClick={async (e) => {
-              e.stopPropagation();
-              if (PlexTvSource) {
-                const data = await getItemByGUID(item.guid);
-                if (!data) {
-                  useBigReader
-                    .getState()
-                    .setBigReader(
-                      `"${item.title}" is not available on this Plex Server`
-                    );
-                  return;
-                }
-
-                setSearchParams({ mid: data.ratingKey.toString() });
-              } else {
-                if (
-                  item.grandparentRatingKey &&
-                  ["episode"].includes(item.type)
-                )
-                  return setSearchParams({ mid: item.grandparentRatingKey });
-
-                setSearchParams({ mid: item.ratingKey.toString() });
-              }
-            }}
-          >
-            <InfoOutlined fontSize="small" />
-          </Button>
 
           <WatchListButton item={item} />
         </Box>
@@ -576,7 +529,7 @@ export function WatchListButton({ item }: { item: Plex.Metadata }) {
       variant="contained"
       sx={{
         width: "fit-content",
-        height: "100%",
+        height: "32px",
         backgroundColor: "#555555",
         color: "#FFFFFF",
         fontSize: "12px",
@@ -593,7 +546,6 @@ export function WatchListButton({ item }: { item: Plex.Metadata }) {
         alignItems: "center",
         justifyContent: "center",
 
-        padding: "0px 20px",
         minWidth: "20px",
       }}
       onClick={(e) => {

@@ -15,6 +15,7 @@ import LibrarySortDropDown, {
   LibrarySort,
   sortMetadata,
 } from "./LibrarySortDropDown";
+import { useWatchListCache } from "../states/WatchListCache";
 
 function LibraryScreen() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -26,6 +27,7 @@ function LibraryScreen() {
   const [sortBy, setSortBy] = useState<LibrarySort>(
     (localStorage.getItem("sortBy") as LibrarySort) || "title:asc"
   );
+  const [skipFilter, setSkipFilter] = useState(false);
 
   const bkey = searchParams.has("bkey")
     ? decodeURIComponent(searchParams.get("bkey") as string)
@@ -53,15 +55,39 @@ function LibraryScreen() {
 
     setLoading(true);
     setError(null);
-    getLibraryDir(bkey)
-      .then((data) => {
-        setLibrary(data);
-        setLoading(false);
-      })
-      .catch((e) => {
-        setError(e.message);
-        setLoading(false);
-      });
+    setLibrary(null);
+
+    switch (bkey) {
+      case "/plextv/watchlist":
+        {
+          const watchlist = useWatchListCache.getState().watchListCache;
+          setLibrary({
+            size: watchlist.length,
+            title1: "Watchlist",
+            librarySectionID: 0,
+            mediaTagPrefix: "",
+            mediaTagVersion: 0,
+            viewGroup: "secondary",
+            Metadata: watchlist,
+          });
+          setLoading(false);
+          setSkipFilter(true);
+        }
+        break;
+      default:
+        getLibraryDir(bkey)
+          .then((data) => {
+            setLibrary(data);
+            setLoading(false);
+            setSkipFilter(false);
+          })
+          .catch((e) => {
+            setError(e.message);
+            setLoading(false);
+          });
+
+        break;
+    }
   }, [bkey, searchParams]);
 
   if (loading)
@@ -158,13 +184,13 @@ function LibraryScreen() {
                 gap: 2,
               }}
             >
-              <LibrarySortDropDown sortHook={[sortBy, setSortBy]} />
+              {!skipFilter && (<LibrarySortDropDown sortHook={[sortBy, setSortBy]} />)}
             </Box>
           </Box>
 
           <Grid container spacing={2}>
             {library?.Metadata &&
-              sortMetadata(library?.Metadata, sortBy).map((item, index) => (
+              (skipFilter ? library?.Metadata : sortMetadata(library?.Metadata, sortBy)).map((item, index) => (
                 <Grid
                   item
                   xs={12}
@@ -174,7 +200,7 @@ function LibraryScreen() {
                   xl={3}
                   key={item.ratingKey}
                 >
-                  <Element item={item} key={`${index}`} />
+                  <Element item={item} key={`${index}`} plexTv={bkey.startsWith("/plextv")} />
                 </Grid>
               ))}
           </Grid>
@@ -185,12 +211,12 @@ function LibraryScreen() {
   return <></>;
 }
 
-function Element({ item }: { item: Plex.Metadata }) {
+function Element({ item, plexTv }: { item: Plex.Metadata, plexTv?: boolean }) {
   const { inView, ref } = useInView();
 
   return (
     <div ref={ref}>
-      {inView && <MovieItem item={item} />}
+      {inView && <MovieItem item={item} PlexTvSource={plexTv} />}
       {!inView && (
         <Box style={{ width: "100%" }}>
           <Box sx={{ width: "100%", height: "auto", aspectRatio: "16/9" }} />

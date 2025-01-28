@@ -177,7 +177,7 @@ export default function Home() {
           />
 
           {watchListCache && watchListCache.length > 0 && (
-            <MovieItemSlider title="Watchlist" data={watchListCache} plexTvSource={true} />
+            <MovieItemSlider title="Watchlist" data={watchListCache} plexTvSource={true} link="/plextv/watchlist" />
           )}
 
           {featured &&
