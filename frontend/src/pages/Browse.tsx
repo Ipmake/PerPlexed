@@ -72,7 +72,7 @@ function Library() {
             shuffleArray(genreSelection).map((genre) => ({
               title: genre.title,
               dir: `/library/sections/${library.librarySectionID}/genre/${genre.key}`,
-              link: `/library/${library.librarySectionID}/dir/genre/${genre.key}`,
+              link: `/library/sections/${library.librarySectionID}/genre/${genre.key}`,
               shuffle: true,
             }))
           );
@@ -158,19 +158,19 @@ function Library() {
         categoryPool.unshift({
           title: "Recently Added",
           dir: `/library/sections/${library.librarySectionID}/recentlyAdded`,
-          link: `/library/${library.librarySectionID}/dir/recentlyAdded`,
+          link: `/library/sections/${library.librarySectionID}/recentlyAdded`,
         });
         categoryPool.unshift({
           title: "New Releases",
           dir: `/library/sections/${library.librarySectionID}/newest`,
-          link: `/library/${library.librarySectionID}/dir/newest`,
+          link: `/library/sections/${library.librarySectionID}/newest`,
         });
       }
 
       categoryPool.unshift({
         title: "Continue Watching",
         dir: `/library/sections/${library.librarySectionID}/onDeck`,
-        link: `/library/${library.librarySectionID}/dir/onDeck`,
+        link: `/library/sections/${library.librarySectionID}/onDeck`,
         shuffle: false,
       });
 

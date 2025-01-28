@@ -15,6 +15,7 @@ import Startup, { useStartupState } from "./pages/Startup";
 import PerPlexedSync from "./components/PerPlexedSync";
 import WaitingRoom from "./pages/WaitingRoom";
 import ToastManager from "./components/ToastManager";
+import LibraryScreen from "./components/LibraryScreen";
 
 function AppManager() {
   const { loading } = useStartupState();
@@ -66,6 +67,7 @@ function App() {
       <BigReader />
       <PerPlexedSync />
       <ToastManager />
+      <LibraryScreen />
       <Routes>
         <Route path="*" element={<AppBar />} />
         <Route path="/watch/:itemID" element={<></>} />

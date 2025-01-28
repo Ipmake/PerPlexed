@@ -172,8 +172,8 @@ export default function Home() {
         >
           <MovieItemSlider
             title="Continue Watching"
-            dir="/onDeck"
-            link={`/library/onDeck`}
+            dir="/library/onDeck"
+            link="/library/onDeck"
           />
 
           {watchListCache && watchListCache.length > 0 && (
@@ -185,7 +185,7 @@ export default function Home() {
               <MovieItemSlider
                 key={index}
                 title={item.title}
-                dir={`/sections/${item.libraryID}/${item.dir}`}
+                dir={item.dir}
                 shuffle={true}
                 link={item.link}
               />
@@ -217,8 +217,8 @@ async function getRecommendations(libraries: Plex.Directory[]) {
       genreSelection.push({
         title: `${library.title} - ${genre.title}`,
         libraryID: library.key,
-        dir: `all?genre=${genre.key}`,
-        link: `/library/${library.key}/dir/genre/${genre.key}`,
+        dir: `/library/sections/${library.key}/genre/${genre.key}`,
+        link: `/library/sections/${library.key}/genre/${genre.key}`,
       });
     }
   }

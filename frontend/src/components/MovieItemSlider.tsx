@@ -2,7 +2,7 @@ import { Box, Typography } from "@mui/material";
 import React from "react";
 import { getLibraryDir } from "../plex";
 import { ArrowForwardIos } from "@mui/icons-material";
-import { useNavigate } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import MovieItem from "./MovieItem";
 
 function MovieItemSlider({
@@ -24,7 +24,7 @@ function MovieItemSlider({
   data?: Plex.Metadata[];
   plexTvSource?: boolean;
 }) {
-  const navigate = useNavigate();
+  const [, setSearchParams] = useSearchParams();
   const [items, setItems] = React.useState<Plex.Metadata[] | null>(
     data ?? null
   );
@@ -118,7 +118,9 @@ function MovieItemSlider({
             userSelect: "none",
           }}
           onClick={() => {
-            if (link) navigate(link);
+            if (link) setSearchParams(new URLSearchParams({
+              bkey: link
+            }));
           }}
         >
           <Typography
