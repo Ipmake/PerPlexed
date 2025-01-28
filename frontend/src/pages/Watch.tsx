@@ -30,16 +30,17 @@ import {
 import ReactPlayer from "react-player";
 import { queryBuilder } from "../plex/QuickFunctions";
 import {
-  ArrowBackIos,
-  ArrowBackIosNew,
+  ArrowBackIosNewRounded,
+  ArrowBackIosRounded,
   Check,
-  Fullscreen,
-  Pause,
-  People,
-  PlayArrow,
+  FullscreenRounded,
+  PauseRounded,
+  PeopleRounded,
+  PlayArrowRounded,
   SkipNext,
-  Tune,
-  VolumeUp,
+  SkipNextRounded,
+  TuneRounded,
+  VolumeUpRounded,
 } from "@mui/icons-material";
 import { VideoSeekSlider } from "react-video-seek-slider";
 import "react-video-seek-slider/styles.css";
@@ -51,6 +52,7 @@ import {
 } from "../states/SyncSessionState";
 import { useSyncInterfaceState } from "../components/PerPlexedSync";
 import { absoluteDifference } from "../common/NumberExtra";
+import WatchShowChildView from "../components/WatchShowChildView";
 
 let SessionID = "";
 export { SessionID };
@@ -1485,7 +1487,7 @@ function Watch() {
                           );
                       }}
                     >
-                      <ArrowBackIosNew fontSize="large" />
+                      <ArrowBackIosNewRounded fontSize="large" />
                     </IconButton>
                   </Box>
 
@@ -1592,9 +1594,9 @@ function Watch() {
                           }}
                         >
                           {playing ? (
-                            <Pause fontSize="large" />
+                            <PauseRounded fontSize="large" />
                           ) : (
-                            <PlayArrow fontSize="large" />
+                            <PlayArrowRounded fontSize="large" />
                           )}
                         </IconButton>
 
@@ -1676,8 +1678,12 @@ function Watch() {
                           setVolumePopoverAnchor(event.currentTarget);
                         }}
                       >
-                        <VolumeUp fontSize="large" />
+                        <VolumeUpRounded fontSize="large" />
                       </IconButton>
+
+                      {metadata.type === "episode" && (
+                        <WatchShowChildView item={metadata} />
+                      )}
 
                       <IconButton
                         onClick={(event) => {
@@ -1686,7 +1692,7 @@ function Watch() {
                           tuneButtonRef.current = event.currentTarget;
                         }}
                       >
-                        <Tune fontSize="large" />
+                        <TuneRounded fontSize="large" />
                       </IconButton>
 
                       {room && (
@@ -1695,7 +1701,7 @@ function Watch() {
                             setSyncInterfaceOpen(true);
                           }}
                         >
-                          <People fontSize="large" />
+                          <PeopleRounded fontSize="large" />
                         </IconButton>
                       )}
 
@@ -1706,7 +1712,7 @@ function Watch() {
                           else document.exitFullscreen();
                         }}
                       >
-                        <Fullscreen fontSize="large" />
+                        <FullscreenRounded fontSize="large" />
                       </IconButton>
                     </Box>
                   </Box>
@@ -1964,7 +1970,7 @@ function NextEPButton({ queue }: { queue?: Plex.Metadata[] }) {
           onMouseEnter={(e) => setAnchorEl(e.currentTarget)}
           onMouseLeave={() => setAnchorEl(null)}
         >
-          <SkipNext fontSize="large" />
+          <SkipNextRounded fontSize="large" />
         </IconButton>
       )}
     </>
@@ -2003,7 +2009,7 @@ function TuneSettingTab(
         setTunePage(props.pageNum);
       }}
     >
-      <ArrowBackIos
+      <ArrowBackIosRounded
         sx={{
           mr: "auto",
         }}

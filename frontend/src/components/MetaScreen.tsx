@@ -1320,6 +1320,6 @@ function TabButton({
  * @param duration The duration in milliseconds.
  * @returns The number of minutes.
  */
-function getMinutes(duration: number): number {
+export function getMinutes(duration: number): number {
   return Math.floor(duration / 60000);
 }
