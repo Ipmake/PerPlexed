@@ -247,7 +247,7 @@ function MovieItemSlider({
             justifyContent: "center",
             width: `auto`,
             gap: "10px",
-            transition: "transform 1.5s ease",
+            transition: "transform 1s ease",
           }}
         >
           {items?.slice(0, itemsPerPage * 5).map((item, i) => {
@@ -267,12 +267,17 @@ function MovieItemSlider({
             } else {
               return (
                 <Box
-                  key={i}
-                  sx={{
+                  style={{
                     width: `calc((100vw - 5vw) / ${itemsPerPage} - 10px)`,
-                    height: "auto",
+                    backgroundColor: "#1C1C1C",
                   }}
-                />
+                  key={i}
+                >
+                  <Box
+                    sx={{ width: "100%", height: "auto", aspectRatio: "16/9" }}
+                  />
+                  <Box sx={{ width: "100%", height: "104px" }} />
+                </Box>
               );
             }
           })}
