@@ -46,6 +46,7 @@ function BigReader() {
             fontWeight: "light",
             color: "white",
             mb: "10px",
+            whiteSpace: "pre-wrap",
           }}
         >
           {bigReader}

@@ -35,10 +35,12 @@ import {
   People,
   Search,
   Settings,
+  ShortcutRounded,
 } from "@mui/icons-material";
 import { useSyncInterfaceState } from "./PerPlexedSync";
 import { useSyncSessionState } from "../states/SyncSessionState";
 import { config } from "..";
+import { useBigReader } from "./BigReader";
 
 const BarSide: SxProps<Theme> = {
   display: "flex",
@@ -168,6 +170,31 @@ function Appbar() {
 
         <MenuItem
           onClick={() => {
+            useBigReader.getState().setBigReader(`
+--- Hint ---
+You can right click on any library item at the top to view the entire library.
+
+--- Browsing ---
+CTRL + F - Search
+
+--- Playback ---
+Space / k - Play/Pause
+Left Arrow / j - Back 10s
+Right Arrow / l - Forward 10s
+Up Arrow - Volume Up
+Down Arrow - Volume Down 
+S - Skip onscreen markers (intro, credits, etc)
+            `);
+          }}
+        >
+          <ListItemIcon>
+            <ShortcutRounded fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>Shortcuts</ListItemText>
+        </MenuItem>
+
+        <MenuItem
+          onClick={() => {
             setAnchorEl(null);
             // navigate("/settings");
           }}
@@ -228,8 +255,9 @@ function Appbar() {
             ?.filter((e) => ["movie", "show"].includes(e.type))
             .map((library) => (
               <HeadLink
-                key={library.key}
                 to={`/browse/${library.key}`}
+                key={library.key}
+                library={library}
                 active={location.pathname.includes(`/browse/${library.key}`)}
               >
                 {library.title}
@@ -643,13 +671,16 @@ function SearchBar() {
 
 function HeadLink({
   to,
+  library,
   children,
   active,
 }: {
   to: string;
+  library?: Plex.LibarySection;
   children: React.ReactNode;
   active?: boolean;
 }): JSX.Element {
+  const [, setSearchParams] = useSearchParams();
   return (
     <Link
       className={`head-link${active ? " head-link-active" : ""}`}
@@ -661,6 +692,15 @@ function HeadLink({
         transition: "all 0.2s ease-in-out",
         fontFamily: '"Inter Variable", sans-serif',
         userSelect: "none",
+      }}
+      onContextMenu={(e) => {
+        e.preventDefault();
+        if (library)
+          setSearchParams(
+            new URLSearchParams({
+              bkey: `/library/sections/${library.key}/all`,
+            })
+          );
       }}
       aria-current={active ? "page" : undefined}
     >

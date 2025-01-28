@@ -11,14 +11,11 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { usePreviewPlayer } from "../states/PreviewPlayerState";
 import ReactPlayer from "react-player";
 import { useBigReader } from "./BigReader";
-import { useWatchListCache } from "../states/WatchListCache";
 import { WatchListButton } from "./MovieItem";
 
 function HeroDisplay({ item }: { item: Plex.Metadata }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
-
-  const { addItem, removeItem, isOnWatchList } = useWatchListCache()
 
   const { MetaScreenPlayerMuted, setMetaScreenPlayerMuted } =
     usePreviewPlayer();
