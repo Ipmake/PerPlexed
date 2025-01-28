@@ -32,7 +32,7 @@ import { queryBuilder } from "../plex/QuickFunctions";
 import {
   ArrowBackIosNewRounded,
   ArrowBackIosRounded,
-  Check,
+  CheckRounded,
   FullscreenRounded,
   PauseRounded,
   PeopleRounded,
@@ -915,7 +915,7 @@ function Watch() {
                     }}
                   >
                     {qualityOption.bitrate === quality.bitrate && (
-                      <Check
+                      <CheckRounded
                         sx={{
                           mr: "auto",
                         }}
@@ -993,7 +993,7 @@ function Watch() {
                       setURL(getUrl);
                     }}
                   >
-                    <Check
+                    <CheckRounded
                       sx={{
                         mr: "auto",
                         opacity: stream.selected ? 1 : 0,
@@ -1068,7 +1068,7 @@ function Watch() {
                   {metadata?.Media[0].Part[0].Stream.filter(
                     (stream) => stream.selected && stream.streamType === 3
                   ).length === 0 && (
-                    <Check
+                    <CheckRounded
                       sx={{
                         mr: "auto",
                       }}
@@ -1127,7 +1127,7 @@ function Watch() {
                       setURL(getUrl);
                     }}
                   >
-                    <Check
+                    <CheckRounded
                       sx={{
                         mr: "auto",
                         opacity: stream.selected ? 1 : 0,

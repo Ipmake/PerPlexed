@@ -21,13 +21,13 @@ import {
   getTranscodeImageURL,
 } from "../plex";
 import {
-  Bookmark,
-  BookmarkBorder,
-  CheckCircle,
-  Close,
-  PlayArrow,
-  VolumeOff,
-  VolumeUp,
+  BookmarkRounded,
+  BookmarkBorderRounded,
+  CheckCircleRounded,
+  CloseRounded,
+  PlayArrowRounded,
+  VolumeOffRounded,
+  VolumeUpRounded,
 } from "@mui/icons-material";
 import { durationToText } from "./MovieItemSlider";
 import ReactPlayer from "react-player";
@@ -314,7 +314,7 @@ function MetaScreen() {
                 setSearchParams(new URLSearchParams());
               }}
             >
-              <Close fontSize="medium" />
+              <CloseRounded fontSize="medium" />
             </IconButton>
 
             <IconButton
@@ -327,7 +327,7 @@ function MetaScreen() {
                 setMetaScreenPlayerMuted(!MetaScreenPlayerMuted);
               }}
             >
-              {MetaScreenPlayerMuted ? <VolumeOff /> : <VolumeUp />}
+              {MetaScreenPlayerMuted ? <VolumeOffRounded /> : <VolumeUpRounded />}
             </IconButton>
           </Box>
         </Box>
@@ -450,7 +450,7 @@ function MetaScreen() {
               >
                 {data?.type === "show" &&
                   data?.leafCount === data?.viewedLeafCount && (
-                    <CheckCircle
+                    <CheckCircleRounded
                       sx={{
                         color: "#FFFFFF",
                         fontSize: "large",
@@ -459,7 +459,7 @@ function MetaScreen() {
                     />
                   )}
                 {data?.type === "movie" && data?.viewCount && (
-                  <CheckCircle
+                  <CheckCircleRounded
                     sx={{
                       color: "#FFFFFF",
                       fontSize: "large",
@@ -593,7 +593,7 @@ function MetaScreen() {
                     }
                   }}
                 >
-                  <PlayArrow fontSize="medium" /> Play{" "}
+                  <PlayArrowRounded fontSize="medium" /> Play{" "}
                   {data?.type === "show" &&
                     data?.OnDeck &&
                     data?.OnDeck.Metadata &&
@@ -623,9 +623,9 @@ function MetaScreen() {
                   }}
                 >
                   {WatchList.isOnWatchList(data?.guid as string) ? (
-                    <Bookmark fontSize="medium" />
+                    <BookmarkRounded fontSize="medium" />
                   ) : (
-                    <BookmarkBorder fontSize="medium" />
+                    <BookmarkBorderRounded fontSize="medium" />
                   )}
                 </IconButton>
               </Box>
@@ -1175,7 +1175,7 @@ function EpisodeItem({
           position: "relative",
         }}
       >
-        <PlayArrow
+        <PlayArrowRounded
           sx={{
             color: "#FFFFFF",
             fontSize: "400%",

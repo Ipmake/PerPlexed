@@ -12,7 +12,7 @@ import {
 import React, { useEffect } from "react";
 import { create } from "zustand";
 import { useSyncSessionState } from "../states/SyncSessionState";
-import { ContentCopy } from "@mui/icons-material";
+import { ContentCopyRounded } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 
 interface SyncInterfaceState {
@@ -143,7 +143,7 @@ function PerPlexedSync() {
                   navigator.clipboard.writeText(room || "");
                 }}
               >
-                <ContentCopy color="primary" />
+                <ContentCopyRounded color="primary" />
               </Button>
             </Box>
 

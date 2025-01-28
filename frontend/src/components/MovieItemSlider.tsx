@@ -1,7 +1,7 @@
 import { Box, Typography } from "@mui/material";
 import React from "react";
 import { getLibraryDir } from "../plex";
-import { ArrowForwardIos } from "@mui/icons-material";
+import { ArrowForwardIosRounded } from "@mui/icons-material";
 import { useSearchParams } from "react-router-dom";
 import MovieItem from "./MovieItem";
 
@@ -152,7 +152,7 @@ function MovieItemSlider({
               }}
             >
               <Typography sx={{ fontSize: "1rem" }}>Browse</Typography>
-              <ArrowForwardIos fontSize="small" />
+              <ArrowForwardIosRounded fontSize="small" />
             </Box>
           )}
         </Box>
@@ -231,7 +231,7 @@ function MovieItemSlider({
             );
           }}
         >
-          <ArrowForwardIos
+          <ArrowForwardIosRounded
             sx={{
               transform: "rotate(180deg)",
             }}
@@ -310,7 +310,7 @@ function MovieItemSlider({
             );
           }}
         >
-          <ArrowForwardIos fontSize="large" />
+          <ArrowForwardIosRounded fontSize="large" />
         </Box>
       </Box>
     </Box>

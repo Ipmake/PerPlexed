@@ -29,12 +29,12 @@ import { getAllLibraries, getSearch, getTranscodeImageURL } from "../plex";
 import MetaScreen from "./MetaScreen";
 import { useUserSessionStore } from "../states/UserSession";
 import {
-  Favorite,
-  Fullscreen,
-  Logout,
-  People,
-  Search,
-  Settings,
+  FavoriteRounded,
+  FullscreenRounded,
+  LogoutRounded,
+  PeopleRounded,
+  SearchRounded,
+  SettingsRounded,
   ShortcutRounded,
 } from "@mui/icons-material";
 import { useSyncInterfaceState } from "./PerPlexedSync";
@@ -136,7 +136,7 @@ function Appbar() {
           }}
         >
           <ListItemIcon>
-            <Favorite fontSize="small" />
+            <FavoriteRounded fontSize="small" />
           </ListItemIcon>
           <ListItemText>Sponsor</ListItemText>
         </MenuItem>
@@ -149,7 +149,7 @@ function Appbar() {
             }}
           >
             <ListItemIcon>
-              <People fontSize="small" />
+              <PeopleRounded fontSize="small" />
             </ListItemIcon>
             <ListItemText>Watch2Gether</ListItemText>
           </MenuItem>
@@ -163,7 +163,7 @@ function Appbar() {
           }}
         >
           <ListItemIcon>
-            <Fullscreen fontSize="small" />
+            <FullscreenRounded fontSize="small" />
           </ListItemIcon>
           <ListItemText>Fullscreen</ListItemText>
         </MenuItem>
@@ -201,7 +201,7 @@ S - Skip onscreen markers (intro, credits, etc)
           disabled
         >
           <ListItemIcon>
-            <Settings fontSize="small" />
+            <SettingsRounded fontSize="small" />
           </ListItemIcon>
           <ListItemText>Settings</ListItemText>
         </MenuItem>
@@ -214,7 +214,7 @@ S - Skip onscreen markers (intro, credits, etc)
           }}
         >
           <ListItemIcon>
-            <Logout fontSize="small" />
+            <LogoutRounded fontSize="small" />
           </ListItemIcon>
           <ListItemText>Logout</ListItemText>
         </MenuItem>
@@ -288,7 +288,7 @@ S - Skip onscreen markers (intro, credits, etc)
               },
             }}
           >
-            <People />
+            <PeopleRounded />
           </IconButton>
         )}
 
@@ -417,7 +417,7 @@ function SearchBar() {
         InputProps={{
           startAdornment: (
             <InputAdornment position="start">
-              <Search />
+              <SearchRounded />
             </InputAdornment>
           ),
         }}

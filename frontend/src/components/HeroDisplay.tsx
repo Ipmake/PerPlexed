@@ -1,9 +1,9 @@
 import {
-  PlayArrow,
+  PlayArrowRounded,
   InfoOutlined,
-  VolumeOff,
-  VolumeUp,
-  Pause,
+  VolumeOffRounded,
+  VolumeUpRounded,
+  PauseRounded,
 } from "@mui/icons-material";
 import { Box, Typography, Button, IconButton } from "@mui/material";
 import React, { useEffect, useState } from "react";
@@ -90,7 +90,7 @@ function HeroDisplay({ item }: { item: Plex.Metadata }) {
             setPreviewVidPlaying(!previewVidPlaying);
           }}
         >
-          {previewVidPlaying ? <Pause /> : <PlayArrow />}
+          {previewVidPlaying ? <PauseRounded /> : <PlayArrowRounded />}
         </IconButton>
 
         <IconButton
@@ -101,7 +101,7 @@ function HeroDisplay({ item }: { item: Plex.Metadata }) {
             setMetaScreenPlayerMuted(!MetaScreenPlayerMuted);
           }}
         >
-          {MetaScreenPlayerMuted ? <VolumeOff /> : <VolumeUp />}
+          {MetaScreenPlayerMuted ? <VolumeOffRounded /> : <VolumeUpRounded />}
         </IconButton>
       </Box>
 
@@ -265,7 +265,7 @@ function HeroDisplay({ item }: { item: Plex.Metadata }) {
                 navigate(`/watch/${item.ratingKey}`);
               }}
             >
-              <PlayArrow fontSize="medium" /> Play
+              <PlayArrowRounded fontSize="medium" /> Play
             </Button>
 
             <Button

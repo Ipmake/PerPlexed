@@ -1,10 +1,8 @@
 import {
-  CheckCircle,
-  PlayArrow,
-  InfoOutlined,
-  BookmarkBorder,
-  CheckCircleOutline,
-  Bookmark,
+  PlayArrowRounded,
+  BookmarkBorderRounded,
+  CheckCircleOutlineRounded,
+  BookmarkRounded,
 } from "@mui/icons-material";
 import {
   Box,
@@ -166,7 +164,7 @@ function MovieItem({
             }}
           >
             <Tooltip title="Watched" arrow placement="top">
-              <CheckCircleOutline
+              <CheckCircleOutlineRounded
                 fontSize="medium"
                 sx={{
                   transform: "rotate(-45deg)",
@@ -478,7 +476,7 @@ function MovieItem({
               <CircularProgress size="small" />
             ) : (
               <>
-                <PlayArrow fontSize="small" /> Play
+                <PlayArrowRounded fontSize="small" /> Play
               </>
             )}
           </Button>
@@ -558,9 +556,9 @@ export function WatchListButton({ item }: { item: Plex.Metadata }) {
       }}
     >
       {WatchList.isOnWatchList(item.guid) ? (
-        <Bookmark fontSize="small" />
+        <BookmarkRounded fontSize="small" />
       ) : (
-        <BookmarkBorder fontSize="small" />
+        <BookmarkBorderRounded fontSize="small" />
       )}
     </Button>
   );

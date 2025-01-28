@@ -1,11 +1,11 @@
 import {
-  PersonAdd,
-  PersonRemove,
+  PersonAddRounded,
+  PersonRemoveRounded,
   PlayArrowRounded,
   PlaylistAddRounded,
-  Pause,
+  PauseRounded,
   RedoRounded,
-  ResetTv
+  ResetTvRounded
 } from "@mui/icons-material";
 import { Avatar, Box, Divider, Typography } from "@mui/material";
 import { create } from "zustand";
@@ -197,7 +197,7 @@ export function Toast({
       )}
 
       {icon === "Pause" && (
-        <Pause
+        <PauseRounded
           sx={{
             color: "white",
             fontSize: "2rem",
@@ -206,7 +206,7 @@ export function Toast({
       )}
 
       {icon === "PlaySet" && (
-        <ResetTv
+        <ResetTvRounded
           sx={{
             color: "white",
             fontSize: "2rem",
@@ -215,7 +215,7 @@ export function Toast({
       )}
 
       {icon === "UserAdd" && (
-        <PersonAdd
+        <PersonAddRounded
           sx={{
             color: "white",
             fontSize: "2rem",
@@ -224,7 +224,7 @@ export function Toast({
       )}
 
       {icon === "UserRemove" && (
-        <PersonRemove
+        <PersonRemoveRounded
           sx={{
             color: "white",
             fontSize: "2rem",
