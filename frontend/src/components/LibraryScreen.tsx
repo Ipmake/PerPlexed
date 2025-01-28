@@ -126,7 +126,7 @@ function LibraryScreen() {
       >
         <Box
           sx={{
-            width: "120vh",
+            width: "70vw",
             display: "flex",
             flexDirection: "column",
             alignItems: "flex-start",
@@ -196,7 +196,7 @@ function LibraryScreen() {
                   xs={12}
                   sm={6}
                   md={4}
-                  lg={3}
+                  lg={4}
                   xl={3}
                   key={item.ratingKey}
                 >
