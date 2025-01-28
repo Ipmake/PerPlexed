@@ -204,6 +204,7 @@ declare namespace Plex {
         leafCount?: number;
         viewedLeafCount?: number;
         childCount?: number;
+        seasonCount?: number;
         addedAt: number;
         updatedAt: number;
         audienceRatingImage: string;

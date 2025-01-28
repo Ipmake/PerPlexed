@@ -71,6 +71,7 @@ function MetaScreen() {
   }, []);
 
   useEffect(() => {
+    setData(undefined);
     setLoading(true);
     setEpisodes(null);
     setSelectedSeason(0);
@@ -82,6 +83,7 @@ function MetaScreen() {
 
     if (!mid) return;
     getLibraryMeta(mid).then((res) => {
+      setSelectedSeason((res.OnDeck?.Metadata?.parentIndex ?? 1) - 1);
       setData(res);
       setLoading(false);
     });
@@ -89,7 +91,6 @@ function MetaScreen() {
 
   useEffect(() => {
     if (!data) return;
-    setSelectedSeason((data.OnDeck?.Metadata?.parentIndex ?? 1) - 1);
 
     if (
       !data?.Extras?.Metadata?.[0] ||
@@ -175,6 +176,7 @@ function MetaScreen() {
 
   useEffect(() => {
     setEpisodes(null);
+    if(!data) return;
     if (
       data?.type === "show" &&
       data?.Children?.Metadata[selectedSeason]?.ratingKey

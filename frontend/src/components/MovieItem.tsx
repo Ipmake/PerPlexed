@@ -326,7 +326,7 @@ function MovieItem({
               {durationToText(item.duration)}
             </Typography>
           )}
-          {item.type === "show" && item.leafCount && item.childCount && (
+          {item.type === "show" && item.leafCount && (item.seasonCount ?? item.childCount) && (
             <Typography
               sx={{
                 fontSize: "14px",
@@ -334,7 +334,7 @@ function MovieItem({
                 color: "#FFFFFF",
               }}
             >
-              {item.childCount > 1
+              {((item.seasonCount ?? item.childCount) ?? 1) > 1
                 ? `${item.childCount} Seasons`
                 : `${item.leafCount} Episode${item.leafCount > 1 ? "s" : ""}`}
             </Typography>
