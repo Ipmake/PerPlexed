@@ -1,12 +1,13 @@
 import { Box, CircularProgress, Grid, Typography } from "@mui/material";
 import React, { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { getSearch } from "../plex";
 import MovieItem from "../components/MovieItem";
 
 export default function Search() {
   const { query } = useParams();
   const navigate = useNavigate();
+  const [, setSearchParams] = useSearchParams();
 
   const [results, setResults] = useState<Plex.Metadata[] | null>(null);
   const [directories, setDirectories] = useState<Plex.Directory[] | null>(null);
@@ -84,18 +85,14 @@ export default function Search() {
             </Grid>
 
             {directories.map((item) => (
-              <Grid item key={item.key} 
-              xl={2}
-              lg={3}
-              md={6}
-              sm={12}
-              xs={12}
-              >
+              <Grid item key={item.key} xl={2} lg={3} md={6} sm={12} xs={12}>
                 <DirectoryItem
                   item={item}
                   onClick={() => {
-                    navigate(
-                      `/library/${item.librarySectionID}/dir/genre/${item.id}`
+                    setSearchParams(
+                      new URLSearchParams({
+                        bkey: `/library/sections/${item.librarySectionID}/genre/${item.id}`,
+                      })
                     );
                   }}
                 />

@@ -440,8 +440,10 @@ function SearchBar() {
                     })
                   );
                 } else if (searchResults[selectedIndex].Directory) {
-                  navigate(
-                    `/library/${searchResults[selectedIndex].Directory?.librarySectionID}/dir/genre/${searchResults[selectedIndex].Directory?.id}`
+                  setSearchParams(
+                    new URLSearchParams({
+                      bkey: `/library/sections/${searchResults[selectedIndex].Directory?.librarySectionID}/genre/${searchResults[selectedIndex].Directory?.id}`,
+                    })
                   );
                 }
               } else {
@@ -618,8 +620,10 @@ function SearchBar() {
                     console.log("test");
                     e.stopPropagation();
                     e.preventDefault();
-                    navigate(
-                      `/library/${item.Directory?.librarySectionID}/dir/genre/${item.Directory?.id}`
+                    setSearchParams(
+                      new URLSearchParams({
+                        bkey: `/library/sections/${item.Directory?.librarySectionID}/genre/${item.Directory?.id}`,
+                      })
                     );
                     searchAnchorEl?.blur();
                     setSearchAnchorEl(null);

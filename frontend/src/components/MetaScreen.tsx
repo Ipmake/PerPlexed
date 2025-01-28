@@ -61,6 +61,16 @@ function MetaScreen() {
   const mid = searchParams.get("mid");
 
   useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setSearchParams(new URLSearchParams());
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  useEffect(() => {
     setLoading(true);
     setEpisodes(null);
     setSelectedSeason(0);
@@ -631,20 +641,23 @@ function MetaScreen() {
               >
                 <Typography>Genres: </Typography>
                 {data?.Genre?.slice(0, 5).map((genre, index) => (
-                  <Link
-                    to={`/library/${data.librarySectionID}/dir/genre/${genre.id}`}
-                    style={{ textDecoration: "none" }}
+                  <Typography
+                    sx={{
+                      color: "#FFFFFF",
+                      fontWeight: "bold",
+                      cursor: "pointer",
+                    }}
+                    onClick={() => {
+                      setSearchParams(
+                        new URLSearchParams({
+                          bkey: `/library/sections/${data?.librarySectionID}/genre/${genre.id}`,
+                        })
+                      );
+                    }}
                   >
-                    <Typography
-                      sx={{
-                        color: "#FFFFFF",
-                        fontWeight: "bold",
-                      }}
-                    >
-                      {genre.tag}
-                      {index + 1 === data?.Genre?.slice(0, 5).length ? "" : ","}
-                    </Typography>
-                  </Link>
+                    {genre.tag}
+                    {index + 1 === data?.Genre?.slice(0, 5).length ? "" : ","}
+                  </Typography>
                 ))}
               </Box>
 

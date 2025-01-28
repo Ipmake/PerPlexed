@@ -32,6 +32,16 @@ function LibraryScreen() {
     : null;
 
   useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setSearchParams(new URLSearchParams());
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  useEffect(() => {
     if (!(searchParams.has("mid") && searchParams.has("bkey"))) return;
 
     const localbkey = searchParams.get("bkey");
