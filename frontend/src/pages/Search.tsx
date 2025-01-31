@@ -6,8 +6,8 @@ import MovieItem from "../components/MovieItem";
 
 export default function Search() {
   const { query } = useParams();
-  const [, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
+  const [, setSearchParams] = useSearchParams();
 
   const [results, setResults] = useState<Plex.Metadata[] | null>(null);
   const [directories, setDirectories] = useState<Plex.Directory[] | null>(null);
@@ -38,7 +38,8 @@ export default function Search() {
             .filter((item) => item.Directory)
             .map((item) => item.Directory)
             .filter(
-              (directory): directory is Plex.Directory => directory !== undefined
+              (directory): directory is Plex.Directory =>
+                directory !== undefined
             )
         );
       });
@@ -84,11 +85,15 @@ export default function Search() {
             </Grid>
 
             {directories.map((item) => (
-              <Grid item key={item.key} xs={2}>
+              <Grid item key={item.key} xl={2} lg={3} md={6} sm={12} xs={12}>
                 <DirectoryItem
                   item={item}
                   onClick={() => {
-                    navigate(`/library/${item.librarySectionID}/dir/genre/${item.id}`);
+                    setSearchParams(
+                      new URLSearchParams({
+                        bkey: `/library/sections/${item.librarySectionID}/genre/${item.id}`,
+                      })
+                    );
                   }}
                 />
               </Grid>
@@ -100,10 +105,16 @@ export default function Search() {
 
         {results &&
           results.map((item) => (
-            <Grid item key={item.ratingKey} xl={3} lg={4} md={6} sm={12} xs={12}>
-              <MovieItem
-                item={item}
-              />
+            <Grid
+              item
+              key={item.ratingKey}
+              xl={2}
+              lg={3}
+              md={6}
+              sm={12}
+              xs={12}
+            >
+              <MovieItem item={item} />
             </Grid>
           ))}
       </Grid>
@@ -111,8 +122,13 @@ export default function Search() {
   );
 }
 
-
-export function DirectoryItem({ item, onClick }: { item: Plex.Directory, onClick: () => void }) {
+export function DirectoryItem({
+  item,
+  onClick,
+}: {
+  item: Plex.Directory;
+  onClick: () => void;
+}) {
   return (
     <Box
       sx={{
@@ -135,7 +151,9 @@ export function DirectoryItem({ item, onClick }: { item: Plex.Directory, onClick
       }}
       onClick={onClick}
     >
-      <Typography variant="h5">{item.librarySectionTitle} - {item.tag}</Typography>
+      <Typography variant="h5">
+        {item.librarySectionTitle} - {item.tag}
+      </Typography>
     </Box>
   );
 }

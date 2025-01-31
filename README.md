@@ -1,11 +1,11 @@
 # PerPlexed
 Fixing Plex's old and simple UI.
 
-[**Docker Hub**](https://hub.docker.com/r/ipmake/perplexed )
+[**Docker Hub**](https://hub.docker.com/r/ipmake/perplexed)
 
-![PerPlexed](assets/screenshot1.png)
-
-
+*Click image for video*
+[![PerPlexed](assets/screenshot1.png)](https://www.youtube.com/watch?v=PuTOw3Wg9oY)
+![PerPlexed2](assets/screenshot2.png)
 ## Description
 
 PerPlexed is a complete redesign of Plex's UI using the Plex media server's API. It comes with its own web server. As the keen eye may notice, the UI is heavily inspired by Netflix's UI. It is currently only developed for desktops and laptops. It is not optimized for mobile or TV use.
@@ -15,6 +15,19 @@ PerPlexed currently supports Movie and TV Show libraries. You can also play medi
 It is currently not possible to edit media metadata or switch between different Plex servers. The "+" and Star buttons on the info pages for shows and movies are placeholders and are currently not functional.
 
 Mind that this project is still in development and may be unstable.
+
+
+## Features
+- Modern UI
+- Seamless Plex integration
+- Netflix-like UI
+- Play media
+- Browse libraries
+- Search for media
+- Watch Together (PerPlexed Sync)
+- Get Recommendations
+- Simple and easy to use
+- Pro-User features (like special shortcuts etc.)
 
 ## Installation
 
@@ -27,11 +40,16 @@ docker run --name perplexed -p 3000:3000 -e PLEX_SERVER=http://your-plex-server:
 ```
 
 #### Environment Variables
-| Name               | Type       | Required | Description                                       |
-|--------------------|------------|----------|---------------------------------------------------|
-| PLEX_SERVER        | string     | Yes      | The url to your plex server starting with http(s) |
-| DISABLE_PROXY      | true/false | No       | Disable the PerPlexed proxy (Not Recommended)     |
-| DISABLE_TLS_VERIFY | true/false | No       | Disable TLS verification on https plex servers    |
+| Name                   | Type       | Required | Description                                                                 |
+|------------------------|------------|----------|-----------------------------------------------------------------------------|
+| PLEX_SERVER            | string     | Yes      | The URL of the Plex server that the frontend will connect to                |
+| PROXY_PLEX_SERVER      | string     | No       | The URL of the Plex server to proxy requests to                             |
+| DISABLE_PROXY          | true/false | No       | If set to true, the proxy will be disabled and all requests go directly to the Plex server from the frontend (NOT RECOMMENDED) |
+| DISABLE_TLS_VERIFY     | true/false | No       | If set to true, the proxy will not check any https ssl certificates         |
+| DISABLE_PERPLEXED_SYNC | true/false | No       | If set to true, perplexed sync (watch together) will be disabled            |
+| DISABLE_REQUEST_LOGGING| true/false | No       | If set to true, the server will not log any requests                        |
+
+
 
 ## Contributing
 Pull requests are welcome for any feature or a bug fix. For major changes, please open an issue first to discuss what you would like to change.

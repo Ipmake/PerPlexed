@@ -84,7 +84,8 @@ export function getIncludeProps() {
         includeConcerts: 1,
         includeReviews: 1,
         includePreferences: 1,
-        includeStations: 1
+        includeStations: 1,
+        includeRelated: 1,
     }
 }
 

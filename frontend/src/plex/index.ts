@@ -7,16 +7,34 @@ export async function getAllLibraries(): Promise<Plex.LibarySection[]> {
     return res.MediaContainer.Directory;
 }
 
-export async function getLibrary(key: string): Promise<Plex.LibraryDetails> {
+export async function getLibrary(key: string): Promise<Plex.MediaContainer> {
     const res = await authedGet(`/library/sections/${key}?${queryBuilder({
         ...getIncludeProps(),
     })}`);
     return res.MediaContainer;
 }
 
-export async function getLibraryMedia(key: string, directory: string): Promise<Plex.Metadata[]> {
-    const res = await authedGet(`/library/sections/${key}/${directory}`);
+/**
+ * @deprecated This function is deprecated. Use `getLibraryDir` instead.
+ */
+export async function getLibraryMedia(path: string): Promise<Plex.Metadata[]> {
+    const res = await authedGet(`/library${path}`);
     return res.MediaContainer.Metadata;
+}
+
+/**
+ * Fetches the items from the library directory.
+ *
+ * @param {string} key - The uri to identify the library directory. e.g. /library/sections/1/all
+ * @param {Object.<string, any>} props - Additional properties to include in the query.
+ * @returns {Promise<Plex.Metadata[]>} - A promise that resolves to an array of metadata items.
+ */
+export async function getLibraryDir(key: string, props?: { [key: string]: any }): Promise<Plex.MediaContainer> {
+    const res = await authedGet(`${key}?${queryBuilder({
+        ...props,
+        ...getIncludeProps(),
+    })}`);
+    return res.MediaContainer;
 }
 
 export async function getLibrarySecondary(key: string, directory: string): Promise<Plex.Directory[]> {
@@ -25,6 +43,7 @@ export async function getLibrarySecondary(key: string, directory: string): Promi
 }
 
 export async function getLibraryMeta(id: string): Promise<Plex.Metadata> {
+    if(!id) return {} as Plex.Metadata;
     const res = await authedGet(`/library/metadata/${id}?${queryBuilder({
         ...getIncludeProps(),
         ...getXPlexProps()
@@ -72,12 +91,21 @@ export async function sendUniversalPing() {
     return;
 }
 
-export function getStreamProps(id: string, limitation: {
+/**
+ * Generates the stream properties for a given media ID with optional limitations.
+ *
+ * @param key - The unique rating key for the media.
+ * @param limitation - An object containing optional limitations for the stream.
+ * @param limitation.autoAdjustQuality - Whether to automatically adjust the quality of the stream.
+ * @param limitation.maxVideoBitrate - The maximum video bitrate for the stream.
+ * @returns An object containing the stream properties.
+ */
+export function getStreamProps(key: string, limitation: {
     autoAdjustQuality?: boolean,
     maxVideoBitrate?: number,
 }) {
     return {
-        path: "/library/metadata/" + id,
+        path: "/library/metadata/" + key,
         protocol: "dash",
         fastSeek: 1,
         directPlay: 0,
@@ -99,6 +127,13 @@ export function getStreamProps(id: string, limitation: {
     }
 }
 
+/**
+ * Updates the audio stream for a specific part in the library.
+ *
+ * @param partID - The ID of the part to update.
+ * @param streamID - The ID of the new audio stream to set.
+ * @returns A promise that resolves when the update is complete.
+ */
 export async function putAudioStream(partID: number, streamID: number): Promise<void> {
     await authedPut(`/library/parts/${partID}?${queryBuilder({
         audioStreamID: streamID,
@@ -106,6 +141,13 @@ export async function putAudioStream(partID: number, streamID: number): Promise<
     })}`, {});
 }
 
+/**
+ * Sends an authenticated PUT request to update the subtitle stream for a given part.
+ *
+ * @param partID - The ID of the part to update.
+ * @param streamID - The ID of the subtitle stream to set.
+ * @returns A promise that resolves when the request is complete.
+ */
 export async function putSubtitleStream(partID: number, streamID: number): Promise<void> {
     await authedPut(`/library/parts/${partID}?${queryBuilder({
         subtitleStreamID: streamID,
@@ -113,10 +155,19 @@ export async function putSubtitleStream(partID: number, streamID: number): Promi
     })}`, {});
 }
 
-export async function getTimelineUpdate(itemID: number, duration: number, state: string, time: number): Promise<Plex.TimelineUpdateResult> {
+/**
+ * Fetches a timeline update for a given item.
+ *
+ * @param key - The ID of the item to get the timeline update for.
+ * @param duration - The duration of the item in milliseconds.
+ * @param state - The current state of the item (e.g., playing, paused).
+ * @param time - The current playback time in milliseconds.
+ * @returns A promise that resolves to a `Plex.TimelineUpdateResult` object containing the timeline update information.
+ */
+export async function getTimelineUpdate(key: number, duration: number, state: string, time: number): Promise<Plex.TimelineUpdateResult> {
     return await authedGet(`/:/timeline?${queryBuilder({
-        ratingKey: itemID,
-        key: `/library/metadata/${itemID}/`,
+        ratingKey: key,
+        key: `/library/metadata/${key}/`,
         duration: duration,
         state: state,
         playbackTime: time,
@@ -126,11 +177,22 @@ export async function getTimelineUpdate(itemID: number, duration: number, state:
     })}`);
 }
 
+/**
+ * Fetches the server preferences from the Plex server.
+ *
+ * @returns {Promise<Plex.ServerPreferences>} A promise that resolves to the server preferences.
+ */
 export async function getServerPreferences(): Promise<Plex.ServerPreferences> {
     const res = await authedGet(`/`);
     return res.MediaContainer;
 }
 
+/**
+ * Retrieves the play queue for a given URI.
+ *
+ * @param uri - The URI of the media item to get the play queue for.
+ * @returns A promise that resolves to an array of Plex metadata objects.
+ */
 export async function getPlayQueue(uri: string): Promise<Plex.Metadata[]> {
     const res = await authedPost(`/playQueues?${queryBuilder({
         type: "video",
@@ -142,6 +204,14 @@ export async function getPlayQueue(uri: string): Promise<Plex.Metadata[]> {
     return res.MediaContainer.Metadata;
 }
 
+/**
+ * Generates a URL for transcoding an image with the specified dimensions.
+ *
+ * @param url - The URL of the image to be transcoded.
+ * @param width - The desired width of the transcoded image.
+ * @param height - The desired height of the transcoded image.
+ * @returns The URL for the transcoded image.
+ */
 export function getTranscodeImageURL(url: string, width: number, height: number) {
     return `${localStorage.getItem(
         "server"
@@ -155,6 +225,12 @@ export function getTranscodeImageURL(url: string, width: number, height: number)
     })}`;
 }
 
+/**
+ * Retrieves an access token from the Plex API using the provided PIN.
+ *
+ * @param {string} pin - The PIN code used to request the access token.
+ * @returns {Promise<Plex.TokenData>} A promise that resolves to the token data.
+ */
 export async function getAccessToken(pin: string): Promise<Plex.TokenData> {
     const res = await axios.get(`https://plex.tv/api/v2/pins/${pin}?${queryBuilder({
         "X-Plex-Client-Identifier": localStorage.getItem("clientID")
@@ -162,6 +238,16 @@ export async function getAccessToken(pin: string): Promise<Plex.TokenData> {
     return res.data;
 }
 
+/**
+ * Retrieves a pin from the Plex API.
+ *
+ * This function sends a POST request to the Plex API to generate a pin.
+ * The request includes the client identifier and product name as query parameters.
+ *
+ * @returns {Promise<Plex.TokenData>} A promise that resolves to the token data returned by the Plex API.
+ *
+ * @throws {Error} Throws an error if the request fails.
+ */
 export async function getPin(): Promise<Plex.TokenData> {
     const res = await axios.post(`https://plex.tv/api/v2/pins?${queryBuilder({
         "X-Plex-Client-Identifier": localStorage.getItem("clientID"),
@@ -170,6 +256,16 @@ export async function getPin(): Promise<Plex.TokenData> {
     return res.data;
 }
 
+/**
+ * Fetches the logged-in user's data from the Plex API.
+ *
+ * @returns {Promise<Plex.UserData | null>} A promise that resolves to the user's data if the request is successful, or null if it fails.
+ *
+ * The function constructs a query string with the necessary headers and sends a GET request to the Plex API.
+ * If the request fails, it logs the error and returns an object with the status and error message.
+ * If the request is successful and returns a status of 200, it returns the user data.
+ * Otherwise, it returns null.
+ */
 export async function getLoggedInUser(): Promise<Plex.UserData | null> {
     const res = await axios.get(`https://plex.tv/api/v2/user?${queryBuilder({
         "X-Plex-Token": localStorage.getItem("accAccessToken") as string,
@@ -183,6 +279,18 @@ export async function getLoggedInUser(): Promise<Plex.UserData | null> {
     else return null;
 }
 
+/**
+ * Fetches search results from the Plex library based on the provided query.
+ *
+ * @param query - The search query string.
+ * @returns A promise that resolves to an array of Plex search results.
+ *
+ * The function constructs a URL with the search query and additional parameters,
+ * including collections, extras, search types (movies, other videos, TV), and a limit of 100 results.
+ * It also includes the Plex access token from local storage for authentication.
+ *
+ * @throws Will throw an error if the request fails.
+ */
 export async function getSearch(query: string): Promise<Plex.SearchResult[]> {
     const res = await authedGet(`/library/search?${queryBuilder({
         query,
@@ -195,15 +303,89 @@ export async function getSearch(query: string): Promise<Plex.SearchResult[]> {
     return res.MediaContainer.SearchResult;
 }
 
-export async function getLibraryDir(library: number, directory: string, subDir?: string): Promise<{
+/**
+ * Sets the media played status for a given rating key.
+ *
+ * This function sends a request to either scrobble or unscrobble a media item
+ * based on the `watched` parameter. If `watched` is true, the media item is marked
+ * as watched (scrobbled). If `watched` is false, the media item is marked as unwatched
+ * (unscrobbled).
+ *
+ * @param watched - A boolean indicating whether the media item has been watched.
+ * @param ratingKey - The unique identifier for the media item.
+ * @returns A promise that resolves when the request is complete.
+ */
+export async function setMediaPlayedStatus(watched: boolean, ratingKey: string): Promise<void> {
+    if(watched) {
+        await authedGet(`/:/scrobble?${queryBuilder({
+            key: ratingKey,
+            identifier: "com.plexapp.plugins.library",
+            ...getXPlexProps()
+        })}`);
+    } else {
+        await authedGet(`/:/unscrobble?${queryBuilder({
+            key: ratingKey,
+            identifier: "com.plexapp.plugins.library",
+            ...getXPlexProps()
+        })}`);
+    }
+}
+
+/**
+ * Sets the media rating for a given media item.
+ *
+ * @param rating - The rating to be set for the media item.
+ * @param ratingKey - The unique key identifying the media item.
+ * @returns A promise that resolves when the rating has been set.
+ */
+export async function setMediaRating(rating: number, ratingKey: string): Promise<void> {
+    await authedGet(`/:/rate?${queryBuilder({
+        identifier: "com.plexapp.plugins.library",
+        key: ratingKey,
+        rating,
+        ...getXPlexProps()
+    })}`);
+}
+
+export interface LibraryDir {
     title: string;
     library: string;
     Metadata: Plex.Metadata[];
-}> {
-    const res = await authedGet(`/library/sections/${library}/${directory}/${subDir ?? ""}`);
-    return {
-        title: res.MediaContainer.title2,
-        library: res.MediaContainer.title1,
-        Metadata: res.MediaContainer.Metadata
-    }
+}
+
+
+/**
+ * Retrieves an item by its GUID from the Plex library.
+ *
+ * @param guid - The GUID of the item to retrieve.
+ * @returns A promise that resolves to the item's metadata if found, or null if not found.
+ *
+ * @remarks
+ * This function sends an authenticated GET request to the Plex library endpoint with various query parameters
+ * to include external media, metadata, marker counts, and related items. The Plex access token is retrieved
+ * from local storage and included in the request.
+ *
+ * @example
+ * ```typescript
+ * const metadata = await getItemByGUID("some-guid");
+ * if (metadata) {
+ *     console.log("Item found:", metadata);
+ * } else {
+ *     console.log("Item not found");
+ * }
+ * ```
+ */
+export async function getItemByGUID(guid: string): Promise<Plex.Metadata | null> {
+    const res = await authedGet(`/library/all?${queryBuilder({
+        guid,
+        "includeExternalMedia": 1,
+        "includeMeta": 1,
+        "includeMarkerCounts": 1,
+        "includeRelated": 1,
+        "X-Plex-Token": localStorage.getItem("accessToken") as string
+    })}`);
+
+    if(res.MediaContainer.Metadata?.[0]?.guid !== guid) return null;
+
+    return res.MediaContainer.Metadata?.[0];
 }

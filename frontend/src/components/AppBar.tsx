@@ -1,24 +1,46 @@
+/* eslint-disable no-lone-blocks */
 import { Theme } from "@emotion/react";
 import {
   AppBar,
   Avatar,
+  Backdrop,
   Box,
   CircularProgress,
   Divider,
+  IconButton,
   InputAdornment,
+  ListItemIcon,
+  ListItemText,
   Menu,
   MenuItem,
+  Popper,
   SxProps,
   TextField,
   Typography,
 } from "@mui/material";
 import React, { useEffect, useState } from "react";
-import { useQuery } from "react-query";
-import { Link, useLocation, useNavigate } from "react-router-dom";
-import { getAllLibraries } from "../plex";
+import {
+  Link,
+  useLocation,
+  useNavigate,
+  useSearchParams,
+} from "react-router-dom";
+import { getAllLibraries, getSearch, getTranscodeImageURL } from "../plex";
 import MetaScreen from "./MetaScreen";
 import { useUserSessionStore } from "../states/UserSession";
-import { Search } from "@mui/icons-material";
+import {
+  FavoriteRounded,
+  FullscreenRounded,
+  LogoutRounded,
+  PeopleRounded,
+  SearchRounded,
+  SettingsRounded,
+  ShortcutRounded,
+} from "@mui/icons-material";
+import { useSyncInterfaceState } from "./PerPlexedSync";
+import { useSyncSessionState } from "../states/SyncSessionState";
+import { config } from "..";
+import { useBigReader } from "./BigReader";
 
 const BarSide: SxProps<Theme> = {
   display: "flex",
@@ -31,7 +53,7 @@ const BarSide: SxProps<Theme> = {
 function Appbar() {
   const [scrollAtTop, setScrollAtTop] = useState(true);
   const location = useLocation();
-  const navigate = useNavigate();
+  const { room } = useSyncSessionState();
 
   const { user } = useUserSessionStore();
 
@@ -47,10 +69,16 @@ function Appbar() {
     };
   }, []);
 
-  const libraries = useQuery("libraries", getAllLibraries);
+  const [libraries, setLibraries] = useState<Plex.LibarySection[] | null>(null);
 
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
+
+  useEffect(() => {
+    getAllLibraries().then((res) => {
+      setLibraries(res);
+    });
+  }, []);
 
   return (
     <AppBar
@@ -66,6 +94,7 @@ function Appbar() {
         transition: "all 0.2s ease-in-out",
 
         bgcolor: scrollAtTop ? "#00000000" : `#000000AA`,
+        backdropFilter: scrollAtTop ? "blur(0px)" : "blur(10px)",
         boxShadow: scrollAtTop ? "none" : "0px 0px 10px 0px #000000AA",
 
         borderBottomLeftRadius: "10px",
@@ -84,6 +113,7 @@ function Appbar() {
           vertical: "top",
           horizontal: "center",
         }}
+        sx={{}}
       >
         <Typography
           sx={{
@@ -101,12 +131,92 @@ function Appbar() {
 
         <MenuItem
           onClick={() => {
+            setAnchorEl(null);
+            window.open("https://g.ipmake.dev/perplexed", "_blank");
+          }}
+        >
+          <ListItemIcon>
+            <FavoriteRounded fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>Sponsor</ListItemText>
+        </MenuItem>
+
+        {!config.DISABLE_PERPLEXED_SYNC && (
+          <MenuItem
+            onClick={() => {
+              useSyncInterfaceState.getState().setOpen(true);
+              setAnchorEl(null);
+            }}
+          >
+            <ListItemIcon>
+              <PeopleRounded fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>Watch2Gether</ListItemText>
+          </MenuItem>
+        )}
+
+        <MenuItem
+          onClick={() => {
+            // toggle Fullscreen
+            if (document.fullscreenElement) document.exitFullscreen();
+            else document.documentElement.requestFullscreen();
+          }}
+        >
+          <ListItemIcon>
+            <FullscreenRounded fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>Fullscreen</ListItemText>
+        </MenuItem>
+
+        <MenuItem
+          onClick={() => {
+            useBigReader.getState().setBigReader(`
+--- Hint ---
+You can right click on any library item at the top to view the entire library.
+
+--- Browsing ---
+CTRL + F - Search
+
+--- Playback ---
+Space / k - Play/Pause
+Left Arrow / j - Back 10s
+Right Arrow / l - Forward 10s
+Up Arrow - Volume Up
+Down Arrow - Volume Down 
+S - Skip onscreen markers (intro, credits, etc)
+            `);
+          }}
+        >
+          <ListItemIcon>
+            <ShortcutRounded fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>Shortcuts</ListItemText>
+        </MenuItem>
+
+        <MenuItem
+          onClick={() => {
+            setAnchorEl(null);
+            // navigate("/settings");
+          }}
+          disabled
+        >
+          <ListItemIcon>
+            <SettingsRounded fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>Settings</ListItemText>
+        </MenuItem>
+
+        <MenuItem
+          onClick={() => {
             localStorage.removeItem("accessToken");
             localStorage.removeItem("accAccessToken");
             window.location.reload();
           }}
         >
-          Logout
+          <ListItemIcon>
+            <LogoutRounded fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>Logout</ListItemText>
         </MenuItem>
       </Menu>
       <MetaScreen />
@@ -140,13 +250,14 @@ function Appbar() {
           <HeadLink to="/" active={location.pathname === "/"}>
             Home
           </HeadLink>
-          {libraries.isLoading && <CircularProgress size="small" />}
-          {libraries.data
+          {!libraries && <CircularProgress size="small" />}
+          {libraries
             ?.filter((e) => ["movie", "show"].includes(e.type))
             .map((library) => (
               <HeadLink
-                key={library.key}
                 to={`/browse/${library.key}`}
+                key={library.key}
+                library={library}
                 active={location.pathname.includes(`/browse/${library.key}`)}
               >
                 {library.title}
@@ -162,30 +273,25 @@ function Appbar() {
           gap: 2,
         }}
       >
-        <TextField
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <Search />
-              </InputAdornment>
-            ),
-          }}
-          placeholder="Search"
-          variant="outlined"
-          size="small"
-          onChange={(e) =>
-            navigate(`/search/${encodeURIComponent(e.target.value.trim())}`)
-          }
-          sx={{
-            backgroundColor: "rgba(255, 255, 255, 0.2)",
-            borderRadius: "7px",
+        <SearchBar />
 
-            // round the corners of the input
-            "& .MuiOutlinedInput-root": {
-              borderRadius: "7px",
-            },
-          }}
-        />
+        {room && (
+          <IconButton
+            onClick={() => {
+              useSyncInterfaceState.getState().setOpen(true);
+            }}
+            sx={{
+              borderRadius: "10px",
+              padding: 1,
+              "&:hover": {
+                backgroundColor: "#000000AA",
+              },
+            }}
+          >
+            <PeopleRounded />
+          </IconButton>
+        )}
+
         <Avatar
           src={user?.thumb}
           variant="square"
@@ -211,15 +317,370 @@ function Appbar() {
 
 export default Appbar;
 
+function SearchBar() {
+  const [searchAnchorEl, setSearchAnchorEl] =
+    React.useState<null | HTMLElement>(null);
+  const searchOpen = Boolean(searchAnchorEl);
+  const searchAnchorElRef = React.useRef<HTMLElement | null>(null);
+  const [searchValue, setSearchValue] = React.useState("");
+  const [searchResults, setSearchResults] = React.useState<Plex.SearchResult[]>(
+    []
+  );
+  const [searchLoading, setSearchLoading] = React.useState(false);
+
+  const [, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
+
+  const [selectedIndex, setSelectedIndex] = React.useState<number | null>(null);
+
+  useEffect(() => {
+    // listen to strg + f
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "f" && e.ctrlKey) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (searchAnchorElRef.current) {
+          searchAnchorElRef.current.blur();
+          setSearchAnchorEl(null);
+          return;
+        }
+
+        setSearchAnchorEl(document.getElementById("search-bar"));
+        document.getElementById("search-bar")?.focus();
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, []);
+
+  useEffect(() => {
+    searchAnchorElRef.current = searchAnchorEl;
+  }, [searchAnchorEl]);
+
+  useEffect(() => {
+    setSelectedIndex(null);
+    if (searchValue.length === 0) {
+      setSearchResults([]);
+      return;
+    }
+
+    setSearchLoading(true);
+
+    const delayDebounceFn = setTimeout(() => {
+      getSearch(searchValue).then((res) => {
+        if (!res) {
+          setSearchLoading(false);
+          return setSearchResults([]);
+        }
+        setSearchResults(
+          res
+            .filter(
+              (item) =>
+                (item.Metadata &&
+                  ["movie", "show"].includes(item.Metadata.type)) ||
+                item.Directory
+            )
+            .sort((a, b) => {
+              // directories first
+              if (a.Directory && !b.Directory) return -1;
+              if (!a.Directory && b.Directory) return 1;
+              return 0;
+            })
+            .slice(0, 8)
+        );
+
+        setSearchLoading(false);
+      });
+    }, 500); // Adjust the delay as needed
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchValue]);
+
+  return (
+    <>
+      <Backdrop
+        open={searchOpen}
+        sx={{
+          zIndex: 10000,
+        }}
+        onClick={() => {
+          setSearchAnchorEl(null);
+        }}
+      />
+      <TextField
+        id="search-bar"
+        InputProps={{
+          startAdornment: (
+            <InputAdornment position="start">
+              <SearchRounded />
+            </InputAdornment>
+          ),
+        }}
+        placeholder="Search"
+        variant="outlined"
+        size="small"
+        onKeyDown={(e) => {
+          switch (e.key) {
+            case "Escape":
+              setSearchAnchorEl(null);
+              searchAnchorEl?.blur();
+              break;
+            case "ArrowDown":
+              e.preventDefault();
+              if (searchResults.length === 0) return;
+              setSelectedIndex((prev) =>
+                prev === null ? 0 : Math.min(prev + 1, searchResults.length - 1)
+              );
+              break;
+            case "ArrowUp":
+              e.preventDefault();
+              if (searchResults.length === 0) return;
+              if (selectedIndex === 0) return setSelectedIndex(null);
+
+              setSelectedIndex((prev) =>
+                prev === null ? 0 : Math.max(prev - 1, 0)
+              );
+              break;
+            case "Tab":
+              e.preventDefault();
+              if (searchResults.length === 0) return;
+              // if it gets to the last item, then set to null
+              if (selectedIndex === searchResults.length - 1)
+                return setSelectedIndex(null);
+              setSelectedIndex((prev) =>
+                prev === null ? 0 : Math.min(prev + 1, searchResults.length - 1)
+              );
+              break;
+            case "Enter":
+              if (searchValue.length === 0) return;
+
+              if (selectedIndex !== null && searchResults.length > 0) {
+                if (searchResults[selectedIndex].Metadata?.ratingKey) {
+                  setSearchParams(
+                    new URLSearchParams({
+                      mid:
+                        searchResults[selectedIndex].Metadata?.ratingKey || "",
+                    })
+                  );
+                } else if (searchResults[selectedIndex].Directory) {
+                  setSearchParams(
+                    new URLSearchParams({
+                      bkey: `/library/sections/${searchResults[selectedIndex].Directory?.librarySectionID}/genre/${searchResults[selectedIndex].Directory?.id}`,
+                    })
+                  );
+                }
+              } else {
+                navigate(`/search/${encodeURIComponent(searchValue.trim())}`);
+              }
+
+              searchAnchorEl?.blur();
+              setSearchAnchorEl(null);
+              break;
+          }
+        }}
+        onChange={(e) => {
+          setSearchValue(e.target.value);
+          //navigate(`/search/${encodeURIComponent(e.target.value.trim())}`);
+        }}
+        onFocus={(e) => {
+          setSearchAnchorEl(e.currentTarget);
+        }}
+        sx={{
+          backgroundColor: "#121212AA",
+          borderRadius: "7px",
+
+          // round the corners of the input
+          "& .MuiOutlinedInput-root": {
+            borderRadius: "7px",
+          },
+          transition: "all 0.2s ease-in-out",
+          zIndex: 11000,
+        }}
+        style={{
+          ...(searchOpen
+            ? { width: "20vw", zIndex: 10000 }
+            : { width: "300px" }),
+        }}
+      />
+      <Popper
+        anchorEl={searchAnchorEl}
+        open={searchOpen && searchValue.length > 0}
+        placement="bottom-end"
+        sx={{
+          borderRadius: "7px",
+          backgroundColor: "#121212AA",
+          backdropFilter: "blur(10px)",
+          transition: "width 0.2s ease-in-out",
+          padding: "20px 10px",
+          pt: "10px",
+
+          display: "flex",
+          flexDirection: "column",
+          gap: "10px",
+        }}
+        style={{
+          ...(searchOpen
+            ? { width: "20vw", zIndex: 11000 }
+            : { width: "300px" }),
+        }}
+        onClick={(e) => {
+          e.stopPropagation();
+          e.preventDefault();
+        }}
+      >
+        {searchLoading && (
+          <Box
+            sx={{ display: "flex", justifyContent: "center", width: "100%" }}
+          >
+            <CircularProgress />
+          </Box>
+        )}
+
+        {!searchLoading && searchResults.length === 0 && (
+          <Typography>No Results</Typography>
+        )}
+
+        {!searchLoading &&
+          searchResults.length > 0 &&
+          searchResults.map((item, index) => {
+            if (item.Metadata) {
+              return (
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "flex-start",
+                    justifyContent: "flex-start",
+                    width: "100%",
+                    borderRadius: "5px",
+                    bgcolor: "#202020",
+                    padding: "7px 10px",
+
+                    "&:hover": {
+                      backgroundColor: "#303030",
+                      transition: "all 0.2s ease-in-out",
+                    },
+
+                    ...(selectedIndex === index && {
+                      backgroundColor: "#303030",
+                    }),
+
+                    transition: "all 0.4s ease-in-out",
+
+                    userSelect: "none",
+                    cursor: "pointer",
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    searchAnchorEl?.blur();
+                    setSearchAnchorEl(null);
+                    if (item.Metadata?.ratingKey) {
+                      setSearchParams({
+                        mid: item.Metadata.ratingKey,
+                      });
+                    }
+                  }}
+                >
+                  <img
+                    src={`${getTranscodeImageURL(
+                      `${
+                        item.Metadata.thumb
+                      }?X-Plex-Token=${localStorage.getItem("accessToken")}`,
+                      100,
+                      100
+                    )}`}
+                    alt=""
+                    style={{
+                      aspectRatio: 1,
+                      objectFit: "cover",
+                      borderRadius: "5px",
+                      width: 50,
+                      height: 50,
+                    }}
+                  />
+
+                  <Box sx={{ ml: 2, display: "flex", flexDirection: "column" }}>
+                    <Typography>{item.Metadata.title}</Typography>
+
+                    <Typography
+                      sx={{
+                        fontSize: 12,
+                        color: "#777",
+                      }}
+                    >
+                      {item.Metadata.librarySectionTitle}
+                    </Typography>
+                  </Box>
+                </Box>
+              );
+            } else if (item.Directory) {
+              return (
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "flex-start",
+                    justifyContent: "flex-start",
+                    width: "100%",
+                    borderRadius: "5px",
+                    bgcolor: "#202020",
+                    padding: "7px 10px",
+
+                    "&:hover": {
+                      backgroundColor: "#303030",
+                      transition: "all 0.2s ease-in-out",
+                    },
+
+                    ...(selectedIndex === index && {
+                      backgroundColor: "#303030",
+                    }),
+
+                    transition: "all 0.4s ease-in-out",
+
+                    userSelect: "none",
+                    cursor: "pointer",
+                  }}
+                  onClick={(e) => {
+                    console.log("test");
+                    e.stopPropagation();
+                    e.preventDefault();
+                    setSearchParams(
+                      new URLSearchParams({
+                        bkey: `/library/sections/${item.Directory?.librarySectionID}/genre/${item.Directory?.id}`,
+                      })
+                    );
+                    searchAnchorEl?.blur();
+                    setSearchAnchorEl(null);
+                  }}
+                >
+                  <Typography>
+                    {item.Directory.librarySectionTitle} - {item.Directory.tag}
+                  </Typography>
+                </Box>
+              );
+            }
+          })}
+      </Popper>
+    </>
+  );
+}
+
 function HeadLink({
   to,
+  library,
   children,
   active,
 }: {
   to: string;
+  library?: Plex.LibarySection;
   children: React.ReactNode;
   active?: boolean;
 }): JSX.Element {
+  const [, setSearchParams] = useSearchParams();
   return (
     <Link
       className={`head-link${active ? " head-link-active" : ""}`}
@@ -229,6 +690,17 @@ function HeadLink({
         color: "inherit",
         fontWeight: 500,
         transition: "all 0.2s ease-in-out",
+        fontFamily: '"Inter Variable", sans-serif',
+        userSelect: "none",
+      }}
+      onContextMenu={(e) => {
+        e.preventDefault();
+        if (library)
+          setSearchParams(
+            new URLSearchParams({
+              bkey: `/library/sections/${library.key}/all`,
+            })
+          );
       }}
       aria-current={active ? "page" : undefined}
     >

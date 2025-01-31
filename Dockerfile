@@ -1,29 +1,19 @@
-FROM node:20-bookworm-slim as frontend_builder
-
-WORKDIR /app
-
-COPY frontend/package*.json ./
-
-# Install the app dependencies
-RUN npm install
-
-COPY frontend .
-
-RUN npm run build
-
-# /// Runner ///
-
-FROM node:20-bookworm-slim as runner
+FROM node:22-bookworm-slim as runner
 
 WORKDIR /app
 
 COPY backend/* /app
 
+RUN apt-get update -y && apt-get install -y openssl
+
 RUN npm install
+RUN npx prisma db push
 RUN npx tsc
+RUN chmod +x /app/run.sh
 
 EXPOSE 3000
+VOLUME /app/data
 
-COPY --from=frontend_builder /app/build/ /app/www/
+COPY frontend/build/ /app/www/
 
 CMD ["node", "dist/index.js"]

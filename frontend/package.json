@@ -5,7 +5,10 @@
   "dependencies": {
     "@emotion/react": "^11.11.4",
     "@emotion/styled": "^11.11.5",
+    "@fontsource-variable/inter": "^5.1.1",
     "@fontsource-variable/quicksand": "^5.1.0",
+    "@fontsource-variable/rubik": "^5.1.1",
+    "@fontsource/ibm-plex-sans": "^5.1.1",
     "@mui/icons-material": "^5.15.15",
     "@mui/material": "^5.15.15",
     "axios": "^1.6.8",
@@ -13,16 +16,18 @@
     "moment": "^2.30.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-intersection-observer": "^9.15.1",
     "react-player": "^2.16.0",
     "react-query": "^3.39.3",
     "react-router-dom": "^6.22.3",
     "react-scripts": "5.0.1",
     "react-video-seek-slider": "^6.0.6",
+    "socket.io-client": "^4.8.1",
     "zustand": "^4.5.2"
   },
   "scripts": {
     "start": "PORT=4000 react-scripts start",
-    "build": "react-scripts build",
+    "build": "DISABLE_ESLINT_PLUGIN=true react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },

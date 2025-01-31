@@ -19,7 +19,9 @@ import {
   Button,
   Fade,
   IconButton,
+  Paper,
   Popover,
+  Popper,
   Slider,
   Theme,
   Typography,
@@ -28,20 +30,29 @@ import {
 import ReactPlayer from "react-player";
 import { queryBuilder } from "../plex/QuickFunctions";
 import {
-  ArrowBackIos,
-  ArrowBackIosNew,
-  Check,
-  Fullscreen,
-  Pause,
-  PlayArrow,
+  ArrowBackIosNewRounded,
+  ArrowBackIosRounded,
+  CheckRounded,
+  FullscreenRounded,
+  PauseRounded,
+  PeopleRounded,
+  PlayArrowRounded,
   SkipNext,
-  Tune,
-  VolumeUp,
+  SkipNextRounded,
+  TuneRounded,
+  VolumeUpRounded,
 } from "@mui/icons-material";
 import { VideoSeekSlider } from "react-video-seek-slider";
 import "react-video-seek-slider/styles.css";
 import { useSessionStore } from "../states/SessionState";
 import { durationToText } from "../components/MovieItemSlider";
+import {
+  SessionStateEmitter,
+  useSyncSessionState,
+} from "../states/SyncSessionState";
+import { useSyncInterfaceState } from "../components/PerPlexedSync";
+import { absoluteDifference } from "../common/NumberExtra";
+import WatchShowChildView from "../components/WatchShowChildView";
 
 let SessionID = "";
 export { SessionID };
@@ -92,6 +103,10 @@ function Watch() {
 
   const [buffering, setBuffering] = useState(false);
   const [showError, setShowError] = useState<string | false>(false);
+
+  const { room, socket, isHost } = useSyncSessionState();
+  const { open: syncInterfaceOpen, setOpen: setSyncInterfaceOpen } =
+    useSyncInterfaceState();
 
   const loadMetadata = async (itemID: string) => {
     await getUniversalDecision(itemID, {
@@ -190,10 +205,82 @@ function Watch() {
       await sendUniversalPing();
     }, 10000);
 
+    if (itemID && isHost)
+      socket?.emit("RES_SYNC_SET_PLAYBACK", {
+        key: itemID,
+        state: playing ? "playing" : "paused",
+        time: player.current?.getCurrentTime() ?? 0,
+      } satisfies PerPlexed.Sync.PlayBackState);
+
     return () => {
       clearInterval(interval);
     };
-  }, [itemID]);
+  }, [isHost, itemID, socket]);
+
+  useEffect(() => {
+    if (!socket || !room) return;
+
+    const resyncInterval = setInterval(async () => {
+      if (!itemID || !socket || !isHost) return;
+
+      socket.emit("RES_SYNC_RESYNC_PLAYBACK", {
+        key: itemID,
+        state: playing ? "playing" : "paused",
+        time: player.current?.getCurrentTime() ?? 0,
+      } satisfies PerPlexed.Sync.PlayBackState);
+    }, 2500);
+
+    const resyncPlayback = async (data: PerPlexed.Sync.PlayBackState) => {
+      if (data.key !== itemID) {
+        navigate(`/watch/${data.key}?t=${data.time}`);
+        return;
+      }
+
+      if (data.time) {
+        const dif = absoluteDifference(
+          player.current?.getCurrentTime() ?? 0,
+          data.time
+        );
+
+        if (dif > 2) player.current?.seekTo(data.time, "seconds");
+      }
+
+      if (data.state === "playing") setPlaying(true);
+      if (data.state === "paused") setPlaying(false);
+    };
+
+    const endPlayback = async () => {
+      navigate("/sync/waitingroom")
+    }
+
+    const pausePlayback = async () => {
+      setPlaying(false);
+    };
+    const resumePlayback = async () => {
+      setPlaying(true);
+    };
+    const seekPlayback = async (time: number) => {
+      player.current?.seekTo(time, "seconds");
+    };
+
+    if (!isHost) SessionStateEmitter.on("PLAYBACK_RESYNC", resyncPlayback);
+    if (!isHost) SessionStateEmitter.on("PLAYBACK_END", endPlayback);
+
+    SessionStateEmitter.on("PLAYBACK_PAUSE", pausePlayback);
+    SessionStateEmitter.on("PLAYBACK_RESUME", resumePlayback);
+    SessionStateEmitter.on("PLAYBACK_SEEK", seekPlayback);
+
+    return () => {
+      SessionStateEmitter.off("PLAYBACK_RESYNC", resyncPlayback);
+      SessionStateEmitter.off("PLAYBACK_END", endPlayback);
+
+      SessionStateEmitter.off("PLAYBACK_PAUSE", pausePlayback);
+      SessionStateEmitter.off("PLAYBACK_RESUME", resumePlayback);
+      SessionStateEmitter.off("PLAYBACK_SEEK", seekPlayback);
+
+      clearInterval(resyncInterval);
+    };
+  }, [isHost, itemID, navigate, playing, room, socket]);
 
   useEffect(() => {
     if (!itemID) return;
@@ -214,13 +301,14 @@ function Watch() {
       if (terminationCode) {
         setShowError(`${terminationCode} - ${terminationText}`);
         setPlaying(false);
+        socket?.emit("EVNT_SYNC_PAUSE");
       }
     };
 
     const updateInterval = setInterval(updateTimeline, 5000);
 
     return () => clearInterval(updateInterval);
-  }, [buffering, itemID, playing]);
+  }, [buffering, itemID, playing, socket]);
 
   useEffect(() => {
     // set css style for .ui-video-seek-slider .track .main .connect
@@ -268,34 +356,94 @@ function Watch() {
   // . (period): Forward 1 frame
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === " " && player.current) {
-        setPlaying((state) => !state);
-      }
-      if (e.key === "ArrowLeft" && player.current) {
-        player.current.seekTo(player.current.getCurrentTime() - 10);
-      }
-      if (e.key === "ArrowRight" && player.current) {
-        player.current.seekTo(player.current.getCurrentTime() + 10);
-      }
-      if (e.key === "ArrowUp" && player.current) {
-        setVolume((state) => Math.min(state + 5, 100));
-      }
-      if (e.key === "ArrowDown" && player.current) {
-        setVolume((state) => Math.max(state - 5, 0));
-      }
-      if (e.key === "," && player.current) {
-        player.current.seekTo(player.current.getCurrentTime() - 0.04);
-      }
-      if (e.key === "." && player.current) {
-        player.current.seekTo(player.current.getCurrentTime() + 0.04);
-      }
+      const actions: { [key: string]: () => void } = {
+        " ": () =>
+          setPlaying((state) => {
+            if (state) socket?.emit("EVNT_SYNC_PAUSE");
+            else socket?.emit("EVNT_SYNC_RESUME");
+            return !state;
+          }),
+        k: () =>
+          setPlaying((state) => {
+            if (state) socket?.emit("EVNT_SYNC_PAUSE");
+            else socket?.emit("EVNT_SYNC_RESUME");
+            return !state;
+          }),
+        j: () => player.current?.seekTo(player.current.getCurrentTime() - 10),
+        l: () => player.current?.seekTo(player.current.getCurrentTime() + 10),
+        s: () => {
+          if (!metadata || !player.current) return;
+          // if there is a marker like credits skip it
+          const time = player.current.getCurrentTime();
+          for (const marker of metadata.Marker ?? []) {
+            if (
+              !(
+                marker.startTimeOffset / 1000 <= time &&
+                marker.endTimeOffset / 1000 >= time
+              )
+            )
+              continue;
+
+            switch (marker.type) {
+              case "credits":
+                {
+                  if (!marker.final) {
+                    player.current.seekTo(marker.endTimeOffset / 1000 + 1);
+                    return;
+                  }
+
+                  if (metadata.type === "movie")
+                    return navigate(
+                      `/browse/${metadata.librarySectionID}?${queryBuilder({
+                        mid: metadata.ratingKey,
+                      })}`
+                    );
+
+                  if (!playQueue) return;
+                  const next = playQueue[1];
+                  if (!next)
+                    return navigate(
+                      `/browse/${metadata.librarySectionID}?${queryBuilder({
+                        mid: metadata.grandparentRatingKey,
+                        pid: metadata.parentRatingKey,
+                        iid: metadata.ratingKey,
+                      })}`
+                    );
+
+                  navigate(`/watch/${next.ratingKey}`);
+                }
+                break;
+              case "intro":
+                player.current.seekTo(marker.endTimeOffset / 1000 + 1);
+                break;
+            }
+          }
+        },
+        f: () => {
+          if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen();
+          } else document.exitFullscreen();
+        },
+        ArrowLeft: () =>
+          player.current?.seekTo(player.current.getCurrentTime() - 10),
+        ArrowRight: () =>
+          player.current?.seekTo(player.current.getCurrentTime() + 10),
+        ArrowUp: () => setVolume((state) => Math.min(state + 5, 100)),
+        ArrowDown: () => setVolume((state) => Math.max(state - 5, 0)),
+        ",": () =>
+          player.current?.seekTo(player.current.getCurrentTime() - 0.04),
+        ".": () =>
+          player.current?.seekTo(player.current.getCurrentTime() + 0.04),
+      };
+
+      if (actions[e.key]) actions[e.key]();
     };
 
     document.addEventListener("keydown", handleKeyDown);
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, []);
+  }, [metadata, navigate, playQueue, socket]);
 
   return (
     <>
@@ -330,8 +478,8 @@ function Watch() {
               onClick={() => {
                 setShowError(false);
 
-                // Reload, if theres a t time in the search params then reload to the current time
-                if (params.has("t")) {
+                // If the video is already 5 seconds in, reload the page with the current time
+                if (player.current?.getCurrentTime() ?? 0 > 5) {
                   const url = new URL(window.location.href);
                   url.searchParams.set(
                     "t",
@@ -475,7 +623,7 @@ function Watch() {
                   sx={{
                     fontSize: "1vw",
                     color: "#FFF",
-                    mt: "-0.75vw",
+                    mt: "-0.70vw",
                   }}
                 >
                   {showmetadata?.childCount &&
@@ -487,7 +635,7 @@ function Watch() {
                     fontSize: "1vw",
                     fontWeight: "bold",
                     color: "#FFF",
-                    mt: "10px",
+                    mt: "6px",
                   }}
                 >
                   {metadata?.title}: EP. {metadata?.index}
@@ -499,7 +647,7 @@ function Watch() {
                     flexDirection: "row",
                     alignItems: "center",
                     justifyContent: "flex-start",
-                    mt: 0.5,
+                    mt: "2px",
                     gap: 1,
                   }}
                 >
@@ -509,7 +657,6 @@ function Watch() {
                         fontSize: "medium",
                         fontWeight: "light",
                         color: "#FFFFFF",
-                        textShadow: "0px 0px 10px #000000",
                       }}
                     >
                       {metadata.year}
@@ -521,7 +668,6 @@ function Watch() {
                         fontSize: "medium",
                         fontWeight: "light",
                         color: "#FFFFFF",
-                        textShadow: "0px 0px 10px #000000",
                         ml: 1,
                       }}
                     >
@@ -534,7 +680,6 @@ function Watch() {
                         fontSize: "medium",
                         fontWeight: "light",
                         color: "#FFFFFF",
-                        textShadow: "0px 0px 10px #000000",
                         ml: 1,
                         border: "1px dotted #AAAAAA",
                         borderRadius: "5px",
@@ -552,7 +697,6 @@ function Watch() {
                           fontSize: "medium",
                           fontWeight: "light",
                           color: "#FFFFFF",
-                          textShadow: "0px 0px 10px #000000",
                           ml: 1,
                         }}
                       >
@@ -565,6 +709,7 @@ function Watch() {
                   sx={{
                     fontSize: "0.75vw",
                     color: "#FFF",
+                    mt: "2px",
                   }}
                 >
                   {metadata?.summary}
@@ -599,7 +744,6 @@ function Watch() {
                         fontSize: "medium",
                         fontWeight: "light",
                         color: "#FFFFFF",
-                        textShadow: "0px 0px 10px #000000",
                       }}
                     >
                       {metadata.year}
@@ -611,7 +755,6 @@ function Watch() {
                         fontSize: "medium",
                         fontWeight: "light",
                         color: "#FFFFFF",
-                        textShadow: "0px 0px 10px #000000",
                         ml: 1,
                       }}
                     >
@@ -624,7 +767,6 @@ function Watch() {
                         fontSize: "medium",
                         fontWeight: "light",
                         color: "#FFFFFF",
-                        textShadow: "0px 0px 10px #000000",
                         ml: 1,
                         border: "1px dotted #AAAAAA",
                         borderRadius: "5px",
@@ -642,7 +784,6 @@ function Watch() {
                           fontSize: "medium",
                           fontWeight: "light",
                           color: "#FFFFFF",
-                          textShadow: "0px 0px 10px #000000",
                           ml: 1,
                         }}
                       >
@@ -774,7 +915,7 @@ function Watch() {
                     }}
                   >
                     {qualityOption.bitrate === quality.bitrate && (
-                      <Check
+                      <CheckRounded
                         sx={{
                           mr: "auto",
                         }}
@@ -852,7 +993,7 @@ function Watch() {
                       setURL(getUrl);
                     }}
                   >
-                    <Check
+                    <CheckRounded
                       sx={{
                         mr: "auto",
                         opacity: stream.selected ? 1 : 0,
@@ -927,7 +1068,7 @@ function Watch() {
                   {metadata?.Media[0].Part[0].Stream.filter(
                     (stream) => stream.selected && stream.streamType === 3
                   ).length === 0 && (
-                    <Check
+                    <CheckRounded
                       sx={{
                         mr: "auto",
                       }}
@@ -986,7 +1127,7 @@ function Watch() {
                       setURL(getUrl);
                     }}
                   >
-                    <Check
+                    <CheckRounded
                       sx={{
                         mr: "auto",
                         opacity: stream.selected ? 1 : 0,
@@ -1027,6 +1168,7 @@ function Watch() {
                 mountOnEnter
                 unmountOnExit
                 in={
+                  (room ? isHost : true) &&
                   metadata.Marker &&
                   metadata.Marker.filter(
                     (marker) =>
@@ -1105,6 +1247,7 @@ function Watch() {
                 mountOnEnter
                 unmountOnExit
                 in={
+                  (room ? isHost : true) &&
                   metadata.Marker &&
                   metadata.Marker.filter(
                     (marker) =>
@@ -1185,6 +1328,7 @@ function Watch() {
                 mountOnEnter
                 unmountOnExit
                 in={
+                  (room ? isHost : true) &&
                   metadata.Marker &&
                   metadata.Marker.filter(
                     (marker) =>
@@ -1314,6 +1458,9 @@ function Watch() {
                   >
                     <IconButton
                       onClick={() => {
+                        if(room && !isHost) socket?.disconnect();
+                        if(room && isHost) socket?.emit("RES_SYNC_PLAYBACK_END");
+
                         if (itemID && player.current)
                           getTimelineUpdate(
                             parseInt(itemID),
@@ -1340,7 +1487,7 @@ function Watch() {
                           );
                       }}
                     >
-                      <ArrowBackIosNew fontSize="large" />
+                      <ArrowBackIosNewRounded fontSize="large" />
                     </IconButton>
                   </Box>
 
@@ -1382,9 +1529,14 @@ function Watch() {
                           bufferTime={buffered * 1000}
                           onChange={(value) => {
                             player.current?.seekTo(value / 1000);
+                            socket?.emit("EVNT_SYNC_SEEK", value / 1000);
                           }}
                           getPreviewScreenUrl={(value) => {
-                            if (!metadata.Media || !metadata.Media[0].Part[0].indexes) return "";
+                            if (
+                              !metadata.Media ||
+                              !metadata.Media[0].Part[0].indexes
+                            )
+                              return "";
                             return `${localStorage.getItem(
                               "server"
                             )}/photo/:/transcode?${queryBuilder({
@@ -1437,24 +1589,18 @@ function Watch() {
                         <IconButton
                           onClick={() => {
                             setPlaying(!playing);
+                            if (playing) socket?.emit("EVNT_SYNC_PAUSE");
+                            else socket?.emit("EVNT_SYNC_RESUME");
                           }}
                         >
                           {playing ? (
-                            <Pause fontSize="large" />
+                            <PauseRounded fontSize="large" />
                           ) : (
-                            <PlayArrow fontSize="large" />
+                            <PlayArrowRounded fontSize="large" />
                           )}
                         </IconButton>
 
-                        {playQueue && playQueue[1] && (
-                          <IconButton
-                            onClick={() => {
-                              navigate(`/watch/${playQueue[1].ratingKey}`);
-                            }}
-                          >
-                            <SkipNext fontSize="large" />
-                          </IconButton>
-                        )}
+                        {playQueue && <NextEPButton queue={playQueue} />}
                       </Box>
 
                       {metadata.type === "movie" && (
@@ -1532,8 +1678,12 @@ function Watch() {
                           setVolumePopoverAnchor(event.currentTarget);
                         }}
                       >
-                        <VolumeUp fontSize="large" />
+                        <VolumeUpRounded fontSize="large" />
                       </IconButton>
+
+                      {metadata.type === "episode" && (
+                        <WatchShowChildView item={metadata} />
+                      )}
 
                       <IconButton
                         onClick={(event) => {
@@ -1542,8 +1692,18 @@ function Watch() {
                           tuneButtonRef.current = event.currentTarget;
                         }}
                       >
-                        <Tune fontSize="large" />
+                        <TuneRounded fontSize="large" />
                       </IconButton>
+
+                      {room && (
+                        <IconButton
+                          onClick={() => {
+                            setSyncInterfaceOpen(true);
+                          }}
+                        >
+                          <PeopleRounded fontSize="large" />
+                        </IconButton>
+                      )}
 
                       <IconButton
                         onClick={() => {
@@ -1552,7 +1712,7 @@ function Watch() {
                           else document.exitFullscreen();
                         }}
                       >
-                        <Fullscreen fontSize="large" />
+                        <FullscreenRounded fontSize="large" />
                       </IconButton>
                     </Box>
                   </Box>
@@ -1568,12 +1728,17 @@ function Watch() {
 
                   switch (e.detail) {
                     case 1:
-                      setPlaying((state) => !state);
+                      setPlaying((state) => {
+                        if (state) socket?.emit("EVNT_SYNC_PAUSE");
+                        else socket?.emit("EVNT_SYNC_RESUME");
+                        return !state;
+                      });
                       break;
                     case 2:
                       if (!document.fullscreenElement) {
                         document.documentElement.requestFullscreen();
                         setPlaying(true);
+                        socket?.emit("EVNT_SYNC_RESUME");
                       } else document.exitFullscreen();
                       break;
                     default:
@@ -1589,15 +1754,16 @@ function Watch() {
                     seekToAfterLoad.current = null;
                   }
 
-                  if (!params.has("t")) return;
-                  if (
-                    lastAppliedTime.current === parseInt(params.get("t") ?? "0")
-                  )
-                    return;
-                  player.current.seekTo(
-                    parseInt(params.get("t") ?? "0") / 1000
-                  );
-                  lastAppliedTime.current = parseInt(params.get("t") ?? "0");
+                  const seekTo = params.has("t")
+                    ? parseInt(params.get("t") as string)
+                    : (metadata?.viewOffset && metadata?.viewOffset > 5
+                        ? metadata?.viewOffset
+                        : null) ?? null;
+
+                  if (!seekTo) return;
+                  if (lastAppliedTime.current === seekTo) return;
+                  player.current.seekTo(seekTo / 1000);
+                  lastAppliedTime.current = seekTo;
                 }}
                 onProgress={(progress) => {
                   setProgress(progress.playedSeconds);
@@ -1621,9 +1787,11 @@ function Watch() {
                   // window.location.reload();
 
                   setPlaying(false);
+                  socket?.emit("EVNT_SYNC_PAUSE");
                   if (showError) return;
 
                   // filter out links from the error messages
+                  if (!err.error) return;
                   const message = err.error.message.replace(
                     /https?:\/\/[^\s]+/g,
                     "Media"
@@ -1644,17 +1812,21 @@ function Watch() {
                   },
                 }}
                 onEnded={() => {
+                  if (room && !isHost) return;
                   if (!playQueue) return console.log("No play queue");
 
-                  if (metadata.type !== "episode")
+                  if (metadata.type !== "episode") {
+                    if (room && isHost) socket?.emit("RES_SYNC_PLAYBACK_END");
                     return navigate(
                       `/browse/${metadata.librarySectionID}?${queryBuilder({
                         mid: metadata.ratingKey,
                       })}`
                     );
+                  }
 
                   const next = playQueue[1];
-                  if (!next)
+                  if (!next) {
+                    if (room && isHost) socket?.emit("RES_SYNC_PLAYBACK_END");
                     return navigate(
                       `/browse/${metadata.librarySectionID}?${queryBuilder({
                         mid: metadata.grandparentRatingKey,
@@ -1662,6 +1834,7 @@ function Watch() {
                         iid: metadata.ratingKey,
                       })}`
                     );
+                  }
 
                   navigate(`/watch/${next.ratingKey}`);
                 }}
@@ -1678,6 +1851,132 @@ function Watch() {
 }
 
 export default Watch;
+
+function NextEPButton({ queue }: { queue?: Plex.Metadata[] }) {
+  const navigate = useNavigate();
+
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+
+  if (!queue) return <></>;
+
+  return (
+    <>
+      <Popper
+        open={Boolean(anchorEl)}
+        anchorEl={anchorEl}
+        placement="top-start"
+        transition
+        sx={{ zIndex: 10000 }}
+        modifiers={[
+          {
+            name: "offset",
+            options: {
+              offset: [0, 10],
+            },
+          },
+        ]}
+      >
+        {({ TransitionProps }) => (
+          <Fade {...TransitionProps} timeout={350}>
+            <Paper
+              sx={{
+                width: "35vw",
+                height: "auto",
+                aspectRatio: "32/8",
+                overflow: "hidden",
+                background: "#101010",
+
+                display: "flex",
+                flexDirection: "row",
+                alignItems: "flex-start",
+                justifyContent: "flex-start",
+              }}
+            >
+              <img
+                src={`${getTranscodeImageURL(
+                  `${queue[1].thumb}?X-Plex-Token=${localStorage.getItem(
+                    "accessToken"
+                  )}`,
+                  500,
+                  500
+                )}`}
+                alt=""
+                style={{
+                  height: "100%",
+                  aspectRatio: "16/9",
+                  width: "auto",
+                }}
+              />
+
+              <Box
+                sx={{
+                  width: "100%",
+                  height: "100%",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "flex-start",
+                  justifyContent: "flex-start",
+                  p: 2,
+                }}
+              >
+                <Typography
+                  sx={{
+                    fontSize: "0.7vw",
+                    fontWeight: "700",
+                    letterSpacing: "0.15em",
+                    color: "#e6a104",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  {queue[1].type}{" "}
+                  {queue[1].type === "episode" && queue[1].index}
+                </Typography>
+                <Typography
+                  sx={{
+                    fontSize: "0.8vw",
+                    fontWeight: "bold",
+                    color: "#FFF",
+                  }}
+                >
+                  {queue[1].title}
+                </Typography>
+
+                <Typography
+                  sx={{
+                    mt: "2px",
+                    fontSize: "0.6vw",
+                    color: "#FFF",
+
+                    // max 5 lines
+                    display: "-webkit-box",
+                    WebkitLineClamp: 5,
+                    WebkitBoxOrient: "vertical",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}
+                >
+                  {queue[1].summary}
+                </Typography>
+              </Box>
+            </Paper>
+          </Fade>
+        )}
+      </Popper>
+      {queue && queue[1] && (
+        <IconButton
+          onClick={() => {
+            navigate(`/watch/${queue[1].ratingKey}`);
+          }}
+          onMouseEnter={(e) => setAnchorEl(e.currentTarget)}
+          onMouseLeave={() => setAnchorEl(null)}
+        >
+          <SkipNextRounded fontSize="large" />
+        </IconButton>
+      )}
+    </>
+  );
+}
+
 function TuneSettingTab(
   theme: Theme,
   setTunePage: React.Dispatch<React.SetStateAction<number>>,
@@ -1710,7 +2009,7 @@ function TuneSettingTab(
         setTunePage(props.pageNum);
       }}
     >
-      <ArrowBackIos
+      <ArrowBackIosRounded
         sx={{
           mr: "auto",
         }}

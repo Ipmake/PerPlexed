@@ -7,41 +7,24 @@ import { CssBaseline, createTheme } from "@mui/material";
 import { QueryClient, QueryClientProvider } from "react-query";
 import { BrowserRouter } from "react-router-dom";
 import { makeid, uuidv4 } from "./plex/QuickFunctions";
-import axios from "axios";
-import { getBackendURL } from "./backendURL";
 
 import "@fontsource-variable/quicksand";
+import '@fontsource-variable/rubik';
+import '@fontsource/ibm-plex-sans';
+import '@fontsource-variable/inter';
 
 if(!localStorage.getItem("clientID")) localStorage.setItem("clientID", makeid(24));
 
 sessionStorage.setItem("sessionID", uuidv4());
 
-(async () => {
-  let reload = false;
-
-  const config = await axios.get(`${getBackendURL()}/config`);
-  if(config.data.PLEX_SERVER !== localStorage.getItem("server")) {
-    localStorage.setItem("server", config.data.PLEX_SERVER);
-    reload = true;
-  }
-
-  if(JSON.stringify(config.data.CONFIG) !== localStorage.getItem("config")) {
-    localStorage.setItem("config", JSON.stringify(config.data.CONFIG));
-    reload = true;
-  }
-
-  if(reload) return window.location.reload();
-})();
-
-interface ConfigInterface {
-  [key: string]: any;
-}
-
-let config: ConfigInterface;
+let config: PerPlexed.ConfigOptions = {
+  DISABLE_PROXY: false,
+  DISABLE_PERPLEXED_SYNC: false
+};
 
 (() => {
   if(!localStorage.getItem("config")) return
-  config = JSON.parse(localStorage.getItem("config") as string) as ConfigInterface;
+  config = JSON.parse(localStorage.getItem("config") as string) as PerPlexed.ConfigOptions;
 })();
 
 if(!localStorage.getItem("quality")) localStorage.setItem("quality", "12000");
@@ -65,7 +48,7 @@ ReactDOM.render(
         },
       },
       typography: {
-        fontFamily: '"Quicksand Variable", sans-serif',
+        fontFamily: '"Inter Variable", sans-serif',
       },
       components: {
         MuiAppBar: {
@@ -78,11 +61,18 @@ ReactDOM.render(
         MuiButton: {
           styleOverrides: {
             root: {
-              fontFamily: '"Quicksand Variable", sans-serif',
+              fontFamily: '"Inter Variable", sans-serif',
               borderRadius: "7px",
             },
           },
         },
+        MuiBackdrop: {
+          styleOverrides: {
+            root: {
+              height: "100vh",
+            },
+          },
+        }
       }
     })}
   >

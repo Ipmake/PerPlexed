@@ -17,6 +17,19 @@ jobs:
       - name: Check out the repo
         uses: actions/checkout@v4
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '22'
+
+      - name: Install dependencies
+        run: npm install
+        working-directory: frontend
+
+      - name: Build frontend
+        run: npm run build
+        working-directory: frontend
+
       - name: Log in to Docker Hub
         uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a
         with:
@@ -27,10 +40,10 @@ jobs:
         run: docker buildx create --name perplexedBuilder --use
 
       - name: Build and push the amd64 image
-        run: docker buildx build --platform linux/amd64 -t ipmake/perplexed:latest-amd64 . --push
+        run: docker buildx build --platform linux/amd64 -t ipmake/perplexed:preview-amd64 . --push
 
-      - name: 
-        run: docker buildx build --platform linux/arm64 -t ipmake/perplexed:latest-arm64 . --push
+      - name: Build and push the arm64 image
+        run: docker buildx build --platform linux/arm64 -t ipmake/perplexed:preview-arm64 . --push
 
-      - name: Build and push Docker image
-        run: docker buildx imagetools create --tag ipmake/perplexed:latest ipmake/perplexed:latest-amd64 ipmake/perplexed:latest-arm64
+      - name: Build and push multi-platform Docker image
+        run: docker buildx imagetools create --tag ipmake/perplexed:preview ipmake/perplexed:preview-amd64 ipmake/perplexed:preview-arm64

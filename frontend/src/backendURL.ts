@@ -1,8 +1,10 @@
 import axios from "axios";
 import { config } from ".";
 
+export const isDev = !process.env.NODE_ENV || process.env.NODE_ENV === 'development'
+
 export function getBackendURL() {
-    if (!process.env.NODE_ENV || process.env.NODE_ENV === 'development') return "http://localhost:3000";
+    if (isDev) return "http://localhost:3000";
     else return "";
 }
 

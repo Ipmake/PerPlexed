@@ -4,12 +4,15 @@ import {
   Box,
   Button,
   CircularProgress,
+  ClickAwayListener,
   Collapse,
   Divider,
   Grid,
   IconButton,
   LinearProgress,
   MenuItem,
+  Popover,
+  Rating,
   Select,
   Typography,
 } from "@mui/material";
@@ -18,23 +21,30 @@ import React, { useEffect, useState } from "react";
 import {
   getLibraryMeta,
   getLibraryMetaChildren,
-  getSimilar,
   getTranscodeImageURL,
+  setMediaPlayedStatus,
+  setMediaRating,
 } from "../plex";
-import { useQuery } from "react-query";
 import {
-  Add,
-  CheckCircle,
-  Close,
-  PlayArrow,
-  StarRate,
-  VolumeOff,
-  VolumeUp,
+  BookmarkRounded,
+  BookmarkBorderRounded,
+  CheckCircleRounded,
+  CloseRounded,
+  PlayArrowRounded,
+  VolumeOffRounded,
+  VolumeUpRounded,
+  CheckCircleOutlineRounded,
+  StarOutlineOutlined,
+  StarRounded,
+  StarOutlineRounded,
 } from "@mui/icons-material";
 import { durationToText } from "./MovieItemSlider";
 import ReactPlayer from "react-player";
 import { usePreviewPlayer } from "../states/PreviewPlayerState";
 import MovieItem from "./MovieItem";
+import { useBigReader } from "./BigReader";
+import { useWatchListCache } from "../states/WatchListCache";
+import { useInView } from "react-intersection-observer";
 
 function MetaScreen() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -42,15 +52,10 @@ function MetaScreen() {
   const { MetaScreenPlayerMuted, setMetaScreenPlayerMuted } =
     usePreviewPlayer();
 
-  const { data, status } = useQuery(
-    ["meta", searchParams.get("mid")],
-    async () => await getLibraryMeta(searchParams.get("mid") as string)
-  );
+  const [loading, setLoading] = useState<boolean>(true);
+  const [data, setData] = useState<Plex.Metadata | undefined>(undefined);
 
-  const similar = useQuery(
-    ["similar", searchParams.get("mid")],
-    async () => await getSimilar(searchParams.get("mid") as string)
-  );
+  const [page, setPage] = useState<number>(0);
 
   const [selectedSeason, setSelectedSeason] = useState<number>(0);
   const [episodes, setEpisodes] = useState<Plex.Metadata[] | null>();
@@ -61,18 +66,41 @@ function MetaScreen() {
   const [previewVidURL, setPreviewVidURL] = useState<string | null>(null);
   const [previewVidPlaying, setPreviewVidPlaying] = useState<boolean>(false);
 
+  const WatchList = useWatchListCache();
+
+  const mid = searchParams.get("mid");
+
   useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setSearchParams(new URLSearchParams());
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  useEffect(() => {
+    setData(undefined);
+    setLoading(true);
     setEpisodes(null);
     setSelectedSeason(0);
     setLanguages(null);
     setSubTitles(null);
     setPreviewVidURL(null);
     setPreviewVidPlaying(false);
-  }, [data?.ratingKey]);
+    setPage(0);
+
+    if (!mid) return;
+    getLibraryMeta(mid).then((res) => {
+      setSelectedSeason((res.OnDeck?.Metadata?.parentIndex ?? 1) - 1);
+      setData(res);
+      setLoading(false);
+    });
+  }, [mid]);
 
   useEffect(() => {
     if (!data) return;
-    setSelectedSeason((data.OnDeck?.Metadata?.parentIndex ?? 1) - 1);
 
     if (
       !data?.Extras?.Metadata?.[0] ||
@@ -153,10 +181,12 @@ function MetaScreen() {
         }
         break;
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data?.ratingKey, episodes]);
 
   useEffect(() => {
     setEpisodes(null);
+    if (!data) return;
     if (
       data?.type === "show" &&
       data?.Children?.Metadata[selectedSeason]?.ratingKey
@@ -167,18 +197,18 @@ function MetaScreen() {
         setEpisodes(res);
       });
     }
-  }, [selectedSeason, data?.ratingKey]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedSeason, data]);
 
   if (!searchParams.has("mid")) return <></>;
 
-  if (status === "loading")
+  if (loading)
     return (
       <Backdrop open={true}>
         <CircularProgress />
       </Backdrop>
     );
 
-  console.log(data);
   return (
     <Backdrop
       open={searchParams.has("mid")}
@@ -202,7 +232,7 @@ function MetaScreen() {
           justifyContent: "flex-start",
           backgroundColor: "#181818",
           mt: 4,
-          pb: 4,
+          pb: "20vh",
 
           borderTopLeftRadius: "10px",
           borderTopRightRadius: "10px",
@@ -294,7 +324,7 @@ function MetaScreen() {
                 setSearchParams(new URLSearchParams());
               }}
             >
-              <Close fontSize="medium" />
+              <CloseRounded fontSize="medium" />
             </IconButton>
 
             <IconButton
@@ -307,7 +337,11 @@ function MetaScreen() {
                 setMetaScreenPlayerMuted(!MetaScreenPlayerMuted);
               }}
             >
-              {MetaScreenPlayerMuted ? <VolumeOff /> : <VolumeUp />}
+              {MetaScreenPlayerMuted ? (
+                <VolumeOffRounded />
+              ) : (
+                <VolumeUpRounded />
+              )}
             </IconButton>
           </Box>
         </Box>
@@ -399,7 +433,6 @@ function MetaScreen() {
                     fontSize: "30px",
                     fontWeight: "900",
                     letterSpacing: "0.1em",
-                    textShadow: "3px 3px 1px #232529",
                     ml: 1,
                     color: "#e6a104",
                     textTransform: "uppercase",
@@ -431,7 +464,7 @@ function MetaScreen() {
               >
                 {data?.type === "show" &&
                   data?.leafCount === data?.viewedLeafCount && (
-                    <CheckCircle
+                    <CheckCircleRounded
                       sx={{
                         color: "#FFFFFF",
                         fontSize: "large",
@@ -439,8 +472,8 @@ function MetaScreen() {
                       }}
                     />
                   )}
-                {data?.type === "movie" && data?.viewCount && (
-                  <CheckCircle
+                {data?.type === "movie" && (data?.viewCount ?? 0) > 0 && (
+                  <CheckCircleRounded
                     sx={{
                       color: "#FFFFFF",
                       fontSize: "large",
@@ -454,7 +487,6 @@ function MetaScreen() {
                       fontSize: "medium",
                       fontWeight: "light",
                       color: "#FFFFFF",
-                      textShadow: "0px 0px 10px #000000",
                       border: "1px dotted #AAAAAA",
                       borderRadius: "5px",
                       px: 1,
@@ -471,7 +503,6 @@ function MetaScreen() {
                       fontWeight: "light",
                       color: "#FFFFFF",
                       ml: data?.contentRating ? 1 : 0,
-                      textShadow: "0px 0px 10px #000000",
                     }}
                   >
                     {data?.year}
@@ -483,7 +514,7 @@ function MetaScreen() {
                       fontSize: "medium",
                       fontWeight: "light",
                       color: "#FFFFFF",
-                      textShadow: "0px 0px 10px #000000",
+
                       ml: 1,
                     }}
                   >
@@ -497,7 +528,6 @@ function MetaScreen() {
                         fontSize: "medium",
                         fontWeight: "light",
                         color: "#FFFFFF",
-                        textShadow: "0px 0px 10px #000000",
                         ml: 1,
                       }}
                     >
@@ -512,7 +542,6 @@ function MetaScreen() {
                         fontSize: "medium",
                         fontWeight: "light",
                         color: "#FFFFFF",
-                        textShadow: "0px 0px 10px #000000",
                         ml: 1,
                       }}
                     >
@@ -552,7 +581,11 @@ function MetaScreen() {
                   }}
                   onClick={async () => {
                     if (data?.type === "movie")
-                      navigate(`/watch/${data?.ratingKey}${data?.viewOffset ? `?t=${data?.viewOffset}` : ""}`);
+                      navigate(
+                        `/watch/${data?.ratingKey}${
+                          data?.viewOffset ? `?t=${data?.viewOffset}` : ""
+                        }`
+                      );
 
                     if (data?.type === "show") {
                       if (data?.OnDeck && data?.OnDeck.Metadata) {
@@ -574,7 +607,7 @@ function MetaScreen() {
                     }
                   }}
                 >
-                  <PlayArrow fontSize="medium" /> Play{" "}
+                  <PlayArrowRounded fontSize="medium" /> Play{" "}
                   {data?.type === "show" &&
                     data?.OnDeck &&
                     data?.OnDeck.Metadata &&
@@ -595,12 +628,23 @@ function MetaScreen() {
                     "&:hover": {
                       backgroundColor: "primary.main",
                     },
-                    cursor: "not-allowed",
                   }}
-                  title="Not yet Implemented"
+                  onClick={() => {
+                    if (!data) return;
+                    if (WatchList.isOnWatchList(data?.guid as string))
+                      WatchList.removeItem(data?.guid as string);
+                    else WatchList.addItem(data);
+                  }}
                 >
-                  <Add fontSize="medium" />
+                  {WatchList.isOnWatchList(data?.guid as string) ? (
+                    <BookmarkRounded fontSize="medium" />
+                  ) : (
+                    <BookmarkBorderRounded fontSize="medium" />
+                  )}
                 </IconButton>
+
+                {data && <RatingButton item={data} />}
+
                 <IconButton
                   sx={{
                     backgroundColor: "#202020",
@@ -612,11 +656,48 @@ function MetaScreen() {
                     "&:hover": {
                       backgroundColor: "primary.main",
                     },
-                    cursor: "not-allowed",
                   }}
-                  title="Not yet Implemented"
+                  onClick={async () => {
+                    if (!data) return;
+                    switch (data.type) {
+                      case "movie":
+                        data.viewCount = !Boolean(data.viewCount) ? 1 : 0;
+                        setData({ ...data });
+                        await setMediaPlayedStatus(
+                          Boolean(data.viewCount),
+                          data.ratingKey
+                        );
+                        break;
+                      case "show":
+                        const newViewedLeafCount =
+                          data.viewedLeafCount === data.leafCount
+                            ? 0
+                            : data.leafCount;
+                        data.viewedLeafCount = newViewedLeafCount;
+                        setData({ ...data });
+                        await setMediaPlayedStatus(
+                          newViewedLeafCount === data.leafCount,
+                          data.ratingKey
+                        );
+                        break;
+                      default:
+                        break;
+                    }
+                  }}
                 >
-                  <StarRate fontSize="medium" />
+                  {data?.type === "movie" ? (
+                    !((data?.viewCount ?? 0) > 0) ? (
+                      <CheckCircleOutlineRounded fontSize="small" />
+                    ) : (
+                      <CheckCircleRounded fontSize="small" />
+                    )
+                  ) : data?.type === "show" ? (
+                    data?.viewedLeafCount === data?.leafCount ? (
+                      <CheckCircleRounded fontSize="small" />
+                    ) : (
+                      <CheckCircleOutlineRounded fontSize="small" />
+                    )
+                  ) : null}
                 </IconButton>
               </Box>
 
@@ -633,20 +714,23 @@ function MetaScreen() {
               >
                 <Typography>Genres: </Typography>
                 {data?.Genre?.slice(0, 5).map((genre, index) => (
-                  <Link
-                    to={`/library/${data.librarySectionID}/dir/genre/${genre.id}`}
-                    style={{ textDecoration: "none" }}
+                  <Typography
+                    sx={{
+                      color: "#FFFFFF",
+                      fontWeight: "bold",
+                      cursor: "pointer",
+                    }}
+                    onClick={() => {
+                      setSearchParams(
+                        new URLSearchParams({
+                          bkey: `/library/sections/${data?.librarySectionID}/genre/${genre.id}`,
+                        })
+                      );
+                    }}
                   >
-                    <Typography
-                      sx={{
-                        color: "#FFFFFF",
-                        fontWeight: "bold",
-                      }}
-                    >
-                      {genre.tag}
-                      {index + 1 === data?.Genre?.slice(0, 5).length ? "" : ","}
-                    </Typography>
-                  </Link>
+                    {genre.tag}
+                    {index + 1 === data?.Genre?.slice(0, 5).length ? "" : ","}
+                  </Typography>
                 ))}
               </Box>
 
@@ -730,8 +814,13 @@ function MetaScreen() {
                   WebkitLineClamp: 5,
                   WebkitBoxOrient: "vertical",
                   maxInlineSize: "100%",
+                  userSelect: "none",
+                  cursor: "zoom-in",
                 }}
-                title={data?.summary}
+                onClick={() => {
+                  if (!data?.summary) return;
+                  useBigReader.getState().setBigReader(data?.summary);
+                }}
               >
                 {data?.summary}
               </Typography>
@@ -742,229 +831,81 @@ function MetaScreen() {
         <Box
           sx={{
             display: "flex",
-            flexDirection: "row",
+            flexDirection: "column",
             alignItems: "flex-start",
-            justifyContent: "center",
+            justifyContent: "flex-start",
             width: "100%",
-            padding: "0 3%",
-            gap: "3%",
+            px: "3%",
             mt: "3vh",
+            zIndex: 2,
           }}
         >
           <Box
             sx={{
-              width: "30%",
-              zIndex: 1,
+              width: "100%",
+              display: "flex",
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "flex-start",
+              gap: 4,
+              mb: "10px",
             }}
           >
-            <Typography
-              sx={{
-                fontSize: "1.5rem",
-                fontWeight: "bold",
-                textTransform: "uppercase",
-                letterSpacing: "0.1em",
-                mb: 1,
+            <TabButton
+              onClick={() => {
+                setPage(0);
               }}
-            >
-              Cast & Crew
-            </Typography>
+              selected={page === 0}
+              text={data?.type === "movie" ? "Similar Movies" : "Episodes"}
+            />
 
-            <Divider sx={{ mb: 2 }} />
+            {data?.type !== "movie" && (
+              <TabButton
+                onClick={() => {
+                  setPage(1);
+                }}
+                selected={page === 1}
+                text="Recommendations"
+              />
+            )}
 
-            <Grid container spacing={2}>
-              {data?.Role?.map((role) => (
-                <Grid item xs={6}>
-                  <Link
-                    to={`/library/${data?.librarySectionID}/dir/actor/${role.id}`}
-                  >
-                    <Box
-                      sx={{
-                        display: "flex",
-                        flexDirection: "row",
-                        alignItems: "center",
-                        justifyContent: "flex-start",
-                        gap: 1,
+            <TabButton
+              onClick={() => {
+                setPage(2);
+              }}
+              selected={page === 2}
+              text="Info"
+            />
 
-                        width: "100%",
-                        height: "100%",
-
-                        userSelect: "none",
-                        cursor: "pointer",
-
-                        "&:hover": {
-                          transition: "all 0.2s ease-in-out",
-                          transform: "scale(1.05)",
-                        },
-                        transition: "all 0.5s ease-in-out",
-                      }}
-                    >
-                      <Avatar
-                        src={role.thumb}
-                        alt=""
-                        sx={{
-                          display: "flex",
-                          width: "35%",
-                          height: "auto",
-                          aspectRatio: "1/1",
-
-                          borderBottomRightRadius: "0%",
-                          borderTopRightRadius: "0%",
-                        }}
-                      />
-
-                      <Box
-                        sx={{
-                          display: "flex",
-                          flexDirection: "column",
-                          alignItems: "flex-start",
-                          justifyContent: "flex-start",
-                        }}
-                      >
-                        <Typography
-                          sx={{
-                            fontSize: "0.7rem",
-                            fontWeight: "bold",
-                            letterSpacing: "0.1em",
-                          }}
-                        >
-                          {role.tag}
-                        </Typography>
-
-                        <Typography
-                          sx={{
-                            fontSize: "0.6rem",
-                            fontWeight: "normal",
-                            letterSpacing: "0.1em",
-                          }}
-                        >
-                          {role.role}
-                        </Typography>
-                      </Box>
-                    </Box>
-                  </Link>
-                </Grid>
-              ))}
-            </Grid>
+            {data?.type === "show" &&
+              data?.Children &&
+              data?.Children.size > 1 && (
+                <Select
+                  sx={{
+                    ml: "auto",
+                    opacity: page === 0 ? 1 : 0,
+                    transition: "all 0.5s ease",
+                  }}
+                  size="small"
+                  value={selectedSeason}
+                  onChange={(e) => {
+                    if (e.target.value === selectedSeason) return;
+                    setSelectedSeason(e.target.value as number);
+                  }}
+                >
+                  {data?.type === "show" &&
+                    data?.Children?.Metadata?.map((season, index) => (
+                      <MenuItem value={index}>{season.title}</MenuItem>
+                    ))}
+                </Select>
+              )}
           </Box>
 
-          <Box
-            sx={{
-              width: "70%",
-              zIndex: 1,
-            }}
-          >
-            <Box
-              sx={{
-                width: "100%",
-                display: "flex",
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "space-between",
-              }}
-            >
-              <Typography
-                sx={{
-                  fontSize: "1.5rem",
-                  fontWeight: "bold",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.1em",
-                  mb: 1,
-                }}
-              >
-                {data?.type === "movie" ? "Similar Movies" : "Episodes"}
-              </Typography>
+          <Divider sx={{ mb: 2, width: "100%" }} />
 
-              {data?.type === "show" &&
-                data?.Children &&
-                data?.Children.size > 1 && (
-                  <Select
-                    sx={{
-                      mb: 1,
-                    }}
-                    size="small"
-                    value={selectedSeason}
-                    onChange={(e) => {
-                      setSelectedSeason(e.target.value as number);
-                    }}
-                  >
-                    {data?.type === "show" &&
-                      data?.Children?.Metadata?.map((season, index) => (
-                        <MenuItem value={index}>{season.title}</MenuItem>
-                      ))}
-                  </Select>
-                )}
-            </Box>
-
-            <Divider sx={{ mb: 2 }} />
-
-            {data?.type === "movie" && similar.status === "loading" && (
-              <Box
-                sx={{
-                  width: "100%",
-                  height: "100%",
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "flex-start",
-                  mt: 10,
-                }}
-              >
-                <CircularProgress />
-              </Box>
-            )}
-
-            {data?.type === "movie" && similar.status === "success" && (
-              <Grid container spacing={2}>
-                {similar.data?.slice(0, 10).map((movie) => (
-                  <Grid item xs={6}>
-                    <MovieItem item={movie} />
-                  </Grid>
-                ))}
-              </Grid>
-            )}
-
-            {data?.type === "show" && !episodes && (
-              <Box
-                sx={{
-                  width: "100%",
-                  height: "100%",
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "flex-start",
-                  mt: 10,
-                }}
-              >
-                <CircularProgress />
-              </Box>
-            )}
-
-            {data?.type === "show" && episodes && (
-              <Box
-                sx={{
-                  width: "100%",
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "flex-start",
-                  justifyContent: "flex-start",
-                  gap: 1,
-                }}
-              >
-                {episodes?.map((episode) => (
-                  <EpisodeItem
-                    item={episode}
-                    onClick={() => {
-                      navigate(
-                        `/watch/${episode.ratingKey}${
-                          episode.viewOffset ? `?t=${episode.viewOffset} ` : ""
-                        }`
-                      );
-                    }}
-                  />
-                ))}
-              </Box>
-            )}
-          </Box>
+          {page === 0 && MetaPage1(data, loading, episodes, navigate)}
+          {page === 1 && MetaPage2(data)}
+          {page === 2 && MetaPage3(data)}
         </Box>
       </Box>
     </Backdrop>
@@ -972,6 +913,375 @@ function MetaScreen() {
 }
 
 export default MetaScreen;
+
+function MetaPage1(
+  data: Plex.Metadata | undefined,
+  loading: boolean,
+  episodes: Plex.Metadata[] | null | undefined,
+  navigate: (path: string) => void
+) {
+  return (
+    <>
+      {data?.type === "movie" && !data && (
+        <Box
+          sx={{
+            width: "100%",
+            height: "100%",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "flex-start",
+            mt: 10,
+          }}
+        >
+          <CircularProgress />
+        </Box>
+      )}
+
+      {data?.type === "movie" && data.Related?.Hub?.[0] && (
+        <Grid container spacing={2}>
+          {data.Related?.Hub?.[0]?.Metadata?.slice(0, 10).map((movie) => (
+            <Grid item xs={4}>
+              <MovieItem item={movie} />
+            </Grid>
+          ))}
+        </Grid>
+      )}
+
+      {data?.type === "show" && !episodes && (
+        <Box
+          sx={{
+            width: "100%",
+            height: "100%",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "flex-start",
+            mt: 10,
+          }}
+        >
+          <CircularProgress />
+        </Box>
+      )}
+
+      {data?.type === "show" && episodes && (
+        <Box
+          sx={{
+            width: "100%",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "flex-start",
+            justifyContent: "flex-start",
+            gap: 1,
+          }}
+        >
+          {episodes?.map((episode) => (
+            <EpisodeItem
+              item={episode}
+              onClick={() => {
+                navigate(
+                  `/watch/${episode.ratingKey}${
+                    episode.viewOffset ? `?t=${episode.viewOffset} ` : ""
+                  }`
+                );
+              }}
+            />
+          ))}
+        </Box>
+      )}
+    </>
+  );
+}
+
+function MetaPage2(data: Plex.Metadata | undefined) {
+  if (!data) return <></>;
+  if (data.Related?.Hub?.length === 0) return <>Nothing here</>;
+
+  return (
+    <Box
+      sx={{
+        width: "100%",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "flex-start",
+        justifyContent: "flex-start",
+        gap: "60px",
+
+        userSelect: "none",
+      }}
+    >
+      {data.Related?.Hub?.map((hub) => (
+        <Box
+          sx={{
+            width: "100%",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "flex-start",
+            justifyContent: "flex-start",
+            gap: 1,
+          }}
+        >
+          <Typography
+            sx={{
+              fontSize: "1.5rem",
+              fontWeight: "bold",
+              color: "#FFFFFF",
+            }}
+          >
+            {hub.title}
+          </Typography>
+
+          <Grid container spacing={2}>
+            {hub.Metadata?.map((item) => (
+              <Grid item lg={3} md={4} sm={6} xs={12}>
+                <MovieItem item={item} />
+              </Grid>
+            ))}
+          </Grid>
+        </Box>
+      ))}
+    </Box>
+  );
+}
+
+function MetaPage3(data: Plex.Metadata | undefined) {
+  return (
+    <Box
+      sx={{
+        width: "100%",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "flex-start",
+        justifyContent: "flex-start",
+        gap: "60px",
+
+        userSelect: "none",
+      }}
+    >
+      <Box
+        sx={{
+          width: "100%",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "flex-start",
+          justifyContent: "flex-start",
+          gap: 1,
+        }}
+      >
+        <Typography
+          sx={{
+            fontSize: "1.5rem",
+            fontWeight: "bold",
+            color: "#FFFFFF",
+          }}
+        >
+          Cast
+        </Typography>
+
+        <Grid container spacing={2}>
+          {data?.Role?.map((role) => (
+            <ActorItem role={role} data={data} />
+          ))}
+        </Grid>
+      </Box>
+    </Box>
+  );
+}
+
+function ActorItem({
+  role,
+  data,
+}: {
+  role: Plex.Role;
+  data: Plex.Metadata;
+}): JSX.Element {
+  const { inView, ref } = useInView();
+  const [, setSearchParams] = useSearchParams();
+
+  return (
+    <Grid item xl={3} lg={4} md={6} sm={6} xs={6} ref={ref}>
+      {inView ? (
+          <Box
+            sx={{
+              width: "100%",
+              display: "flex",
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "flex-start",
+              gap: "20px",
+              backgroundColor: "#00000055",
+              padding: "10px 20px",
+              borderRadius: "10px",
+
+              userSelect: "none",
+              cursor: "pointer",
+
+              "&:hover": {
+                backgroundColor: "#00000088",
+                transition: "all 0.2s ease",
+              },
+
+              transition: "all 0.5s ease",
+            }}
+            onClick={() => {
+              setSearchParams(
+                new URLSearchParams({
+                  bkey: `/library/sections/${data.librarySectionID}/actor/${role.id}`,
+                })
+              );
+            }}
+          >
+            <Avatar
+              src={`${getTranscodeImageURL(
+                `${role.thumb}?X-Plex-Token=${localStorage.getItem(
+                  "accessToken"
+                )}`,
+                200,
+                200
+              )}`}
+              sx={{
+                width: "25%",
+                height: "auto",
+                aspectRatio: "1/1",
+                borderRadius: "50%",
+              }}
+            />
+
+            <Box
+              sx={{
+                width: "75%",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "flex-start",
+                overflow: "hidden",
+              }}
+            >
+              <Typography
+                sx={{
+                  fontSize: "1rem",
+                  color: "#FFFFFF",
+                }}
+              >
+                {role.tag}
+              </Typography>
+              <Typography
+                sx={{
+                  fontSize: "0.75rem",
+                  color: "#BBBBBB",
+
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  display: "-webkit-box",
+                  WebkitLineClamp: 1,
+                  whiteSpace: "nowrap",
+
+                  width: "100%",
+                }}
+              >
+                {role.role}
+              </Typography>
+            </Box>
+          </Box>
+      ) : (
+        <Box
+          sx={{
+            width: "100%",
+            height: "100px", // Adjust height as needed
+            backgroundColor: "#00000055",
+          }}
+        />
+      )}
+    </Grid>
+  );
+}
+
+function RatingButton({ item }: { item: Plex.Metadata }): JSX.Element {
+  const [rating, setRating] = useState<number | null>(
+    (item.userRating && item.userRating / 2) ?? null
+  );
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+
+  return (
+    <>
+      <Popover
+        anchorEl={anchorEl}
+        open={anchorEl !== null}
+        onClick={() => {
+          setAnchorEl(null);
+        }}
+        anchorOrigin={{
+          vertical: "top",
+          horizontal: "center",
+        }}
+        transformOrigin={{
+          vertical: "bottom",
+          horizontal: "center",
+        }}
+        sx={{
+          "& .MuiPopover-paper": {
+            padding: 1,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+          },
+        }}
+      >
+        <Rating
+          name="simple-controlled"
+          value={rating}
+          precision={0.5}
+          size="large"
+          onChange={(e, v) => {
+            setRating(v);
+
+            if (v === null) return;
+
+            item.rating = v * 2;
+            setMediaRating(v * 2, item.ratingKey);
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+          }}
+          onContextMenu={(e) => {
+            e.preventDefault();
+            setRating(null);
+            item.rating = undefined;
+            setMediaRating(-1, item.ratingKey);
+          }}
+        />
+      </Popover>
+      <IconButton
+        sx={{
+          backgroundColor: "#202020",
+          color: "#FFFFFF",
+          fontWeight: "bold",
+          letterSpacing: "0.1em",
+          textTransform: "uppercase",
+          border: "1px solid #FFFFFF",
+          "&:hover": {
+            backgroundColor: "primary.main",
+          },
+        }}
+        onClick={(e) => {
+          setAnchorEl(e.currentTarget);
+        }}
+        onContextMenu={(e) => {
+          e.preventDefault();
+          setRating(null);
+          item.rating = undefined;
+          setMediaRating(-1, item.ratingKey);
+        }}
+      >
+        {rating ? (
+          <StarRounded fontSize="small" />
+        ) : (
+          <StarOutlineRounded fontSize="small" />
+        )}
+      </IconButton>
+    </>
+  );
+}
 
 function EpisodeItem({
   item,
@@ -1019,7 +1329,6 @@ function EpisodeItem({
             fontSize: "1.25rem",
             fontWeight: "bold",
             color: "#FFFFFF",
-            textShadow: "0px 0px 10px #000000",
             textAlign: "center",
           }}
         >
@@ -1029,7 +1338,7 @@ function EpisodeItem({
 
       <Box
         sx={{
-          width: "25%",
+          width: "20%",
           borderRadius: "5px",
           aspectRatio: "16/9",
           backgroundImage: `url(${getTranscodeImageURL(
@@ -1053,7 +1362,7 @@ function EpisodeItem({
           position: "relative",
         }}
       >
-        <PlayArrow
+        <PlayArrowRounded
           sx={{
             color: "#FFFFFF",
             fontSize: "400%",
@@ -1109,7 +1418,6 @@ function EpisodeItem({
               fontSize: "1.5rem",
               fontWeight: "bold",
               color: "#FFFFFF",
-              textShadow: "0px 0px 10px #000000",
               // make it so the text doesnt resize the parent nor overflow max 3 rows
               overflow: "hidden",
               textOverflow: "ellipsis",
@@ -1141,7 +1449,6 @@ function EpisodeItem({
             fontWeight: "light",
             color: "#FFFFFF",
             opacity: 0.7,
-            textShadow: "0px 0px 10px #000000",
             mt: -0.5,
             // make it so the text doesnt resize the parent nor overflow max 3 rows
             overflow: "hidden",
@@ -1159,12 +1466,47 @@ function EpisodeItem({
   );
 }
 
+function TabButton({
+  text,
+  onClick,
+  selected,
+}: {
+  text: string;
+  onClick: (event: React.MouseEvent) => void;
+  selected: boolean;
+}) {
+  return (
+    <Typography
+      sx={{
+        fontSize: "1.5rem",
+        fontWeight: "bold",
+        textTransform: "uppercase",
+        letterSpacing: "0.1em",
+        color: selected ? "#AAAAAA" : "#333333",
+
+        cursor: "pointer",
+        userSelect: "none",
+
+        "&:hover": {
+          color: "#CCCCCC",
+          transition: "all 0.5s ease-in-out",
+        },
+
+        transition: "all 0.75s ease-in-out",
+      }}
+      onClick={onClick}
+    >
+      {text}
+    </Typography>
+  );
+}
+
 /**
  * Calculates the number of minutes from a given duration in milliseconds.
  *
  * @param duration The duration in milliseconds.
  * @returns The number of minutes.
  */
-function getMinutes(duration: number): number {
+export function getMinutes(duration: number): number {
   return Math.floor(duration / 60000);
 }
