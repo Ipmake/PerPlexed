@@ -55,10 +55,9 @@ function MovieItemSlider({
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  React.useEffect(() => {
-    if (data) return setItems(data);
+  const fetchData = async () => {
     if (!dir) return;
-
+    
     getLibraryDir(dir, props).then((res) => {
       // cut the array down so its a multiple of itemsPerPage
       if (!res.Metadata) return;
@@ -69,6 +68,13 @@ function MovieItemSlider({
       if (!media) return;
       setItems(shuffle ? shuffleArray(media) : media);
     });
+  };
+
+  React.useEffect(() => {
+    if (data) return setItems(data);
+
+    fetchData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data, dir, filter, props, shuffle]);
 
   if (!items) return <></>;
@@ -262,6 +268,7 @@ function MovieItemSlider({
                   itemsPerPage={itemsPerPage}
                   index={i}
                   PlexTvSource={plexTvSource}
+                  refetchData={(dir && dir.endsWith("onDeck")) ? fetchData : undefined}
                 />
               );
             } else {

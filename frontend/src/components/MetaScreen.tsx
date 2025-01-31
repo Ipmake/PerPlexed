@@ -4,12 +4,15 @@ import {
   Box,
   Button,
   CircularProgress,
+  ClickAwayListener,
   Collapse,
   Divider,
   Grid,
   IconButton,
   LinearProgress,
   MenuItem,
+  Popover,
+  Rating,
   Select,
   Typography,
 } from "@mui/material";
@@ -19,6 +22,8 @@ import {
   getLibraryMeta,
   getLibraryMetaChildren,
   getTranscodeImageURL,
+  setMediaPlayedStatus,
+  setMediaRating,
 } from "../plex";
 import {
   BookmarkRounded,
@@ -28,6 +33,10 @@ import {
   PlayArrowRounded,
   VolumeOffRounded,
   VolumeUpRounded,
+  CheckCircleOutlineRounded,
+  StarOutlineOutlined,
+  StarRounded,
+  StarOutlineRounded,
 } from "@mui/icons-material";
 import { durationToText } from "./MovieItemSlider";
 import ReactPlayer from "react-player";
@@ -35,6 +44,7 @@ import { usePreviewPlayer } from "../states/PreviewPlayerState";
 import MovieItem from "./MovieItem";
 import { useBigReader } from "./BigReader";
 import { useWatchListCache } from "../states/WatchListCache";
+import { useInView } from "react-intersection-observer";
 
 function MetaScreen() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -176,7 +186,7 @@ function MetaScreen() {
 
   useEffect(() => {
     setEpisodes(null);
-    if(!data) return;
+    if (!data) return;
     if (
       data?.type === "show" &&
       data?.Children?.Metadata[selectedSeason]?.ratingKey
@@ -327,7 +337,11 @@ function MetaScreen() {
                 setMetaScreenPlayerMuted(!MetaScreenPlayerMuted);
               }}
             >
-              {MetaScreenPlayerMuted ? <VolumeOffRounded /> : <VolumeUpRounded />}
+              {MetaScreenPlayerMuted ? (
+                <VolumeOffRounded />
+              ) : (
+                <VolumeUpRounded />
+              )}
             </IconButton>
           </Box>
         </Box>
@@ -458,7 +472,7 @@ function MetaScreen() {
                       }}
                     />
                   )}
-                {data?.type === "movie" && data?.viewCount && (
+                {data?.type === "movie" && (data?.viewCount ?? 0) > 0 && (
                   <CheckCircleRounded
                     sx={{
                       color: "#FFFFFF",
@@ -627,6 +641,63 @@ function MetaScreen() {
                   ) : (
                     <BookmarkBorderRounded fontSize="medium" />
                   )}
+                </IconButton>
+
+                {data && <RatingButton item={data} />}
+
+                <IconButton
+                  sx={{
+                    backgroundColor: "#202020",
+                    color: "#FFFFFF",
+                    fontWeight: "bold",
+                    letterSpacing: "0.1em",
+                    textTransform: "uppercase",
+                    border: "1px solid #FFFFFF",
+                    "&:hover": {
+                      backgroundColor: "primary.main",
+                    },
+                  }}
+                  onClick={async () => {
+                    if (!data) return;
+                    switch (data.type) {
+                      case "movie":
+                        data.viewCount = !Boolean(data.viewCount) ? 1 : 0;
+                        setData({ ...data });
+                        await setMediaPlayedStatus(
+                          Boolean(data.viewCount),
+                          data.ratingKey
+                        );
+                        break;
+                      case "show":
+                        const newViewedLeafCount =
+                          data.viewedLeafCount === data.leafCount
+                            ? 0
+                            : data.leafCount;
+                        data.viewedLeafCount = newViewedLeafCount;
+                        setData({ ...data });
+                        await setMediaPlayedStatus(
+                          newViewedLeafCount === data.leafCount,
+                          data.ratingKey
+                        );
+                        break;
+                      default:
+                        break;
+                    }
+                  }}
+                >
+                  {data?.type === "movie" ? (
+                    !((data?.viewCount ?? 0) > 0) ? (
+                      <CheckCircleOutlineRounded fontSize="small" />
+                    ) : (
+                      <CheckCircleRounded fontSize="small" />
+                    )
+                  ) : data?.type === "show" ? (
+                    data?.viewedLeafCount === data?.leafCount ? (
+                      <CheckCircleRounded fontSize="small" />
+                    ) : (
+                      <CheckCircleOutlineRounded fontSize="small" />
+                    )
+                  ) : null}
                 </IconButton>
               </Box>
 
@@ -1009,90 +1080,206 @@ function MetaPage3(data: Plex.Metadata | undefined) {
 
         <Grid container spacing={2}>
           {data?.Role?.map((role) => (
-            <Grid item xl={3} lg={4} md={6} sm={6} xs={6}>
-              <Link
-                to={`/library/${data?.librarySectionID}/dir/actor/${role.id}`}
-              >
-                <Box
-                  sx={{
-                    width: "100%",
-                    display: "flex",
-                    flexDirection: "row",
-                    alignItems: "center",
-                    justifyContent: "flex-start",
-                    gap: "20px",
-                    backgroundColor: "#00000055",
-                    padding: "10px 20px",
-                    borderRadius: "10px",
-
-                    userSelect: "none",
-                    cursor: "pointer",
-
-                    "&:hover": {
-                      backgroundColor: "#00000088",
-                      transition: "all 0.2s ease",
-                    },
-
-                    transition: "all 0.5s ease",
-                  }}
-                >
-                  <Avatar
-                    src={`${getTranscodeImageURL(
-                      `${role.thumb}?X-Plex-Token=${localStorage.getItem(
-                        "accessToken"
-                      )}`,
-                      200,
-                      200
-                    )}`}
-                    sx={{
-                      width: "25%",
-                      height: "auto",
-                      aspectRatio: "1/1",
-                      borderRadius: "50%",
-                    }}
-                  />
-
-                  <Box
-                    sx={{
-                      width: "75%",
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "flex-start",
-                      overflow: "hidden",
-                    }}
-                  >
-                    <Typography
-                      sx={{
-                        fontSize: "1rem",
-                        color: "#FFFFFF",
-                      }}
-                    >
-                      {role.tag}
-                    </Typography>
-                    <Typography
-                      sx={{
-                        fontSize: "0.75rem",
-                        color: "#BBBBBB",
-
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        display: "-webkit-box",
-                        WebkitLineClamp: 1,
-                        whiteSpace: "nowrap",
-
-                        width: "100%",
-                      }}
-                    >
-                      {role.role}
-                    </Typography>
-                  </Box>
-                </Box>
-              </Link>
-            </Grid>
+            <ActorItem role={role} data={data} />
           ))}
         </Grid>
       </Box>
     </Box>
+  );
+}
+
+function ActorItem({
+  role,
+  data,
+}: {
+  role: Plex.Role;
+  data: Plex.Metadata;
+}): JSX.Element {
+  const { inView, ref } = useInView();
+  const [, setSearchParams] = useSearchParams();
+
+  return (
+    <Grid item xl={3} lg={4} md={6} sm={6} xs={6} ref={ref}>
+      {inView ? (
+          <Box
+            sx={{
+              width: "100%",
+              display: "flex",
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "flex-start",
+              gap: "20px",
+              backgroundColor: "#00000055",
+              padding: "10px 20px",
+              borderRadius: "10px",
+
+              userSelect: "none",
+              cursor: "pointer",
+
+              "&:hover": {
+                backgroundColor: "#00000088",
+                transition: "all 0.2s ease",
+              },
+
+              transition: "all 0.5s ease",
+            }}
+            onClick={() => {
+              setSearchParams(
+                new URLSearchParams({
+                  bkey: `/library/sections/${data.librarySectionID}/actor/${role.id}`,
+                })
+              );
+            }}
+          >
+            <Avatar
+              src={`${getTranscodeImageURL(
+                `${role.thumb}?X-Plex-Token=${localStorage.getItem(
+                  "accessToken"
+                )}`,
+                200,
+                200
+              )}`}
+              sx={{
+                width: "25%",
+                height: "auto",
+                aspectRatio: "1/1",
+                borderRadius: "50%",
+              }}
+            />
+
+            <Box
+              sx={{
+                width: "75%",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "flex-start",
+                overflow: "hidden",
+              }}
+            >
+              <Typography
+                sx={{
+                  fontSize: "1rem",
+                  color: "#FFFFFF",
+                }}
+              >
+                {role.tag}
+              </Typography>
+              <Typography
+                sx={{
+                  fontSize: "0.75rem",
+                  color: "#BBBBBB",
+
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  display: "-webkit-box",
+                  WebkitLineClamp: 1,
+                  whiteSpace: "nowrap",
+
+                  width: "100%",
+                }}
+              >
+                {role.role}
+              </Typography>
+            </Box>
+          </Box>
+      ) : (
+        <Box
+          sx={{
+            width: "100%",
+            height: "100px", // Adjust height as needed
+            backgroundColor: "#00000055",
+          }}
+        />
+      )}
+    </Grid>
+  );
+}
+
+function RatingButton({ item }: { item: Plex.Metadata }): JSX.Element {
+  const [rating, setRating] = useState<number | null>(
+    (item.userRating && item.userRating / 2) ?? null
+  );
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+
+  return (
+    <>
+      <Popover
+        anchorEl={anchorEl}
+        open={anchorEl !== null}
+        onClick={() => {
+          setAnchorEl(null);
+        }}
+        anchorOrigin={{
+          vertical: "top",
+          horizontal: "center",
+        }}
+        transformOrigin={{
+          vertical: "bottom",
+          horizontal: "center",
+        }}
+        sx={{
+          "& .MuiPopover-paper": {
+            padding: 1,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+          },
+        }}
+      >
+        <Rating
+          name="simple-controlled"
+          value={rating}
+          precision={0.5}
+          size="large"
+          onChange={(e, v) => {
+            setRating(v);
+
+            if (v === null) return;
+
+            item.rating = v * 2;
+            setMediaRating(v * 2, item.ratingKey);
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+          }}
+          onContextMenu={(e) => {
+            e.preventDefault();
+            setRating(null);
+            item.rating = undefined;
+            setMediaRating(-1, item.ratingKey);
+          }}
+        />
+      </Popover>
+      <IconButton
+        sx={{
+          backgroundColor: "#202020",
+          color: "#FFFFFF",
+          fontWeight: "bold",
+          letterSpacing: "0.1em",
+          textTransform: "uppercase",
+          border: "1px solid #FFFFFF",
+          "&:hover": {
+            backgroundColor: "primary.main",
+          },
+        }}
+        onClick={(e) => {
+          setAnchorEl(e.currentTarget);
+        }}
+        onContextMenu={(e) => {
+          e.preventDefault();
+          setRating(null);
+          item.rating = undefined;
+          setMediaRating(-1, item.ratingKey);
+        }}
+      >
+        {rating ? (
+          <StarRounded fontSize="small" />
+        ) : (
+          <StarOutlineRounded fontSize="small" />
+        )}
+      </IconButton>
+    </>
   );
 }
 

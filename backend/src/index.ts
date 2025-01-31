@@ -74,6 +74,48 @@ app.use(express.json());
         }
     }
 
+
+    // if(!status.error) {
+    //     let checkAllows = false;
+    //     const fetchStatus = async () => {
+    //         try {
+    //             const res = await axios.get(`${process.env.PROXY_PLEX_SERVER}/`, {
+    //                 timeout: 2500,
+    //             });
+
+    //             const m = res.data.MediaContainer;
+
+    //             if(
+    //                 !m.transcoderAudio ||
+    //                 !m.transcoderSubtitles ||
+    //                 !m.transcoderVideo
+    //             ) {
+    //                 status.error = true;
+    //                 status.message = `PLEX_SERVER ${m.friendlyName} does not allow transcoding`;
+    //                 console.error(`PLEX_SERVER ${m.friendlyName} does not allow transcoding`);
+    //                 return;
+    //             }
+
+    //             checkAllows = true;
+    //             status.error = false;
+
+    //         } catch (error: any) {
+    //             status.error = true;
+    //             status.message = 'Server cannot reach PLEX_SERVER' + error.message;
+    //             console.error('Server cannot reach PLEX_SERVER ' + error.message);
+    //         }
+    //     }
+
+    //     await new Promise<void>((resolve) => {
+    //         setTimeout(() => {
+    //             if(checkAllows) return resolve();
+    //             fetchStatus();
+    //         }, 5000);
+    //     })
+    // }
+
+
+    if(status.error) return;
     status.ready = true;
     status.message = 'OK';
 })();
@@ -224,3 +266,4 @@ let io = (process.env.DISABLE_PERPLEXED_SYNC === 'true') ? null : new SocketIOSe
 export { app, server, io, deploymentID, prisma };
 
 import './common/sync';
+import { features } from 'process';
