@@ -1,11 +1,11 @@
 # PerPlexed
 Fixing Plex's old and simple UI.
 
-[**Docker Hub**](https://hub.docker.com/r/ipmake/perplexed )
+[**Docker Hub**](https://hub.docker.com/r/ipmake/perplexed)
 
-![PerPlexed](assets/screenshot1.png)
-
-
+*Click image for video*
+[![PerPlexed](assets/screenshot1.png)](https://www.youtube.com/watch?v=PuTOw3Wg9oY)
+![PerPlexed2](assets/screenshot2.png)
 ## Description
 
 PerPlexed is a complete redesign of Plex's UI using the Plex media server's API. It comes with its own web server. As the keen eye may notice, the UI is heavily inspired by Netflix's UI. It is currently only developed for desktops and laptops. It is not optimized for mobile or TV use.
@@ -15,6 +15,19 @@ PerPlexed currently supports Movie and TV Show libraries. You can also play medi
 It is currently not possible to edit media metadata or switch between different Plex servers. The "+" and Star buttons on the info pages for shows and movies are placeholders and are currently not functional.
 
 Mind that this project is still in development and may be unstable.
+
+
+## Features
+- Modern UI
+- Seamless Plex integration
+- Netflix-like UI
+- Play media
+- Browse libraries
+- Search for media
+- Watch Together (PerPlexed Sync)
+- Get Recommendations
+- Simple and easy to use
+- Pro-User features (like special shortcuts etc.)
 
 ## Installation
 
