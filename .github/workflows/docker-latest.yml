@@ -40,10 +40,10 @@ jobs:
         run: docker buildx create --name perplexedBuilder --use
 
       - name: Build and push the amd64 image
-        run: docker buildx build --platform linux/amd64 -t ipmake/perplexed:latest . --push
+        run: docker buildx build --platform linux/amd64 -t ipmake/perplexed:latest-amd64 . --push
 
       - name: Build and push the arm64 image
-        run: docker buildx build --platform linux/arm64 -t ipmake/perplexed:latest . --push
+        run: docker buildx build --platform linux/arm64 -t ipmake/perplexed:latest-arm64 . --push
 
       - name: Build and push multi-platform Docker image
-        run: docker buildx imagetools create --tag ipmake/perplexed:latest ipmake/perplexed:latest ipmake/perplexed:latest
+        run: docker buildx imagetools create --tag ipmake/perplexed:latest ipmake/perplexed:latest-amd64 ipmake/perplexed:latest-arm64
