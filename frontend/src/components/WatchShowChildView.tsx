@@ -1,7 +1,7 @@
 import {
   ArrowBackIosNewRounded,
-  FormatListBulletedRounded,
   PlayArrowRounded,
+  SubscriptionsRounded,
 } from "@mui/icons-material";
 import {
   Box,
@@ -98,7 +98,12 @@ function WatchShowChildView({ item }: { item: Plex.Metadata }) {
                 userSelect: "none",
               }}
             >
-              <ClickAwayListener onClickAway={() => setAnchorEl(null)}>
+              <ClickAwayListener
+                onClickAway={(e) => {
+                  e.stopPropagation();
+                  setAnchorEl(null);
+                }}
+              >
                 <Box
                   sx={{
                     backgroundColor: "background.paper",
@@ -112,7 +117,7 @@ function WatchShowChildView({ item }: { item: Plex.Metadata }) {
                 >
                   <Box
                     sx={{
-                      display: ((seasons?.length ?? 1) > 1 ? "flex" : "none"),
+                      display: (seasons?.length ?? 1) > 1 ? "flex" : "none",
                       flexDirection: "column",
                       width: "12vw",
                       height: "40vh",
@@ -221,7 +226,7 @@ function WatchShowChildView({ item }: { item: Plex.Metadata }) {
                       overflowY: "auto",
 
                       py: "10px",
-                      px: (seasons?.length === 1) ? "10px" : "0px",
+                      px: seasons?.length === 1 ? "10px" : "0px",
                     }}
                   >
                     {episodes
@@ -441,7 +446,7 @@ function WatchShowChildView({ item }: { item: Plex.Metadata }) {
         )}
       </Popper>
       <IconButton onClick={(event) => setAnchorEl(event.currentTarget)}>
-        <FormatListBulletedRounded fontSize="large" />
+        <SubscriptionsRounded fontSize="large" />
       </IconButton>
     </>
   );
