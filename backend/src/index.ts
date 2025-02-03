@@ -15,7 +15,7 @@ import { CheckPlexUser } from './common/plex';
     * PROXY_PLEX_SERVER?: The URL of the Plex server to proxy requests to
     * DISABLE_PROXY?: If set to true, the proxy will be disabled and all requests go directly to the Plex server from the frontend (NOT RECOMMENDED)
     * DISABLE_TLS_VERIFY?: If set to true, the proxy will not check any https ssl certificates
-    * DISABLE_PERPLEXED_SYNC?: If set to true, perplexed sync (watch together) will be disabled
+    * DISABLE_NEVU_SYNC?: If set to true, NEVU sync (watch together) will be disabled
     * DISABLE_REQUEST_LOGGING?: If set to true, the server will not log any requests
 **/
 const deploymentID = randomBytes(8).toString('hex');
@@ -138,7 +138,7 @@ app.get('/config', (req, res) => {
         DEPLOYMENTID: deploymentID,
         CONFIG: {
             DISABLE_PROXY: process.env.DISABLE_PROXY === 'true',
-            DISABLE_PERPLEXED_SYNC: process.env.DISABLE_PERPLEXED_SYNC === 'true',
+            DISABLE_NEVU_SYNC: process.env.DISABLE_NEVU_SYNC === 'true',
         }
     });
 });
@@ -257,7 +257,7 @@ const server = app.listen(3000, () => {
     console.log('Server started on http://localhost:3000');
 });
 
-let io = (process.env.DISABLE_PERPLEXED_SYNC === 'true') ? null : new SocketIOServer(server, {
+let io = (process.env.DISABLE_NEVU_SYNC === 'true') ? null : new SocketIOServer(server, {
     cors: {
         origin: '*',
     },

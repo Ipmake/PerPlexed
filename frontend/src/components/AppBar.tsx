@@ -141,7 +141,7 @@ function Appbar() {
           <ListItemText>Sponsor</ListItemText>
         </MenuItem>
 
-        {!config.DISABLE_PERPLEXED_SYNC && (
+        {!config.DISABLE_NEVU_SYNC && (
           <MenuItem
             onClick={() => {
               useSyncInterfaceState.getState().setOpen(true);
@@ -227,9 +227,9 @@ S - Skip onscreen markers (intro, credits, etc)
         }}
       >
         <img
-          src="/plex.png"
+          src="/logo.png"
           alt=""
-          height="80"
+          height="100"
           style={{
             aspectRatio: 1,
             objectFit: "contain",

@@ -37,8 +37,8 @@ function WaitingRoom() {
       }}
     >
       <img
-        src="/plex.png"
-        alt="Plex"
+        src="/logoBig.png"
+        alt="NEVU"
         style={{
           width: "30vw",
           height: "auto",

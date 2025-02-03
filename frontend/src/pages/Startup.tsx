@@ -147,8 +147,8 @@ function Startup() {
       }}
     >
       <img
-        src="/plex.png"
-        alt="Plex Logo"
+        src="/logoBig.png"
+        alt="NEVU Logo"
         style={{ width: "35vw", height: "auto" }}
       />
     </Box>

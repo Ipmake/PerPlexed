@@ -251,7 +251,7 @@ export async function getAccessToken(pin: string): Promise<Plex.TokenData> {
 export async function getPin(): Promise<Plex.TokenData> {
     const res = await axios.post(`https://plex.tv/api/v2/pins?${queryBuilder({
         "X-Plex-Client-Identifier": localStorage.getItem("clientID"),
-        "X-Plex-Product": "PerPlexed"
+        "X-Plex-Product": "NEVU"
     })}`)
     return res.data;
 }
@@ -269,7 +269,7 @@ export async function getPin(): Promise<Plex.TokenData> {
 export async function getLoggedInUser(): Promise<Plex.UserData | null> {
     const res = await axios.get(`https://plex.tv/api/v2/user?${queryBuilder({
         "X-Plex-Token": localStorage.getItem("accAccessToken") as string,
-        "X-Plex-Product": "PerPlexed",
+        "X-Plex-Product": "NEVU",
         "X-Plex-Client-Identifier": localStorage.getItem("clientID")
     })}`).catch((err) => {
         console.log(err);

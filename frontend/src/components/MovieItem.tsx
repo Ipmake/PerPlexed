@@ -271,7 +271,7 @@ function MovieItem({
           minWidth: itemsPerPage
             ? `calc((100vw / ${itemsPerPage}) - 10px - (5vw / ${itemsPerPage}))`
             : "100%",
-          backgroundColor: "#1C1C1C",
+          backgroundColor: "#1A1A1A",
 
           borderRadius: "7px",
           overflow: "hidden",
@@ -435,7 +435,7 @@ function MovieItem({
               fontSize: "14px",
               fontWeight: "700",
               letterSpacing: "0.15em",
-              color: "#e6a104",
+              color: theme => theme.palette.primary.main,
               textTransform: "uppercase",
               mt: "2px",
             }}
@@ -616,8 +616,8 @@ function MovieItem({
               sx={{
                 width: "100%",
                 height: "100%",
-                backgroundColor: "#CCCCCC",
-                color: "#000000",
+                backgroundColor: "#F4F8FF",
+                color: "#1A1A1A",
                 letterSpacing: "0.1em",
                 textTransform: "uppercase",
                 "&:hover": {
@@ -693,8 +693,8 @@ export function WatchListButton({ item }: { item: Plex.Metadata }) {
       sx={{
         width: "fit-content",
         height: "100%",
-        backgroundColor: "#555555",
-        color: "#FFFFFF",
+        backgroundColor: "#5A5A5A",
+        color: "#F4F8FF",
         fontSize: "12px",
         letterSpacing: "0.1em",
         textTransform: "uppercase",

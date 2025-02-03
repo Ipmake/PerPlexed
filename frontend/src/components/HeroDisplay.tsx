@@ -181,7 +181,7 @@ function HeroDisplay({ item }: { item: Plex.Metadata }) {
               mb: 0,
             }}
           >
-            <img
+            {/* <img
               src="/plexIcon.png"
               alt=""
               height="35"
@@ -189,14 +189,13 @@ function HeroDisplay({ item }: { item: Plex.Metadata }) {
                 aspectRatio: 1,
                 borderRadius: 8,
               }}
-            />
+            /> */}
             <Typography
               sx={{
                 fontSize: "24px",
                 fontWeight: "900",
                 letterSpacing: "0.1em",
-                ml: 1,
-                color: "#e6a104",
+                color: theme => theme.palette.primary.main,
                 textTransform: "uppercase",
               }}
             >
@@ -249,8 +248,8 @@ function HeroDisplay({ item }: { item: Plex.Metadata }) {
             <Button
               variant="contained"
               sx={{
-                backgroundColor: "#CCCCCC",
-                color: "#000000",
+                backgroundColor: "#F4F8FF",
+                color: "#1A1A1A",
                 fontWeight: "bold",
                 letterSpacing: "0.1em",
                 textTransform: "uppercase",
@@ -271,8 +270,8 @@ function HeroDisplay({ item }: { item: Plex.Metadata }) {
             <Button
               variant="contained"
               sx={{
-                backgroundColor: "#555555",
-                color: "#FFFFFF",
+                backgroundColor: "#5A5A5A",
+                color: "#F4F8FF",
                 fontWeight: "bold",
                 letterSpacing: "0.1em",
                 textTransform: "uppercase",

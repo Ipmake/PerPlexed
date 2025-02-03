@@ -416,10 +416,10 @@ function MetaScreen() {
                   flexDirection: "row",
                   alignItems: "center",
                   justifyContent: "flex-start",
-                  mb: 0,
+                  mb: "-10px",
                 }}
               >
-                <img
+                {/* <img
                   src="/plexIcon.png"
                   alt=""
                   height="40"
@@ -427,14 +427,13 @@ function MetaScreen() {
                     aspectRatio: 1,
                     borderRadius: 8,
                   }}
-                />
+                /> */}
                 <Typography
                   sx={{
                     fontSize: "30px",
                     fontWeight: "900",
                     letterSpacing: "0.1em",
-                    ml: 1,
-                    color: "#e6a104",
+                    color: theme => theme.palette.primary.main,
                     textTransform: "uppercase",
                   }}
                 >

@@ -38,7 +38,7 @@ function Utility() {
             marginBottom: "20px",
           }}
         >
-          PerPlexed has encountered an error
+          NEVU has encountered an error
         </Typography>
 
         {lastStatus?.error && (
