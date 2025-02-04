@@ -19,7 +19,7 @@ sessionStorage.setItem("sessionID", uuidv4());
 
 let config: PerPlexed.ConfigOptions = {
   DISABLE_PROXY: false,
-  DISABLE_PERPLEXED_SYNC: false
+  DISABLE_NEVU_SYNC: false
 };
 
 (() => {
@@ -37,15 +37,30 @@ ReactDOM.render(
       palette: {
         mode: "dark",
         primary: {
-          main: "#e6a104",
+          main: "#9950D9",
+          dark: "#64229D", // 2E1246
+          light: "#A15EEA",
         },
         secondary: {
-          main: "#3f51b5",
+          main: "#7C3AED",
         },
         background: {
           default: "#000000",
-          paper: "#000000",
+          paper: "#1A1A1A",
         },
+        text: {
+          primary: "#F4F8FF",
+          secondary: "#F4F8FF",
+        },
+        success: {
+          main: "#22C55E",
+        },
+        warning: {
+          main: "#FACC15",
+        },
+        error: {
+          main: "#EF4444"
+        }
       },
       typography: {
         fontFamily: '"Inter Variable", sans-serif',

@@ -38,7 +38,7 @@ function Utility() {
             marginBottom: "20px",
           }}
         >
-          PerPlexed has encountered an error
+          NEVU has encountered an error
         </Typography>
 
         {lastStatus?.error && (
@@ -49,6 +49,7 @@ function Utility() {
               fontWeight: "bold",
               textAlign: "center",
               marginBottom: "20px",
+              whiteSpace: "pre-wrap",
             }}
           >
             {lastStatus.message.split(" ").map((word, index) => (
@@ -83,6 +84,7 @@ function Utility() {
                 fontWeight: "bold",
                 textAlign: "center",
                 marginBottom: "20px",
+                whiteSpace: "pre-wrap",
                 }}
             >
                 {frontEndStatus.message.split(" ").map((word, index) => (

@@ -49,7 +49,7 @@ export function queryBuilder(query: any) {
 export function getXPlexProps() {
     return {
         "X-Incomplete-Segments": "1",
-        "X-Plex-Product": "PerPlexed",
+        "X-Plex-Product": "NEVU",
         "X-Plex-Version": "0.1.0",
         "X-Plex-Client-Identifier": localStorage.getItem("clientID"),
         "X-Plex-Platform": getBrowserName(),

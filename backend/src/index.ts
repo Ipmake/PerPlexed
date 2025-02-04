@@ -7,6 +7,7 @@ import { PerPlexed } from './types';
 import { randomBytes } from 'crypto';
 import { PrismaClient } from '@prisma/client';
 import { CheckPlexUser } from './common/plex';
+import fs from 'fs';
 
 /* 
  * ENVIRONMENT VARIABLES
@@ -15,7 +16,7 @@ import { CheckPlexUser } from './common/plex';
     * PROXY_PLEX_SERVER?: The URL of the Plex server to proxy requests to
     * DISABLE_PROXY?: If set to true, the proxy will be disabled and all requests go directly to the Plex server from the frontend (NOT RECOMMENDED)
     * DISABLE_TLS_VERIFY?: If set to true, the proxy will not check any https ssl certificates
-    * DISABLE_PERPLEXED_SYNC?: If set to true, perplexed sync (watch together) will be disabled
+    * DISABLE_NEVU_SYNC?: If set to true, NEVU sync (watch together) will be disabled
     * DISABLE_REQUEST_LOGGING?: If set to true, the server will not log any requests
 **/
 const deploymentID = randomBytes(8).toString('hex');
@@ -33,6 +34,16 @@ const prisma = new PrismaClient();
 app.use(express.json());
 
 (async () => {
+    const packageJson = fs.readFileSync('package.json', 'utf-8');
+    const packageJsonParsed = JSON.parse(packageJson);
+
+    if(packageJsonParsed.version !== "1.0.0") {
+        status.error = true;
+        status.message = 'PerPlexed is now NEVU! \nPlease change the docker image from "ipmake/perplexed" to "ipmake/nevu"';
+        console.error('PerPlexed is now NEVU! \nPlease change the docker image from "ipmake/perplexed" to "ipmake/nevu"');
+        return
+    }
+
     if (!process.env.PLEX_SERVER) {
         status.error = true;
         status.message = 'PLEX_SERVER environment variable not set';
@@ -46,8 +57,8 @@ app.use(express.json());
         // check if the PLEX_SERVER environment variable is a valid URL, the URL must not end with a /
         if (!process.env.PLEX_SERVER.match(/^https?:\/\/[^\/]+$/)) {
             status.error = true;
-            status.message = 'Invalid PLEX_SERVER environment variable. The URL must start with http:// or https:// and must not end with a /';
-            console.error('Invalid PLEX_SERVER environment variable. The URL must start with http:// or https:// and must not end with a /');
+            status.message = 'Invalid PLEX_SERVER environment variable. \nThe URL must start with http:// or https:// and must not end with a /';
+            console.error('Invalid PLEX_SERVER environment variable. \nThe URL must start with http:// or https:// and must not end with a /');
             return;
         }
     }
@@ -56,8 +67,8 @@ app.use(express.json());
         // check if the PROXY_PLEX_SERVER environment variable is a valid URL, the URL must not end with a /
         if (!process.env.PROXY_PLEX_SERVER.match(/^https?:\/\/[^\/]+$/)) {
             status.error = true;
-            status.message = 'Invalid PROXY_PLEX_SERVER environment variable. The URL must start with http:// or https:// and must not end with a /';
-            console.error('Invalid PROXY_PLEX_SERVER environment variable. The URL must start with http:// or https:// and must not end with a /');
+            status.message = 'Invalid PROXY_PLEX_SERVER environment variable. \nThe URL must start with http:// or https:// and must not end with a /';
+            console.error('Invalid PROXY_PLEX_SERVER environment variable. \nThe URL must start with http:// or https:// and must not end with a /');
             return;
         }
 
@@ -138,7 +149,7 @@ app.get('/config', (req, res) => {
         DEPLOYMENTID: deploymentID,
         CONFIG: {
             DISABLE_PROXY: process.env.DISABLE_PROXY === 'true',
-            DISABLE_PERPLEXED_SYNC: process.env.DISABLE_PERPLEXED_SYNC === 'true',
+            DISABLE_NEVU_SYNC: process.env.DISABLE_NEVU_SYNC === 'true',
         }
     });
 });
@@ -257,7 +268,7 @@ const server = app.listen(3000, () => {
     console.log('Server started on http://localhost:3000');
 });
 
-let io = (process.env.DISABLE_PERPLEXED_SYNC === 'true') ? null : new SocketIOServer(server, {
+let io = (process.env.DISABLE_NEVU_SYNC === 'true') ? null : new SocketIOServer(server, {
     cors: {
         origin: '*',
     },
@@ -266,4 +277,5 @@ let io = (process.env.DISABLE_PERPLEXED_SYNC === 'true') ? null : new SocketIOSe
 export { app, server, io, deploymentID, prisma };
 
 import './common/sync';
-import { features } from 'process';
+import { features } from 'process';import { readFileSync } from 'fs';
+

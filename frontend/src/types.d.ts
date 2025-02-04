@@ -20,7 +20,7 @@ declare namespace PerPlexed {
 
     interface ConfigOptions {
         DISABLE_PROXY: boolean;
-        DISABLE_PERPLEXED_SYNC: boolean;
+        DISABLE_NEVU_SYNC: boolean;
     }
 
     namespace Sync {

@@ -16,6 +16,7 @@ import PerPlexedSync from "./components/PerPlexedSync";
 import WaitingRoom from "./pages/WaitingRoom";
 import ToastManager from "./components/ToastManager";
 import LibraryScreen from "./components/LibraryScreen";
+import { useSessionStore } from "./states/SessionState";
 
 function AppManager() {
   const { loading } = useStartupState();
@@ -25,8 +26,10 @@ function AppManager() {
   useEffect(() => {
     if (loading) return;
 
-    setFadeOut(true);
-    setTimeout(() => setShowApp(true), 500);
+    setTimeout(() => {
+      setFadeOut(true);
+      setTimeout(() => setShowApp(true), 500);
+    }, 1000);
   }, [loading]);
 
   if (!showApp) {
@@ -38,6 +41,24 @@ function AppManager() {
   }
 
   return <App />;
+}
+
+function AppTitleManager() {
+  const { PlexServer } = useSessionStore();
+
+  useEffect(() => {
+    console.log(PlexServer);
+    if (!PlexServer?.friendlyName) return;
+
+    const capitalizedFriendlyName = PlexServer.friendlyName.charAt(0).toUpperCase() + PlexServer.friendlyName.slice(1);
+    document.title = `${capitalizedFriendlyName} - Nevu`;
+  }, [PlexServer]);
+
+  useEffect(() => {
+    document.title = "Nevu";
+  }, []);
+
+  return <></>
 }
 
 function App() {
@@ -54,6 +75,7 @@ function App() {
 
   useEffect(() => {
     useWatchListCache.getState().loadWatchListCache();
+    useSessionStore.getState().fetchPlexServer();
 
     const interval = setInterval(() => {
       useWatchListCache.getState().loadWatchListCache();
@@ -68,6 +90,7 @@ function App() {
       <PerPlexedSync />
       <ToastManager />
       <LibraryScreen />
+      <AppTitleManager />
       <Routes>
         <Route path="*" element={<AppBar />} />
         <Route path="/watch/:itemID" element={<></>} />
