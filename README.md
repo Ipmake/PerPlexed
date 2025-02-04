@@ -1,11 +1,15 @@
 # NEVU for Plex
 Fixing Plex's old and simple UI.
 
+**PerPlexed is now Nevu!**
+
 [**Docker Hub**](https://hub.docker.com/r/ipmake/nevu)
 
 *Click image for video*
 [![Nevu1](assets/screenshot1.png)](https://www.youtube.com/watch?v=PuTOw3Wg9oY)
 ![Nevu2](assets/screenshot2.png)
+
+
 ## Description
 
 Nevu is a complete redesign of Plex's UI using the Plex media server's API. It comes with its own web server. As the keen eye may notice, the UI is heavily inspired by Netflix's UI. It is currently only developed for desktops and laptops. It is not optimized for mobile or TV use.

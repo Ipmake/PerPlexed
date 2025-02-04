@@ -41,10 +41,10 @@ jobs:
         run: docker buildx create --name nevuBuilder --use
 
       - name: Build and push the amd64 image
-        run: docker buildx build --platform linux/amd64 -t ipmake/nevu:preview-amd64 . --push
+        run: docker buildx build --platform linux/amd64 -t ipmake/nevu:latest-amd64 . --push
 
       - name: Build and push the arm64 image
-        run: docker buildx build --platform linux/arm64 -t ipmake/nevu:preview-arm64 . --push
+        run: docker buildx build --platform linux/arm64 -t ipmake/nevu:latest-arm64 . --push
 
       - name: Build and push multi-platform Docker image
-        run: docker buildx imagetools create --tag ipmake/nevu:preview ipmake/nevu:preview-amd64 ipmake/nevu:preview-arm64
+        run: docker buildx imagetools create --tag ipmake/nevu:latest ipmake/nevu:latest-amd64 ipmake/nevu:latest-arm64
