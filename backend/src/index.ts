@@ -7,6 +7,7 @@ import { PerPlexed } from './types';
 import { randomBytes } from 'crypto';
 import { PrismaClient } from '@prisma/client';
 import { CheckPlexUser } from './common/plex';
+import fs from 'fs';
 
 /* 
  * ENVIRONMENT VARIABLES
@@ -33,6 +34,16 @@ const prisma = new PrismaClient();
 app.use(express.json());
 
 (async () => {
+    const packageJson = fs.readFileSync('package.json', 'utf-8');
+    const packageJsonParsed = JSON.parse(packageJson);
+
+    if(packageJsonParsed.version !== "1.0.0") {
+        status.error = true;
+        status.message = 'PerPlexed is now NEVU! \nPlease change the docker image from "ipmake/perplexed" to "ipmake/nevu"';
+        console.error('PerPlexed is now NEVU! \nPlease change the docker image from "ipmake/perplexed" to "ipmake/nevu"');
+        return
+    }
+
     if (!process.env.PLEX_SERVER) {
         status.error = true;
         status.message = 'PLEX_SERVER environment variable not set';
@@ -46,8 +57,8 @@ app.use(express.json());
         // check if the PLEX_SERVER environment variable is a valid URL, the URL must not end with a /
         if (!process.env.PLEX_SERVER.match(/^https?:\/\/[^\/]+$/)) {
             status.error = true;
-            status.message = 'Invalid PLEX_SERVER environment variable. The URL must start with http:// or https:// and must not end with a /';
-            console.error('Invalid PLEX_SERVER environment variable. The URL must start with http:// or https:// and must not end with a /');
+            status.message = 'Invalid PLEX_SERVER environment variable. \nThe URL must start with http:// or https:// and must not end with a /';
+            console.error('Invalid PLEX_SERVER environment variable. \nThe URL must start with http:// or https:// and must not end with a /');
             return;
         }
     }
@@ -56,8 +67,8 @@ app.use(express.json());
         // check if the PROXY_PLEX_SERVER environment variable is a valid URL, the URL must not end with a /
         if (!process.env.PROXY_PLEX_SERVER.match(/^https?:\/\/[^\/]+$/)) {
             status.error = true;
-            status.message = 'Invalid PROXY_PLEX_SERVER environment variable. The URL must start with http:// or https:// and must not end with a /';
-            console.error('Invalid PROXY_PLEX_SERVER environment variable. The URL must start with http:// or https:// and must not end with a /');
+            status.message = 'Invalid PROXY_PLEX_SERVER environment variable. \nThe URL must start with http:// or https:// and must not end with a /';
+            console.error('Invalid PROXY_PLEX_SERVER environment variable. \nThe URL must start with http:// or https:// and must not end with a /');
             return;
         }
 
@@ -266,4 +277,5 @@ let io = (process.env.DISABLE_NEVU_SYNC === 'true') ? null : new SocketIOServer(
 export { app, server, io, deploymentID, prisma };
 
 import './common/sync';
-import { features } from 'process';
+import { features } from 'process';import { readFileSync } from 'fs';
+
